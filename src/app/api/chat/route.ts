@@ -1,20 +1,20 @@
-import OpenAI from 'openai'
 import { NextResponse } from 'next/server'
+import OpenAI from 'openai'
 
-// منع التخزين المؤقت وحل خطأ الـ Build على Vercel
 export const dynamic = 'force-dynamic'
-
-const apiKey = process.env.OPENAI_API_KEY || ''
-const openai = new OpenAI({ apiKey })
 
 export async function POST(req: Request) {
     try {
+        const apiKey = process.env.OPENAI_API_KEY || ''
+
         if (!apiKey) {
             return NextResponse.json(
                 { reply: 'مفتاح الـ API غير متاح في ملف البيئة' },
                 { status: 500 }
             )
         }
+
+        const openai = new OpenAI({ apiKey })
 
         const { messages, currentModule, currentChapter, currentQuestion } = await req.json()
 
