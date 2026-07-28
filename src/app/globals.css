@@ -1,0 +1,393 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Tajawal', sans-serif;
+}
+
+:root {
+  --bg-flat: #f8fafc;
+  --primary-blue: #2563eb;
+  --primary-hover: #1d4ed8;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --card-white: #ffffff;
+  --border-line: #e2e8f0;
+}
+
+body {
+  background-color: var(--bg-flat);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--card-white);
+  border-bottom: 1px solid var(--border-line);
+  height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 50px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--primary-blue);
+  cursor: pointer;
+}
+.nav-auth-btn {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.nav-auth-btn:hover { background-color: var(--primary-hover); }
+.user-badge {
+  font-weight: bold;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Hero / Landing */
+.hero-container {
+  margin-top: 130px;
+  text-align: center;
+  padding: 0 20px;
+  margin-bottom: 50px;
+}
+.hero-title { font-size: 36px; font-weight: 900; margin-bottom: 16px; }
+.hero-subtitle {
+  font-size: 18px;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  line-height: 1.6;
+}
+
+/* Course Section */
+.course-section {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px 80px 20px;
+}
+.section-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: block;
+  text-align: center;
+}
+.course-card {
+  background-color: var(--card-white);
+  border: 1px solid var(--border-line);
+  border-radius: 16px;
+  padding: 35px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border-line);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+.course-title-block h3 { font-size: 24px; font-weight: 900; margin-bottom: 6px; }
+.course-badge {
+  background-color: #eff6ff;
+  color: var(--primary-blue);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.course-description { font-size: 15px; color: var(--text-muted); line-height: 1.8; margin-bottom: 25px; }
+.course-action-block { text-align: center; border-top: 1px solid var(--border-line); padding-top: 25px; }
+.start-btn {
+  display: inline-block;
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 14px 40px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37,99,243,0.2);
+  transition: all 0.2s;
+}
+.start-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+
+/* Login */
+.login-container {
+  margin-top: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  flex: 1;
+}
+.login-card {
+  background-color: var(--card-white);
+  border: 1px solid var(--border-line);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.login-card h2 { font-size: 24px; font-weight: 900; margin-bottom: 8px; text-align: center; }
+.login-subtitle { font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 30px; }
+.input-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+.input-group label { font-size: 14px; font-weight: 700; }
+.input-group input {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-line);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-group input:focus { border-color: var(--primary-blue); }
+.login-submit-btn {
+  width: 100%;
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+.login-submit-btn:hover { background-color: var(--primary-hover); }
+.login-footer { margin-top: 20px; text-align: center; font-size: 14px; color: var(--text-muted); }
+.login-footer a { color: var(--primary-blue); text-decoration: none; font-weight: 500; }
+
+/* Modules Dashboard */
+.dashboard-container {
+  margin-top: 100px;
+  max-width: 1100px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+}
+.dash-title {
+  font-size: 24px;
+  font-weight: 900;
+  margin-bottom: 25px;
+  border-right: 4px solid var(--primary-blue);
+  padding-right: 12px;
+}
+.course-selector-card {
+  background-color: var(--card-white);
+  border: 2px solid var(--border-line);
+  border-radius: 12px;
+  padding: 25px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.course-selector-card:hover { border-color: var(--primary-blue); box-shadow: 0 4px 12px rgba(37,99,243,0.08); }
+.course-selector-card h3 { margin-bottom: 8px; }
+.modules-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start; }
+.modules-list { display: flex; flex-direction: column; gap: 12px; }
+.module-item-btn {
+  background-color: var(--card-white);
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+  padding: 18px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: right;
+}
+.module-item-btn:hover { background-color: #f1f5f9; border-color: var(--text-muted); }
+.disabled-mod { opacity: 0.6; cursor: not-allowed; background-color: #f1f5f9; }
+.module-details-panel {
+  background-color: var(--card-white);
+  border: 1px solid var(--border-line);
+  border-radius: 12px;
+  padding: 30px;
+  min-height: 350px;
+}
+.placeholder-text { text-align: center; color: var(--text-muted); padding-top: 100px; }
+.theory-box {
+  background-color: #f0fdf4;
+  border-right: 4px solid #10b981;
+  padding: 15px;
+  border-radius: 4px 8px 8px 4px;
+  margin: 15px 0 25px 0;
+}
+.theory-box h5, .chapters-box h5 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.theory-box p { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+.chapters-list { display: flex; flex-direction: column; gap: 10px; }
+.chapter-item {
+  border: 1px solid var(--border-line);
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bg-flat);
+}
+.chapter-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.enter-chap-btn {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Workspace */
+.workspace-container {
+  margin-top: 70px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  height: calc(100vh - 70px);
+}
+.learning-zone {
+  padding: 30px;
+  background-color: var(--bg-flat);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.progress-container {
+  background: var(--card-white);
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid var(--border-line);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-weight: bold;
+}
+.progress-bar-bg { flex: 1; background-color: #e2e8f0; border-radius: 20px; overflow: hidden; }
+.progress-bar-fill {
+  background-color: #10b981;
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  padding: 3px 0;
+  font-weight: bold;
+  transition: width 0.3s;
+}
+.video-box {
+  background-color: #000;
+  border-radius: 12px;
+  aspect-ratio: 16/9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-weight: bold;
+}
+.video-mock { cursor: pointer; padding: 20px; border: 2px dashed #fff; border-radius: 8px; }
+.quiz-box {
+  background-color: var(--card-white);
+  border: 1px solid var(--border-line);
+  border-radius: 12px;
+  padding: 25px;
+}
+.quiz-box h4 { margin-bottom: 10px; color: var(--primary-blue); }
+.quiz-question { font-size: 16px; font-weight: 500; margin-bottom: 15px; }
+.code-block {
+  display: block;
+  background-color: #1e293b;
+  color: #f8fafc;
+  padding: 15px;
+  border-radius: 8px;
+  direction: ltr;
+  text-align: left;
+  font-family: monospace;
+  margin-bottom: 15px;
+  white-space: pre;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.option-item {
+  background: var(--bg-flat);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-line);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.verify-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.ai-chat-zone {
+  background-color: var(--card-white);
+  border-right: 1px solid var(--border-line);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.chat-header { background-color: #1e293b; color: white; padding: 20px; font-weight: bold; text-align: center; }
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.msg { padding: 12px; border-radius: 8px; max-width: 85%; font-size: 14px; line-height: 1.5; }
+.ai-msg { background-color: #eff6ff; color: #1e40af; align-self: flex-start; border-right: 4px solid var(--primary-blue); }
+.user-msg { background-color: var(--primary-blue); color: white; align-self: flex-end; }
+.chat-input-area { padding: 15px; border-top: 1px solid var(--border-line); display: flex; gap: 10px; }
+.chat-input-area input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-line);
+  outline: none;
+  font-family: 'Tajawal', sans-serif;
+}
+.chat-input-area button {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 0 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}

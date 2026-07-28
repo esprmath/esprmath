@@ -1,0 +1,39 @@
+'use client'
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+
+export default function UpdateEmailPage() {
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const handleUpdateEmail = async () => {
+    setLoading(true)
+    setMessage('')
+
+    // هنا يتم تحديث الإيميل
+    const { data, error } = await supabase.auth.updateUser({
+      email: 'esprmath@gmail.com'
+    })
+
+    if (error) {
+      setMessage(`❌ حدث خطأ: ${error.message}`)
+    } else {
+      setMessage('✅ تم الإرسال! تحقق من بريد الموقع الجديد لتأكيد التغيير.')
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
+      <h2>تغيير ايميل الموقع</h2>
+      <button
+        onClick={handleUpdateEmail}
+        disabled={loading}
+        style={{ background: '#4f46e5', color: '#fff', padding: '10px 20px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+      >
+        {loading ? 'جاري التحديث...' : 'تغيير الإيميل إلى support@esprmath.com'}
+      </button>
+      {message && <p style={{ marginTop: '15px' }}>{message}</p>}
+    </div>
+  )
+}
