@@ -1,6 +1,9 @@
 import OpenAI from 'openai'
 import { NextResponse } from 'next/server'
 
+// منع التخزين المؤقت وحل خطأ الـ Build على Vercel
+export const dynamic = 'force-dynamic'
+
 const apiKey = process.env.OPENAI_API_KEY || ''
 const openai = new OpenAI({ apiKey })
 
@@ -8,14 +11,13 @@ export async function POST(req: Request) {
     try {
         if (!apiKey) {
             return NextResponse.json(
-                { reply: 'مفتاح الـ API غير متاح في ملف البيئة (.env.local)' },
+                { reply: 'مفتاح الـ API غير متاح في ملف البيئة' },
                 { status: 500 }
             )
         }
 
         const { messages, currentModule, currentChapter, currentQuestion } = await req.json()
 
-        // تعليمات النظام محدثة لتكون صارمة وتمنع التفلسف والشرح المطول
         const systemInstruction = `
 أنت معلم مساعد ذكي لمقرر الجبر الخطي (Math 204) في منصة EsprMath.
 سياق الطالب الحالي:
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: finalMessages,
-            temperature: 0.2, // خفضنا القيمة لتقليل العشوائية وجعله مركزاً وعملياً
+            temperature: 0.2,
         })
 
         const reply = completion.choices[0]?.message?.content || 'لم يتم استلام إجابة.'
