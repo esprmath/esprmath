@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import type { Metadata } from 'next'
 import './globals.css'
 

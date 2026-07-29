@@ -17,34 +17,31 @@ export default function WorkspacePage() {
     const [showAlertModal, setShowAlertModal] = useState(false)
     const [alertMessage, setAlertMessage] = useState('')
 
-    // فحص صلاحيات الموافقة من Supabase لكورس الجبر الخطي (204)
+    // التحقق السريع من الجلسة وحالة الاعتماد المخزنة محلياً لتجنب البطء
     useEffect(() => {
-        async function checkApprovalStatus() {
+        async function checkLocalSession() {
             setLoading(true)
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
 
-            if (!user) {
+            if (!session?.user) {
                 setIsAuthorized(false)
                 setLoading(false)
                 return
             }
 
-            const { data, error } = await supabase
-                .from('user_courses')
-                .select('is_approved')
-                .eq('user_id', user.id)
-                .eq('course_id', '204')
-                .maybeSingle()
-
-            if (!error && data && data.is_approved === true) {
+            const userId = session.user.id
+            // التحقق الفوري من حالة الكورس المخزنة محلياً بناءً على تحديث الصفحة الرئيسية
+            const cachedStatus = localStorage.getItem(`course_approved_${userId}_204`)
+            if (cachedStatus === 'true') {
                 setIsAuthorized(true)
             } else {
                 setIsAuthorized(false)
             }
+
             setLoading(false)
         }
 
-        checkApprovalStatus()
+        checkLocalSession()
 
         if (typeof window !== 'undefined') {
             const newProgress: { [key: number]: number } = {}
@@ -83,7 +80,7 @@ export default function WorkspacePage() {
     if (loading) {
         return (
             <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', color: '#4A5550', fontSize: '1rem', fontWeight: 'bold' }}>
-                جاري التحقق من صلاحيات الكورس... ⏳
+                جاري تحميل محتوى الكورس... ⏳
             </div>
         )
     }
@@ -227,8 +224,7 @@ export default function WorkspacePage() {
                                         fontSize: '14px',
                                         boxShadow: isExpanded && !isLocked ? '0 4px 12px rgba(220, 162, 123, 0.3)' : 'none',
                                         alignSelf: 'center',
-                                        cursor: isLocked ? 'not-allowed' : 'pointer',
-                                        pointerEvents: isLocked ? 'auto' : 'auto'
+                                        cursor: isLocked ? 'not-allowed' : 'pointer'
                                     }}
                                 >
                                     {isLocked ? 'Locked 🔒' : 'Start ➔'}

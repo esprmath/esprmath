@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -9,33 +10,19 @@ export default function HomePage() {
   const [userName, setUserName] = useState<string>('')
   const [userId, setUserId] = useState<string | null>(null)
 
-  // حالات حالة الموافقة لكل كورس { '204': 'approved' | 'pending' | 'none', ... }
+  // حالات حالة الموافقة لكل كورس { '204': 'approved' | 'pending' | 'none', '203': ... }
   const [courseStatuses, setCourseStatuses] = useState<Record<string, string>>({
     '204': 'none',
     '203': 'none'
   })
 
-  // حالات نافذة التنبيه المخصصة داخل الموقع بدلاً من تنبيه المتصفح
+  // حالات نافذة التنبيه المخصصة داخل الموقع بدلًا من تنبيه المتصفح
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertMessage, setAlertMessage] = useState('')
 
-  // دالة لجلب حالة الكورسات مع الاعتماد الفوري على الذاكرة المحلية لتجنب البطء
+  // دالة لجلب حالة الكورسات والتحقق من الموافقة فور الدخول أو التحديث
   const fetchUserApprovals = async (currentUserId: string) => {
-    const cacheKey = `user_courses_statuses_${currentUserId}`
-    const cachedStatuses = localStorage.getItem(cacheKey)
-
-    // ⚡ إذا كانت الحالات مخزنة مسبقاً، نستخدمها فوراً ونتجاوز اتصال القاعدة تماماً للسرعة الخارقة
-    if (cachedStatuses) {
-      try {
-        const parsed = JSON.parse(cachedStatuses)
-        setCourseStatuses(parsed)
-        return
-      } catch (e) {
-        // تجاوز الخطأ إذا وجد
-      }
-    }
-
-    // إذا لم تكن مخزنة نهائياً في المتصفح، نسأل القاعدة مرة واحدة فقط
+    // جلب أحدث حالة مباشرة من جدول user_courses في Supabase لضمان دقة الاعتماد
     const { data, error } = await supabase
         .from('user_courses')
         .select('course_id, is_approved')
@@ -43,13 +30,16 @@ export default function HomePage() {
 
     if (!error && data) {
       const statuses: Record<string, string> = { '204': 'none', '203': 'none' }
+
       data.forEach((item) => {
+        // إذا كانت is_approved تساوي true تصبح 'approved' وإلا تبقى 'pending'
         statuses[item.course_id] = item.is_approved ? 'approved' : 'pending'
       })
 
       setCourseStatuses(statuses)
-      localStorage.setItem(cacheKey, JSON.stringify(statuses))
 
+      // تخزين الحالة في الذاكرة المحلية لتسريع العرض مستقبلاً
+      localStorage.setItem(`user_courses_statuses_${currentUserId}`, JSON.stringify(statuses))
       data.forEach((item) => {
         localStorage.setItem(`course_approved_${currentUserId}_${item.course_id}`, item.is_approved ? 'true' : 'false')
       })
@@ -57,7 +47,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    // 1. التحقق من حالة تسجيل الدخول وجلب بيانات المستخدم
+    // 1. التحقق من حالة تسجيل الدخول وجلب بيانات المستخدم عند التحميل الأول أو التحديث
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsLoggedIn(!!session)
       if (session?.user) {
@@ -100,7 +90,7 @@ export default function HomePage() {
       setAlertMessage('تم إرسال طلب الانضمام بنجاح! يمكنك تجربة الموديول الأول مجاناً الآن ⏳')
       setShowAlertModal(true)
 
-      // تحديث الحالة محلياً وقاعدة البيانات فوراً
+      // تحديث الحالة محلياً فوراً
       const updatedStatuses = { ...courseStatuses, [courseId]: 'pending' }
       setCourseStatuses(updatedStatuses)
       localStorage.setItem(`user_courses_statuses_${userId}`, JSON.stringify(updatedStatuses))
@@ -108,7 +98,7 @@ export default function HomePage() {
     }
   }
 
-  // دالة عرض الأزرار لكل كورس (تشترط تسجيل الدخول للوصول للتجربة المجانية)
+  // دالة عرض الأزرار لكل كورس بناءً على حالة الاعتماد الفعلية
   const renderCourseActions = (courseId: string, buttonColor: string) => {
     if (!isLoggedIn) {
       return (
@@ -126,10 +116,19 @@ export default function HomePage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* زر الدخول متاح للمسجلين لكي يتمكنوا من رؤية الموديول الأول المجاني أو محتوى الكورس المعتمد */}
+          {/* زر الدخول: يتغير نص الرابط واللون تلقائياً إذا تم اعتماد الكورس */}
           <Link href={`/workspace/${courseId}`} style={{ textDecoration: 'none' }}>
-            <button style={{ background: buttonColor, color: '#ffffff', border: 'none', padding: '11px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
-              {status === 'approved' ? 'دخول الكورس الكامل 🚀' : 'دخول الكورس (Module 1 Free) ✨'}
+            <button style={{
+              background: status === 'approved' ? '#2F5233' : buttonColor,
+              color: '#ffffff',
+              border: 'none',
+              padding: '11px 20px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              width: '100%'
+            }}>
+              {status === 'approved' ? 'دخول الكورس الكامل 🚀' : 'دخول التجربة (Module 1 Free) ✨'}
             </button>
           </Link>
 
@@ -142,6 +141,7 @@ export default function HomePage() {
               </button>
           )}
 
+          {/* حالة بانتظار الموافقة مع زر تيليجرام لتسريع الاعتماد */}
           {status === 'pending' && (
               <div style={{
                 display: 'flex',
@@ -233,7 +233,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* الكورس الثاني التجريبي: كالك 3 Math203 */}
+            {/* الكورس الثاني: كالك 3 Math203 */}
             <div className="course-card" style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
               <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>التفاضل والتكامل المتقدم (كالك 3)</h3>
@@ -266,31 +266,47 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* قسم Why EsprMath (المربعات الأربعة) */}
+        {/* قسم مميزات EsprMath (البوكسات الأخيرة) */}
         <section style={{ maxWidth: '800px', margin: '0 auto 60px auto', padding: '0 20px' }}>
           <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '16px' }}>
-            ⭐ Why EsprMath ؟
+            ⭐ لماذا EsprMath ؟
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>🎯 شرح مبسط ومباشر</h4>
-              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>نختصر عليك تشتت المصادر ونعطيك الزبدة لتفهم بسرعة.</p>
+            {/* بوكس 1 */}
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>شرح مبسط ومباشر</h4>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
+                نختصر عليك تشتت المصادر ونعطيك الزبدة لتفهم بسرعة.
+              </p>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>🎁 Module 1 مجاني</h4>
-              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>جرب بنفسك احكم على جودة الشرح بعد تسجيل الدخول.</p>
+            {/* بوكس 2 */}
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎁</div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>Module 1 مجاني</h4>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
+                جرب بنفسك واحكم على جودة الشرح بعد تسجيل الدخول.
+              </p>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>📊 متابعة تقدمك</h4>
-              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>تتبع إنجازك لكل شابتر أول بأول وبكل سهولة.</p>
+            {/* بوكس 3 */}
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>متابعة تقدمك</h4>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
+                تتبع إنجازك لكل شابتر أول بأول وبكل سهولة.
+              </p>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>💡 أمثلة واختبارات</h4>
-              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>تدرب على أسئلة اختبارات سابقة تضمن لك الـ A+ بإذن الله.</p>
+            {/* بوكس 4 */}
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>💡</div>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>أمثلة واختبارات</h4>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
+                تدرب على أسئلة اختبارات سابقة تضمن لك الـ A+ بإذن الله.
+              </p>
             </div>
 
           </div>
