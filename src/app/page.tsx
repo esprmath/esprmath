@@ -5,40 +5,68 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
 
+// تعريف هيكل الكورس القادم من Supabase
+interface Course {
+  id: string
+  title: string
+  description: string
+  badge_color: string
+  badge_text_color: string
+  is_active: boolean
+}
+
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState<string>('')
   const [userId, setUserId] = useState<string | null>(null)
 
-  // حالات حالة الموافقة لكل كورس { '204': 'approved' | 'pending' | 'none', '203': ... }
-  const [courseStatuses, setCourseStatuses] = useState<Record<string, string>>({
-    '204': 'none',
-    '203': 'none'
-  })
+  // حالة الكورسات القادمة من قاعدة البيانات
+  const [courses, setCourses] = useState<Course[]>([])
 
-  // حالات نافذة التنبيه المخصصة داخل الموقع بدلًا من تنبيه المتصفح
+  // حالات حالة الموافقة لكل كورس ديناميكياً
+  const [courseStatuses, setCourseStatuses] = useState<Record<string, string>>({})
+
+  // حالات نافذة التنبيه المخصصة داخل الموقع
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertMessage, setAlertMessage] = useState('')
 
-  // دالة لجلب حالة الكورسات والتحقق من الموافقة فور الدخول أو التحديث
-  const fetchUserApprovals = async (currentUserId: string) => {
-    // جلب أحدث حالة مباشرة من جدول user_courses في Supabase لضمان دقة الاعتماد
+  // دالة لجلب الكورسات النشطة من Supabase
+  const fetchCourses = async () => {
+    const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('is_active', true)
+        .order('id')
+
+    if (!error && data) {
+      setCourses(data)
+      const initialStatuses: Record<string, string> = {}
+      data.forEach(course => {
+        initialStatuses[course.id] = 'none'
+      })
+      setCourseStatuses(initialStatuses)
+    }
+  }
+
+  // دالة لجلب حالة الاعتماد لكل كورس للمستخدم الحالي
+  const fetchUserApprovals = async (currentUserId: string, activeCourses: Course[]) => {
     const { data, error } = await supabase
         .from('user_courses')
         .select('course_id, is_approved')
         .eq('user_id', currentUserId)
 
     if (!error && data) {
-      const statuses: Record<string, string> = { '204': 'none', '203': 'none' }
+      const statuses: Record<string, string> = {}
+      activeCourses.forEach(course => {
+        statuses[course.id] = 'none'
+      })
 
       data.forEach((item) => {
-        // إذا كانت is_approved تساوي true تصبح 'approved' وإلا تبقى 'pending'
         statuses[item.course_id] = item.is_approved ? 'approved' : 'pending'
       })
 
       setCourseStatuses(statuses)
 
-      // تخزين الحالة في الذاكرة المحلية لتسريع العرض مستقبلاً
       localStorage.setItem(`user_courses_statuses_${currentUserId}`, JSON.stringify(statuses))
       data.forEach((item) => {
         localStorage.setItem(`course_approved_${currentUserId}_${item.course_id}`, item.is_approved ? 'true' : 'false')
@@ -47,15 +75,15 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    // 1. التحقق من حالة تسجيل الدخول وجلب بيانات المستخدم عند التحميل الأول أو التحديث
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session)
-      if (session?.user) {
-        setUserId(session.user.id)
-        const fullName = session.user.user_metadata?.full_name
-        setUserName(fullName || '')
-        fetchUserApprovals(session.user.id)
-      }
+    fetchCourses().then(() => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setIsLoggedIn(!!session)
+        if (session?.user) {
+          setUserId(session.user.id)
+          const fullName = session.user.user_metadata?.full_name
+          setUserName(fullName || '')
+        }
+      })
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -64,20 +92,41 @@ export default function HomePage() {
         setUserId(session.user.id)
         const fullName = session.user.user_metadata?.full_name
         setUserName(fullName || '')
-        fetchUserApprovals(session.user.id)
       } else {
         setUserId(null)
         setUserName('')
-        setCourseStatuses({ '204': 'none', '203': 'none' })
+        if (courses.length > 0) {
+          const resetStatuses: Record<string, string> = {}
+          courses.forEach(course => {
+            resetStatuses[course.id] = 'none'
+          })
+          setCourseStatuses(resetStatuses)
+        }
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  // دالة طلب الانضمام للكورس (تضيف سجل في Supabase بـ is_approved = false)
+  useEffect(() => {
+    if (userId && courses.length > 0) {
+      fetchUserApprovals(userId, courses)
+    }
+  }, [userId, courses])
+
+  // دالة طلب الانضمام للكورس مع التحقق من عدم امتلاك الطالب لكورس آخر مسبقاً
   const handleRequestCourse = async (courseId: string) => {
     if (!userId) return
+
+    const hasActiveOrPendingCourse = Object.values(courseStatuses).some(
+        status => status === 'pending' || status === 'approved'
+    )
+
+    if (hasActiveOrPendingCourse) {
+      setAlertMessage('⚠️ عذراً، يمكنك التقديم على كورس واحد فقط في نفس الوقت. يرجى إلغاء طلبك الحالي إذا أردت التبديل لكورس آخر.')
+      setShowAlertModal(true)
+      return
+    }
 
     const { error } = await supabase
         .from('user_courses')
@@ -90,7 +139,6 @@ export default function HomePage() {
       setAlertMessage('تم إرسال طلب الانضمام بنجاح! يمكنك تجربة الموديول الأول مجاناً الآن ⏳')
       setShowAlertModal(true)
 
-      // تحديث الحالة محلياً فوراً
       const updatedStatuses = { ...courseStatuses, [courseId]: 'pending' }
       setCourseStatuses(updatedStatuses)
       localStorage.setItem(`user_courses_statuses_${userId}`, JSON.stringify(updatedStatuses))
@@ -98,7 +146,35 @@ export default function HomePage() {
     }
   }
 
-  // دالة عرض الأزرار لكل كورس بناءً على حالة الاعتماد الفعلية
+  // دالة إلغاء الطلب وحذفه نهائياً من قاعدة البيانات Supabase
+  const handleCancelRequest = async (courseId: string) => {
+    if (!userId) return
+
+    // إرسال أمر حذف للسجل من جدول user_courses بناءً على معرّف المستخدم ومعرّف الكورس
+    const { error } = await supabase
+        .from('user_courses')
+        .delete()
+        .eq('user_id', userId)
+        .eq('course_id', courseId)
+        .eq('is_approved', false) // للتأكد من حذف الطلبات غير المعتمدة فقط
+
+    if (error) {
+      setAlertMessage('حدث خطأ أثناء إلغاء الطلب من قاعدة البيانات، حاول مرة أخرى.')
+      setShowAlertModal(true)
+    } else {
+      setAlertMessage('🗑️ تم إلغاء الطلب وحذفه بنجاح من النظام.')
+      setShowAlertModal(true)
+
+      // تحديث الحالة المحلية وحذف البيانات المرتبطة من الذاكرة المحلية
+      const updatedStatuses = { ...courseStatuses, [courseId]: 'none' }
+      setCourseStatuses(updatedStatuses)
+      localStorage.setItem(`user_courses_statuses_${userId}`, JSON.stringify(updatedStatuses))
+      localStorage.removeItem(`course_approved_${userId}_${courseId}`)
+      localStorage.removeItem("approved_course")
+    }
+  }
+
+  // دالة عرض الأزرار لكل كورس
   const renderCourseActions = (courseId: string, buttonColor: string) => {
     if (!isLoggedIn) {
       return (
@@ -112,11 +188,10 @@ export default function HomePage() {
       )
     }
 
-    const status = courseStatuses[courseId]
+    const status = courseStatuses[courseId] || 'none'
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* زر الدخول: يتغير نص الرابط واللون تلقائياً إذا تم اعتماد الكورس */}
           <Link href={`/workspace/${courseId}`} style={{ textDecoration: 'none' }}>
             <button style={{
               background: status === 'approved' ? '#2F5233' : buttonColor,
@@ -132,7 +207,6 @@ export default function HomePage() {
             </button>
           </Link>
 
-          {/* زر طلب الانضمام يظهر فقط إذا لم يطلب مسبقاً */}
           {status === 'none' && (
               <button
                   onClick={() => handleRequestCourse(courseId)}
@@ -141,7 +215,6 @@ export default function HomePage() {
               </button>
           )}
 
-          {/* حالة بانتظار الموافقة مع زر تيليجرام لتسريع الاعتماد */}
           {status === 'pending' && (
               <div style={{
                 display: 'flex',
@@ -155,28 +228,53 @@ export default function HomePage() {
                 fontWeight: 'bold'
               }}>
                 <span>⏳ طلب الانضمام بانتظار موافقة المشرف</span>
-                <a
-                    href="https://t.me/YOUR_USERNAME"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="تواصل معي عبر تيليجرام لتسريع الموافقة"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#DCA27B',
-                      color: '#ffffff',
-                      borderRadius: '50%',
-                      textDecoration: 'none',
-                      fontSize: '15px',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      flexShrink: 0
-                    }}
-                >
-                  💬
-                </a>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <a
+                      href="https://t.me/YOUR_USERNAME"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="تواصل معي عبر تيليجرام لتسريع الموافقة"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#DCA27B',
+                        color: '#ffffff',
+                        borderRadius: '50%',
+                        textDecoration: 'none',
+                        fontSize: '15px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        flexShrink: 0
+                      }}
+                  >
+                    💬
+                  </a>
+
+                  <button
+                      type="button"
+                      onClick={() => handleCancelRequest(courseId)}
+                      title="إلغاء الطلب من قاعدة البيانات"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#b91c1c',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        flexShrink: 0
+                      }}
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
           )}
         </div>
@@ -202,55 +300,36 @@ export default function HomePage() {
           </p>
         </header>
 
-        {/* قسم كورسات الطالب */}
+        {/* قسم كورسات الطالب الديناميكي */}
         <section className="courses-section" style={{ maxWidth: '800px', margin: '0 auto 40px auto', padding: '0 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
             <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', margin: 0 }}>
               📚 كورساتك المتاحة
             </h3>
             <span className="section-label" style={{ background: '#CDD4B1', color: '#2C3531', border: '1px solid #b8c29e', padding: '5px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-              Module 1 مجاني للمسجلين 🎁
-            </span>
+            Module 1 مجاني للمسجلين 🎁
+          </span>
           </div>
 
           <div style={{ display: 'grid', gap: '20px' }}>
-
-            {/* الكورس الأول: الجبر الخطي Math204 */}
-            <div className="course-card" style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>الجبر الخطي</h3>
-                <span className="course-badge" style={{ background: '#CDD4B1', color: '#2C3531', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                  Math204
+            {courses.map((course) => (
+                <div key={course.id} className="course-card" style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+                  <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>{course.title}</h3>
+                    <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                  Math{course.id}
                 </span>
-              </div>
+                  </div>
 
-              <p className="course-description" style={{ color: '#4A5550', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                دراسة المتجهات، المصفوفات، القيم الذاتية، والتحويلات الخطية من الصفر حتى الاحتراف.
-              </p>
+                  <p className="course-description" style={{ color: '#4A5550', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
+                    {course.description}
+                  </p>
 
-              <div>
-                {renderCourseActions('204', '#DCA27B')}
-              </div>
-            </div>
-
-            {/* الكورس الثاني: كالك 3 Math203 */}
-            <div className="course-card" style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>التفاضل والتكامل المتقدم (كالك 3)</h3>
-                <span className="course-badge" style={{ background: '#FEECD0', color: '#8c5521', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                  Math203
-                </span>
-              </div>
-
-              <p className="course-description" style={{ color: '#4A5550', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                متجهات الفضاء ثلاثي الأبعاد، الدوال متعدّدة المتغيرات، التكاملات الثنائية والثلاثية.
-              </p>
-
-              <div>
-                {renderCourseActions('203', '#DCA27B')}
-              </div>
-            </div>
-
+                  <div>
+                    {renderCourseActions(course.id, '#DCA27B')}
+                  </div>
+                </div>
+            ))}
           </div>
         </section>
 
@@ -266,51 +345,37 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* قسم مميزات EsprMath (البوكسات الأخيرة) */}
+
+        {/* قسم Why EsprMath (المربعات الأربعة) */}
         <section style={{ maxWidth: '800px', margin: '0 auto 60px auto', padding: '0 20px' }}>
           <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '16px' }}>
-            ⭐ لماذا EsprMath ؟
+            ⭐ Why EsprMath ؟
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
 
-            {/* بوكس 1 */}
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>شرح مبسط ومباشر</h4>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
-                نختصر عليك تشتت المصادر ونعطيك الزبدة لتفهم بسرعة.
-              </p>
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>🎯 شرح مبسط ومباشر</h4>
+              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>نختصر عليك تشتت المصادر ونعطيك الزبدة لتفهم بسرعة.</p>
             </div>
 
-            {/* بوكس 2 */}
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎁</div>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>Module 1 مجاني</h4>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
-                جرب بنفسك واحكم على جودة الشرح بعد تسجيل الدخول.
-              </p>
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>🎁 Module 1 مجاني</h4>
+              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>جرب بنفسك احكم على جودة الشرح بعد تسجيل الدخول.</p>
             </div>
 
-            {/* بوكس 3 */}
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>متابعة تقدمك</h4>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
-                تتبع إنجازك لكل شابتر أول بأول وبكل سهولة.
-              </p>
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>📊 متابعة تقدمك</h4>
+              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>تتبع إنجازك لكل شابتر أول بأول وبكل سهولة.</p>
             </div>
 
-            {/* بوكس 4 */}
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>💡</div>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#2C3531' }}>أمثلة واختبارات</h4>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#4A5550', lineHeight: '1.5' }}>
-                تدرب على أسئلة اختبارات سابقة تضمن لك الـ A+ بإذن الله.
-              </p>
+            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>💡 أمثلة واختبارات</h4>
+              <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>تدرب على أسئلة اختبارات سابقة تضمن لك الـ A+ بإذن الله.</p>
             </div>
 
           </div>
         </section>
+
 
         {/* نافذة التنبيه المخصصة داخل الموقع (Modal) */}
         {showAlertModal && (
