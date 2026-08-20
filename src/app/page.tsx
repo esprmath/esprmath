@@ -13,12 +13,16 @@ interface Course {
   badge_color: string
   badge_text_color: string
   is_active: boolean
+  requires_approval: boolean
 }
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState<string>('')
   const [userId, setUserId] = useState<string | null>(null)
+
+  // حالة صلاحية الذكاء الاصطناعي للطالب من جدول profiles
+  const [isAiAllowed, setIsAiAllowed] = useState(false)
 
   // حالة الكورسات القادمة من قاعدة البيانات
   const [courses, setCourses] = useState<Course[]>([])
@@ -45,6 +49,19 @@ export default function HomePage() {
         initialStatuses[course.id] = 'none'
       })
       setCourseStatuses(initialStatuses)
+    }
+  }
+
+  // دالة لجلب بيانات الملف الشخصي وصلاحية الـ AI للمستخدم الحالي من جدول profiles
+  const fetchUserProfile = async (currentUserId: string) => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('is_ai_allowed')
+        .eq('id', currentUserId)
+        .single()
+
+    if (!error && data) {
+      setIsAiAllowed(data.is_ai_allowed)
     }
   }
 
@@ -82,6 +99,7 @@ export default function HomePage() {
           setUserId(session.user.id)
           const fullName = session.user.user_metadata?.full_name
           setUserName(fullName || '')
+          fetchUserProfile(session.user.id)
         }
       })
     })
@@ -92,9 +110,11 @@ export default function HomePage() {
         setUserId(session.user.id)
         const fullName = session.user.user_metadata?.full_name
         setUserName(fullName || '')
+        fetchUserProfile(session.user.id)
       } else {
         setUserId(null)
         setUserName('')
+        setIsAiAllowed(false)
         if (courses.length > 0) {
           const resetStatuses: Record<string, string> = {}
           courses.forEach(course => {
@@ -113,6 +133,107 @@ export default function HomePage() {
       fetchUserApprovals(userId, courses)
     }
   }, [userId, courses])
+
+  // تفعيل الدخول المباشر للكورس الذي لا يتطلب موافقة
+  const handleDirectCourseAccess = async (courseId: string) => {
+    if (!userId) {
+      setAlertMessage('يجب تسجيل الدخول أولاً.')
+      setShowAlertModal(true)
+      return
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session?.user) {
+      setAlertMessage('يجب تسجيل الدخول أولاً.')
+      setShowAlertModal(true)
+      return
+    }
+
+    const studentName =
+        session.user.user_metadata?.full_name ||
+        session.user.user_metadata?.name ||
+        ''
+
+    const studentEmail = session.user.email || ''
+
+    // أولاً: نتأكد هل يوجد سجل سابق لنفس الطالب في نفس الكورس.
+    const { data: existingRows, error: checkError } = await supabase
+        .from('user_courses')
+        .select('user_id, course_id')
+        .eq('user_id', session.user.id)
+        .eq('course_id', courseId)
+        .limit(1)
+
+    if (checkError) {
+      console.error('Check user_courses error:', {
+        message: checkError.message,
+        details: checkError.details,
+        hint: checkError.hint,
+        code: checkError.code,
+      })
+
+      setAlertMessage(`حدث خطأ أثناء التحقق من الكورس: ${checkError.message}`)
+      setShowAlertModal(true)
+      return
+    }
+
+    let accessError = null
+
+    if (existingRows && existingRows.length > 0) {
+      // يوجد سجل مسبق: نحوله إلى معتمد مباشرة ونحدّث بيانات الطالب.
+      const { error } = await supabase
+          .from('user_courses')
+          .update({
+            is_approved: true,
+            full_name: studentName,
+            email: studentEmail,
+          })
+          .eq('user_id', session.user.id)
+          .eq('course_id', courseId)
+
+      accessError = error
+    } else {
+      // لا يوجد سجل: ننشئه مباشرة كطالب معتمد لأن الكورس مفتوح.
+      const { error } = await supabase
+          .from('user_courses')
+          .insert([
+            {
+              user_id: session.user.id,
+              course_id: courseId,
+              is_approved: true,
+              full_name: studentName,
+              email: studentEmail,
+            },
+          ])
+
+      accessError = error
+    }
+
+    if (accessError) {
+      console.error('Direct course access error:', {
+        message: accessError.message,
+        details: accessError.details,
+        hint: accessError.hint,
+        code: accessError.code,
+      })
+
+      setAlertMessage(`حدث خطأ أثناء تفعيل الكورس: ${accessError.message}`)
+      setShowAlertModal(true)
+      return
+    }
+
+    localStorage.setItem(
+        `course_approved_${session.user.id}_${courseId}`,
+        'true'
+    )
+
+    localStorage.setItem('approved_course', courseId)
+
+    window.location.href = `/workspace/${courseId}`
+  }
 
   // دالة طلب الانضمام للكورس مع التحقق من عدم امتلاك الطالب لكورس آخر مسبقاً
   const handleRequestCourse = async (courseId: string) => {
@@ -150,13 +271,12 @@ export default function HomePage() {
   const handleCancelRequest = async (courseId: string) => {
     if (!userId) return
 
-    // إرسال أمر حذف للسجل من جدول user_courses بناءً على معرّف المستخدم ومعرّف الكورس
     const { error } = await supabase
         .from('user_courses')
         .delete()
         .eq('user_id', userId)
         .eq('course_id', courseId)
-        .eq('is_approved', false) // للتأكد من حذف الطلبات غير المعتمدة فقط
+        .eq('is_approved', false)
 
     if (error) {
       setAlertMessage('حدث خطأ أثناء إلغاء الطلب من قاعدة البيانات، حاول مرة أخرى.')
@@ -165,7 +285,6 @@ export default function HomePage() {
       setAlertMessage('🗑️ تم إلغاء الطلب وحذفه بنجاح من النظام.')
       setShowAlertModal(true)
 
-      // تحديث الحالة المحلية وحذف البيانات المرتبطة من الذاكرة المحلية
       const updatedStatuses = { ...courseStatuses, [courseId]: 'none' }
       setCourseStatuses(updatedStatuses)
       localStorage.setItem(`user_courses_statuses_${userId}`, JSON.stringify(updatedStatuses))
@@ -175,15 +294,54 @@ export default function HomePage() {
   }
 
   // دالة عرض الأزرار لكل كورس
-  const renderCourseActions = (courseId: string, buttonColor: string) => {
+  const renderCourseActions = (course: Course, buttonColor: string) => {
+    const courseId = course.id
+
     if (!isLoggedIn) {
       return (
           <div style={{ display: 'flex', gap: '10px', flexDirection: 'column' }}>
             <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
-              <button style={{ background: buttonColor, color: '#ffffff', border: 'none', padding: '12px 15px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', width: '100%', fontSize: '0.95rem' }}>
-                تسجيل الدخول لتجربة Module 1 مجاناً 🎁
+              <button
+                  style={{
+                    background: buttonColor,
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '12px 15px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    width: '100%',
+                    fontSize: '0.95rem'
+                  }}
+              >
+                تسجيل الدخول لدخول الكورس 🔐
               </button>
             </Link>
+          </div>
+      )
+    }
+
+    // إذا الكورس لا يحتاج موافقة: يدخل كامل الكورس مباشرة
+    if (!course.requires_approval) {
+      return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+                type="button"
+                onClick={() => handleDirectCourseAccess(courseId)}
+                style={{
+                  background: '#2F5233',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '11px 20px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
+            >
+              دخول الكورس مباشرة 🚀
+            </button>
+
           </div>
       )
     }
@@ -193,41 +351,59 @@ export default function HomePage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <Link href={`/workspace/${courseId}`} style={{ textDecoration: 'none' }}>
-            <button style={{
-              background: status === 'approved' ? '#2F5233' : buttonColor,
-              color: '#ffffff',
-              border: 'none',
-              padding: '11px 20px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              width: '100%'
-            }}>
-              {status === 'approved' ? 'دخول الكورس الكامل 🚀' : 'دخول التجربة (Module 1 Free) ✨'}
+            <button
+                style={{
+                  background: status === 'approved' ? '#2F5233' : buttonColor,
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '11px 20px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
+            >
+              {status === 'approved'
+                  ? 'دخول الكورس الكامل 🚀'
+                  : 'دخول التجربة (Module 1 Free) ✨'}
             </button>
           </Link>
 
           {status === 'none' && (
               <button
                   onClick={() => handleRequestCourse(courseId)}
-                  style={{ background: '#3A4D39', color: '#ffffff', border: 'none', padding: '9px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', width: '100%', fontSize: '0.9rem' }}>
+                  style={{
+                    background: '#3A4D39',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '9px 20px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    width: '100%',
+                    fontSize: '0.9rem'
+                  }}
+              >
                 طلب انضمام لكامل الكورس 📬
               </button>
           )}
 
           {status === 'pending' && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: '#FEECD0',
-                color: '#8c5521',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                fontWeight: 'bold'
-              }}>
+              <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#FEECD0',
+                    color: '#8c5521',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold'
+                  }}
+              >
                 <span>⏳ طلب الانضمام بانتظار موافقة المشرف</span>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <a
                       href="https://t.me/YOUR_USERNAME"
@@ -288,7 +464,7 @@ export default function HomePage() {
         <header className="hero-container" style={{ textAlign: 'center', padding: '40px 20px' }}>
           {isLoggedIn && (
               <h2 style={{ fontSize: '1.25rem', color: '#DCA27B', fontWeight: 'bold', marginBottom: '15px' }}>
-                مرحباً {userName || 'طالبنا العزيز'} 👋
+                مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px' }}>🤖 ميزة الـ AI مفعلة</span>}
               </h2>
           )}
 
@@ -306,9 +482,7 @@ export default function HomePage() {
             <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', margin: 0 }}>
               📚 كورساتك المتاحة
             </h3>
-            <span className="section-label" style={{ background: '#CDD4B1', color: '#2C3531', border: '1px solid #b8c29e', padding: '5px 14px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-            Module 1 مجاني للمسجلين 🎁
-          </span>
+
           </div>
 
           <div style={{ display: 'grid', gap: '20px' }}>
@@ -326,7 +500,7 @@ export default function HomePage() {
                   </p>
 
                   <div>
-                    {renderCourseActions(course.id, '#DCA27B')}
+                    {renderCourseActions(course, '#DCA27B')}
                   </div>
                 </div>
             ))}

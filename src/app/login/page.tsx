@@ -1,4 +1,5 @@
 'use client'
+
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -84,9 +85,14 @@ export default function LoginPage() {
                         </div>
 
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#2C3531', marginBottom: '6px' }}>
-                                كلمة المرور
-                            </label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#2C3531' }}>
+                                    كلمة المرور
+                                </label>
+                                <Link href="/forgot-password" style={{ fontSize: '12px', color: '#8B5E3C', textDecoration: 'none', fontWeight: 'bold' }}>
+                                    نسيت كلمة المرور؟
+                                </Link>
+                            </div>
                             <input
                                 type="password"
                                 placeholder="••••••••"

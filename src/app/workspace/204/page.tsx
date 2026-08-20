@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -77,6 +78,15 @@ export default function WorkspacePage() {
         }
     }
 
+    // دالة خاصة للتعامل مع النقر على أقسام بنك الأسئلة أو التسريبات إذا كانت تتطلب اعتماداً
+    const handleExtraFeatureClick = (e: React.MouseEvent, featureName: string) => {
+        if (!isAuthorized) {
+            e.preventDefault()
+            setAlertMessage(`🔒 قسم "${featureName}" يتطلب اعتماد الكورس أولاً. يرجى طلب الانضمام من الصفحة الرئيسية.`)
+            setShowAlertModal(true)
+        }
+    }
+
     if (loading) {
         return (
             <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', color: '#4A5550', fontSize: '1rem', fontWeight: 'bold' }}>
@@ -91,7 +101,7 @@ export default function WorkspacePage() {
 
             <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
 
-                <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+                <div style={{ marginBottom: '24px', textAlign: 'center' }}>
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2C3531', marginBottom: '8px' }}>
                         📚 Course Modules - Math 204
                     </h1>
@@ -102,6 +112,69 @@ export default function WorkspacePage() {
                     <div style={{ marginTop: '15px', padding: '10px 14px', borderRadius: '8px', background: isAuthorized ? '#CDD4B1' : '#FEECD0', color: isAuthorized ? '#2C3531' : '#8c5521', fontSize: '0.9rem', fontWeight: 'bold', display: 'inline-block', border: '1px solid #e6dec5' }}>
                         {isAuthorized ? '✅ حسابك معتمد، فالك التوفيق' : '🎁 المعاينة المجانية مفعلة: الموديول الأول متاح، وباقي الموديولات تتطلب موافقة المشرف.'}
                     </div>
+                </div>
+
+                {/* 🌟 إضافة قسم بنك الأسئلة وتسيبرات الاختبارات */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+                    {/* بطاقة بنك الأسئلة */}
+                    <Link
+                        href={isAuthorized ? "/workspace/204/question-bank" : "#"}
+                        onClick={(e) => handleExtraFeatureClick(e, "بنك الأسئلة")}
+                        style={{
+                            textDecoration: 'none',
+                            background: '#ffffff',
+                            border: '1px solid #e6dec5',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: '32px', background: '#FEECD0', padding: '12px', borderRadius: '12px' }}>
+                            ❓
+                        </div>
+                        <div>
+                            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2C3531', fontWeight: 'bold' }}>
+                                بنك الأسئلة الشامل
+                            </h3>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#4A5550' }}>
+                                تدرب على أسئلة متنوعة ومتوسطة وصعبة لجميع الشباتر.
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* بطاقة تسريبات الاختبارات */}
+                    <Link
+                        href={isAuthorized ? "/workspace/204/exam-leaks" : "#"}
+                        onClick={(e) => handleExtraFeatureClick(e, "تسريبات الاختبارات")}
+                        style={{
+                            textDecoration: 'none',
+                            background: '#ffffff',
+                            border: '1px solid #e6dec5',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <div style={{ fontSize: '32px', background: '#fee2e2', padding: '12px', borderRadius: '12px' }}>
+                            🔥
+                        </div>
+                        <div>
+                            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2C3531', fontWeight: 'bold' }}>
+                                تسريبات الاختبارات السابقة
+                            </h3>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#4A5550' }}>
+                                استعرض أسئلة الكويزات والميدترم السابقة مع الحلول النموذجية.
+                            </p>
+                        </div>
+                    </Link>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -232,6 +305,93 @@ export default function WorkspacePage() {
                             </div>
                         )
                     })}
+
+                    {/* 🌟 قسم الفاينل: مراجعة، تدريب وتسريبات (بعد الموديول السابع) */}
+                    <div
+                        style={{
+                            background: !isAuthorized ? '#f5f2e6' : '#ffffff',
+                            border: '2px solid #DCA27B',
+                            borderRadius: '16px',
+                            padding: '20px 24px',
+                            boxShadow: '0 4px 12px rgba(220, 162, 123, 0.15)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            flexWrap: 'wrap',
+                            gap: '16px',
+                            cursor: !isAuthorized ? 'not-allowed' : 'pointer',
+                            opacity: !isAuthorized ? 0.8 : 1,
+                            marginTop: '8px'
+                        }}
+                        onClick={(e) => {
+                            if (!isAuthorized) {
+                                e.preventDefault()
+                                setAlertMessage('🔒 قسم المراجعة النهائية والفاينل مقفل! يتطلب اعتماد الكورس أولاً من الصفحة الرئيسية.')
+                                setShowAlertModal(true)
+                            } else {
+                                router.push('/workspace/204/final-review')
+                            }
+                        }}
+                    >
+                        <div style={{ flex: 1, minWidth: '280px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span style={{
+                                        background: '#FEECD0',
+                                        color: '#2C3531',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px'
+                                    }}>
+                                        ⭐ Final Exam Prep
+                                    </span>
+                                    {!isAuthorized && (
+                                        <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                            🔒 مقفل
+                                        </span>
+                                    )}
+                                </div>
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2C3531', background: '#CDD4B1', padding: '4px 8px', borderRadius: '6px' }}>
+                                    شامل لجميع المنهج 🎯
+                                </span>
+                            </div>
+
+                            <h2 style={{ fontSize: '18px', color: '#DCA27B', margin: '6px 0' }}>
+                                المراجعة النهائية، التدريب الشامل وتسريبات الفاينل
+                            </h2>
+
+                            <p style={{ margin: '0 0 12px 0', color: '#4A5550', fontSize: '14px' }}>
+                                ملخصات ذهبية شاملة لكل الشباتر، أسئلة تدريبية متقدمة، وتسريبات اختبارات الفاينل السابقة مع الحلول النموذجية.
+                            </p>
+                        </div>
+
+                        <Link
+                            href={!isAuthorized ? '#' : '/workspace/204/final-review'}
+                            onClick={(e) => {
+                                if (!isAuthorized) {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    setAlertMessage('🔒 قسم المراجعة النهائية والفاينل مقفل! يتطلب اعتماد الكورس أولاً من الصفحة الرئيسية.')
+                                    setShowAlertModal(true)
+                                }
+                            }}
+                            style={{
+                                textDecoration: 'none',
+                                backgroundColor: !isAuthorized ? '#94a3b8' : '#DCA27B',
+                                color: '#ffffff',
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                fontWeight: 'bold',
+                                fontSize: '14px',
+                                alignSelf: 'center',
+                                cursor: !isAuthorized ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            {!isAuthorized ? 'Locked 🔒' : 'Start Final ➔'}
+                        </Link>
+                    </div>
+
                 </div>
 
             </div>
@@ -240,7 +400,7 @@ export default function WorkspacePage() {
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
                     <div style={{ backgroundColor: '#FFF9E2', border: '1px solid #e6dec5', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', textAlign: 'center', fontFamily: 'sans-serif', color: '#2C3531' }}>
                         <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔒</div>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#2C3531' }}>الموديول مقفل</h3>
+                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#2C3531' }}>تنبيه الأمان</h3>
                         <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#4A5550', lineHeight: '1.5' }}>{alertMessage}</p>
                         <button
                             type="button"

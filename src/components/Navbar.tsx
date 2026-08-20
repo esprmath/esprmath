@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 interface NavbarProps {
@@ -11,6 +11,9 @@ interface NavbarProps {
 
 export default function Navbar({ isLoggedIn }: NavbarProps) {
     const router = useRouter()
+    const pathname = usePathname()
+    const isHomePage = pathname === '/'
+
     const [userName, setUserName] = useState<string | null>(null)
     const [userEmail, setUserEmail] = useState<string | null>(null)
     const [studentId, setStudentId] = useState<string | null>(null)
@@ -23,6 +26,13 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
     const [newFullName, setNewFullName] = useState('')
     const [newStudentId, setNewStudentId] = useState('')
     const [loadingName, setLoadingName] = useState(false)
+
+    // حالات مودال تغيير كلمة المرور المستقل
+    const [showPasswordModal, setShowPasswordModal] = useState(false)
+    const [oldPassword, setOldPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmNewPassword, setConfirmNewPassword] = useState('')
+    const [loadingPassword, setLoadingPassword] = useState(false)
 
     const [showCalendarModal, setShowCalendarModal] = useState(false)
     const [examDate, setExamDate] = useState<string | null>(null)
@@ -53,32 +63,28 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
             const fullName = user.user_metadata?.full_name
-            const sId = user.user_metadata?.student_id
-
             setUserName(fullName || 'طالبنا العزيز')
             setUserEmail(user.email || '')
-            setStudentId(sId || '')
             setNewFullName(fullName || '')
-            setNewStudentId(sId || '')
 
-            // البحث عن أي كورس تمت الموافقة عليه للمستخدم بشكل عام
             const { data: coursesData, error: coursesError } = await supabase
                 .from('user_courses')
-                .select('course_id, exam_date, is_approved')
+                .select('course_id, exam_date, is_approved, "students-id"')
                 .eq('user_id', user.id)
-                .eq('is_approved', true)
 
             if (!coursesError && coursesData && coursesData.length > 0) {
-                setCourseApprovalStatus(true)
-                // نأخذ أول كورس مفعل كممثل رئيسي لبيانات الاختبار والكورس الحالي
-                const activeCourse = coursesData[0]
-                setApprovedCourseId(activeCourse.course_id)
+                const activeCourse = coursesData.find(c => c.is_approved) || coursesData[0]
+                if (activeCourse.is_approved) {
+                    setCourseApprovalStatus(true)
+                    setApprovedCourseId(activeCourse.course_id)
+                }
                 if (activeCourse.exam_date) {
                     setExamDate(activeCourse.exam_date)
                 }
-            } else {
-                setCourseApprovalStatus(false)
-                setApprovedCourseId(null)
+                if (activeCourse['students-id']) {
+                    setStudentId(activeCourse['students-id'])
+                    setNewStudentId(activeCourse['students-id'])
+                }
             }
         }
     }
@@ -130,36 +136,31 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             if (!user) return
 
             if (cleanStudentId) {
-                const { data: existingId, error: checkError } = await supabase
-                    .from('student_ids')
-                    .select('user_id')
-                    .eq('student_id', cleanStudentId)
-                    .maybeSingle()
+                const { data: existingRecords, error: checkError } = await supabase
+                    .from('user_courses')
+                    .select('user_id, "students-id"')
+                    .eq('"students-id"', cleanStudentId)
 
-                if (!checkError && existingId && existingId.user_id !== user.id) {
-                    setAlertMessage('❌ عذراً، معرف الطالب هذا مستخدم من طالب آخر. يرجى اختيار معرف مختلف.')
-                    setShowAlertModal(true)
-                    setLoadingName(false)
-                    return
+                if (!checkError && existingRecords && existingRecords.length > 0) {
+                    const isUsedBySomeoneElse = existingRecords.some(record => record.user_id !== user.id)
+
+                    if (isUsedBySomeoneElse) {
+                        setAlertMessage('❌ عذراً، معرف الطالب (Student ID) هذا مستخدم من قبل طالب آخر. يرجى اختيار معرف مختلف.')
+                        setShowAlertModal(true)
+                        setLoadingName(false)
+                        return
+                    }
                 }
 
                 await supabase
-                    .from('student_ids')
-                    .upsert({ student_id: cleanStudentId, user_id: user.id }, { onConflict: 'student_id' })
-
-                if (studentId && studentId !== cleanStudentId) {
-                    await supabase
-                        .from('student_ids')
-                        .delete()
-                        .eq('student_id', studentId)
-                        .eq('user_id', user.id)
-                }
+                    .from('user_courses')
+                    .update({ 'students-id': cleanStudentId })
+                    .eq('user_id', user.id)
             }
 
             const { error } = await supabase.auth.updateUser({
                 data: {
-                    full_name: newFullName.trim(),
-                    student_id: cleanStudentId
+                    full_name: newFullName.trim()
                 }
             })
 
@@ -178,6 +179,58 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             console.error('خطأ أثناء تحديث البيانات:', err)
         } finally {
             setLoadingName(false)
+        }
+    }
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (newPassword !== confirmNewPassword) {
+            setAlertMessage('❌ كلمة المرور الجديدة وتأكيدها غير متطابقتين.')
+            setShowAlertModal(true)
+            return
+        }
+
+        if (newPassword.length < 6) {
+            setAlertMessage('⚠️ كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف أو أرقام.')
+            setShowAlertModal(true)
+            return
+        }
+
+        setLoadingPassword(true)
+        try {
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: userEmail || '',
+                password: oldPassword
+            })
+
+            if (signInError) {
+                setAlertMessage('❌ كلمة المرور الحالية غير صحيحة. يرجى التأكد وإعادة المحاولة.')
+                setShowAlertModal(true)
+                setLoadingPassword(false)
+                return
+            }
+
+            const { error: updateError } = await supabase.auth.updateUser({
+                password: newPassword
+            })
+
+            if (updateError) {
+                setAlertMessage(`❌ حدث خطأ أثناء تحديث كلمة المرور: ${updateError.message}`)
+                setShowAlertModal(true)
+            } else {
+                setAlertMessage('✅ تم تغيير كلمة المرور بنجاح!')
+                setShowAlertModal(true)
+                setShowPasswordModal(false)
+                setOldPassword('')
+                setNewPassword('')
+                setConfirmNewPassword('')
+            }
+        } catch (err) {
+            console.error('خطأ أثناء تغيير كلمة المرور:', err)
+            setAlertMessage('❌ حدث خطأ غير متوقع.')
+            setShowAlertModal(true)
+        } finally {
+            setLoadingPassword(false)
         }
     }
 
@@ -258,6 +311,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
     const isUrgent = daysLeft !== null && (daysLeft === 1 || daysLeft === 2)
 
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
     const targetMonthDate = new Date(today.getFullYear(), today.getMonth() + currentMonthOffset, 1)
     const year = targetMonthDate.getFullYear()
     const month = targetMonthDate.getMonth()
@@ -310,8 +365,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {isLoggedIn ? (
                         <>
-                            {/* شرط ظهور زر موعد الاختبار: إذا تمت الموافقة على أي كورس للمستخدم */}
-                            {courseApprovalStatus && (
+                            {/* زر موعد الاختبار يظهر فقط إذا كان داخل الكورس وليس في الرئيسية */}
+                            {!isHomePage && courseApprovalStatus && (
                                 <>
                                     {isExamPromptMinimized ? (
                                         <button
@@ -357,11 +412,15 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                             <span>
                                                 {examDate
                                                     ? (daysLeft !== null && daysLeft >= 0
-                                                        ? (daysLeft === 1
-                                                            ? 'باقي على اختبارك: يوم 🎯'
-                                                            : daysLeft === 2
-                                                                ? 'باقي على اختبارك: يومين 🎯'
-                                                                : `باقي على اختبارك: ${daysLeft} يوم 🎯`)
+                                                        ? (daysLeft === 0
+                                                            ? 'اختبارك اليوم 🎯'
+                                                            : daysLeft === 1
+                                                                ? 'باقي على اختبارك: يوم 🎯'
+                                                                : daysLeft === 2
+                                                                    ? 'باقي على اختبارك: يومين 🎯'
+                                                                    : daysLeft >= 3 && daysLeft <= 10
+                                                                        ? `باقي على اختبارك: ${daysLeft} ايام 🎯`
+                                                                        : `باقي على اختبارك: ${daysLeft} يوم 🎯`)
                                                         : 'تم تحديد موعد الاختبار')
                                                     : 'تحديد موعد الاختبار'}
                                             </span>
@@ -370,22 +429,25 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 </>
                             )}
 
-                            <button
-                                onClick={handleProtectedCourseClick}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    backgroundColor: '#ffffff',
-                                    color: '#2C3531',
-                                    borderRadius: '8px',
-                                    fontWeight: 'bold',
-                                    fontSize: '0.875rem',
-                                    border: '1px solid #6B5744',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                }}
-                            >
-                                📚 كورسك الحالي
-                            </button>
+                            {/* زر كورسك الحالي يظهر فقط في الصفحة الرئيسية */}
+                            {isHomePage && (
+                                <button
+                                    onClick={handleProtectedCourseClick}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        backgroundColor: '#ffffff',
+                                        color: '#2C3531',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.875rem',
+                                        border: '1px solid #6B5744',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    }}
+                                >
+                                    📚 كورسك الحالي
+                                </button>
+                            )}
 
                             <div style={{ position: 'relative' }} ref={menuRef}>
                                 <button
@@ -434,7 +496,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowEditModal(true)}
-                                                    title="تعديل البيانات"
+                                                    title="تعديل بيانات الملف الشخصي"
                                                     style={{
                                                         width: '28px',
                                                         height: '28px',
@@ -477,6 +539,25 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                                 </span>
                                             </div>
                                         </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => { setShowMenu(false); setShowPasswordModal(true); }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.5rem',
+                                                marginBottom: '8px',
+                                                backgroundColor: '#FEECD0',
+                                                color: '#8B5E3C',
+                                                border: '1px solid #8B5E3C',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            🔑 تغيير كلمة المرور
+                                        </button>
 
                                         <button
                                             type="button"
@@ -535,6 +616,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 </div>
             </nav>
 
+            {/* مودال تعديل الملف الشخصي */}
             {showEditModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
                     <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'right' }}>
@@ -549,69 +631,102 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>معرف الطالب (Student ID):</label>
-                                <input type="text" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} placeholder="أحرف أو أرقام بدون مسافات" style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box' }} />
-                                <span style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '3px', display: 'block' }}>يتم التحقق من عدم تكراره فورياً.</span>
+                                <input type="text" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box' }} />
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                <button type="submit" disabled={loadingName} style={{ flex: 1, padding: '0.6rem', backgroundColor: '#7C9E6B', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: loadingName ? 'not-allowed' : 'pointer' }}>
-                                    {loadingName ? 'جاري التحقق والحفظ...' : 'حفظ التغييرات'}
-                                </button>
-                                <button type="button" onClick={() => setShowEditModal(false)} style={{ padding: '0.6rem 1rem', backgroundColor: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>إلغاء</button>
-                            </div>
+                            <button type="submit" disabled={loadingName} style={{ width: '100%', padding: '10px', backgroundColor: '#7C9E6B', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>
+                                {loadingName ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {showCalendarModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000, fontFamily: 'sans-serif' }}>
-                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', boxSizing: 'border-box', color: '#2C3531' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h3 style={{ margin: 0, fontSize: '15px', color: '#2C3531' }}>📅 اختر موعد الاختبار</h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" onClick={() => { handleToggleMinimize(true); setShowCalendarModal(false) }} style={{ background: '#f3f4f6', border: '1px solid #6B5744', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', color: '#2C3531', fontWeight: 'bold' }}>◄◄ تصغير</button>
-                                <button type="button" onClick={() => setShowCalendarModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6B5744' }}>✕</button>
+            {/* مودال تغيير كلمة المرور */}
+            {showPasswordModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ margin: 0, fontSize: '16px', color: '#2C3531' }}>🔑 تغيير كلمة المرور</h3>
+                            <button type="button" onClick={() => setShowPasswordModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6B5744' }}>✕</button>
+                        </div>
+                        <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>كلمة المرور الحالية:</label>
+                                <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', direction: 'ltr', textAlign: 'right' }} />
                             </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>كلمة المرور الجديدة:</label>
+                                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder="6 أحرف على الأقل" style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', direction: 'ltr', textAlign: 'right' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>تأكيد كلمة المرور الجديدة:</label>
+                                <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', direction: 'ltr', textAlign: 'right' }} />
+                            </div>
+                            <button type="submit" disabled={loadingPassword} style={{ width: '100%', padding: '10px', backgroundColor: '#8B5E3C', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>
+                                {loadingPassword ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* مودال التقويم لتحديد موعد الاختبار (الشهر الحالي والقادم فقط مع منع اختيار الأيام الماضية) */}
+            {showCalendarModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '20px', borderRadius: '16px', width: '90%', maxWidth: '340px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <h3 style={{ margin: 0, fontSize: '15px', color: '#2C3531' }}>📅 تحديد موعد الاختبار</h3>
+                            <button type="button" onClick={() => setShowCalendarModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6B5744' }}>✕</button>
                         </div>
-
-                        <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#6B5744' }}>حدد يوم الاختبار من الشهر الحالي أو الشهر القادم:</p>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb', padding: '8px 12px', borderRadius: '8px', marginBottom: '12px', border: '1px solid #e5e7eb' }}>
-                            <button type="button" onClick={() => setCurrentMonthOffset(0)} disabled={currentMonthOffset === 0} style={{ background: 'none', border: 'none', cursor: currentMonthOffset === 0 ? 'not-allowed' : 'pointer', fontSize: '0.75rem', fontWeight: 'bold', color: currentMonthOffset === 0 ? '#94a3b8' : '#2C3531' }}>◀ الشهر الحالي</button>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#2C3531' }}>{monthNames[month]} {year}</span>
-                            <button type="button" onClick={() => setCurrentMonthOffset(1)} disabled={currentMonthOffset === 1} style={{ background: 'none', border: 'none', cursor: currentMonthOffset === 1 ? 'not-allowed' : 'pointer', fontSize: '0.75rem', fontWeight: 'bold', color: currentMonthOffset === 1 ? '#94a3b8' : '#2C3531' }}>الشهر القادم ▶</button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                            <button
+                                type="button"
+                                onClick={() => setCurrentMonthOffset(prev => Math.max(0, prev - 1))}
+                                disabled={currentMonthOffset === 0}
+                                style={{ background: 'none', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', cursor: currentMonthOffset === 0 ? 'not-allowed' : 'pointer', opacity: currentMonthOffset === 0 ? 0.4 : 1 }}
+                            >
+                                ▶
+                            </button>
+                            <span>{monthNames[month]} {year}</span>
+                            <button
+                                type="button"
+                                onClick={() => setCurrentMonthOffset(prev => Math.min(1, prev + 1))}
+                                disabled={currentMonthOffset === 1}
+                                style={{ background: 'none', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', cursor: currentMonthOffset === 1 ? 'not-allowed' : 'pointer', opacity: currentMonthOffset === 1 ? 0.4 : 1 }}
+                            >
+                                ◀
+                            </button>
                         </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', marginBottom: '8px' }}>
-                            {['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'].map((d, index) => (
-                                <span key={index} style={{ fontSize: '11px', fontWeight: 'bold', color: '#6B5744' }}>{d}</span>
-                            ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 'bold', color: '#6B5744' }}>
+                            <span>أحد</span><span>إثنين</span><span>ثلاثاء</span><span>أربعاء</span><span>خميس</span><span>جمعة</span><span>سبت</span>
                         </div>
-
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '16px' }}>
-                            {calendarDays.map((dateStr, index) => {
-                                if (!dateStr) {
-                                    return <div key={`empty-${index}`} />
-                                }
-                                const dayNum = parseInt(dateStr.split('-')[2])
-                                const isSelected = examDate === dateStr
-                                const isPast = new Date(dateStr) < new Date(new Date().setHours(0, 0, 0, 0))
+                            {calendarDays.map((dayStr, idx) => {
+                                if (!dayStr) return <div key={idx} />
+                                const dayNum = parseInt(dayStr.split('-')[2])
+                                const isSelected = examDate === dayStr
+                                const isToday = dayStr === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+                                const dayDate = new Date(dayStr)
+                                dayDate.setHours(0, 0, 0, 0)
+                                const isPast = dayDate < today
 
                                 return (
                                     <button
-                                        key={dateStr}
+                                        key={idx}
                                         type="button"
-                                        disabled={isPast || loadingExamDate}
-                                        onClick={() => saveSelectedDateToSupabase(dateStr)}
+                                        disabled={isPast}
+                                        onClick={() => !isPast && saveSelectedDateToSupabase(dayStr)}
                                         style={{
                                             padding: '8px 0',
+                                            backgroundColor: isSelected ? '#8B5E3C' : isToday ? '#FEECD0' : '#f8fafc',
+                                            color: isSelected ? '#fff' : isPast ? '#cbd5e1' : '#2C3531',
+                                            border: '1px solid #e2e8f0',
                                             borderRadius: '6px',
-                                            border: isSelected ? '2px solid #8B5E3C' : '1px solid #e2e8f0',
-                                            backgroundColor: isSelected ? '#FEECD0' : (isPast ? '#f1f5f9' : '#ffffff'),
-                                            color: isPast ? '#94a3b8' : '#2C3531',
-                                            fontWeight: isSelected ? 'bold' : 'normal',
-                                            fontSize: '12px',
-                                            cursor: isPast ? 'not-allowed' : 'pointer'
+                                            fontSize: '0.85rem',
+                                            fontWeight: 'bold',
+                                            cursor: isPast ? 'not-allowed' : 'pointer',
+                                            opacity: isPast ? 0.5 : 1
                                         }}
                                     >
                                         {dayNum}
@@ -619,31 +734,47 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 )
                             })}
                         </div>
-
                         {examDate && (
-                            <div style={{ textAlign: 'center' }}>
-                                <button
-                                    type="button"
-                                    disabled={loadingExamDate}
-                                    onClick={() => saveSelectedDateToSupabase('')}
-                                    style={{ background: 'none', border: 'none', color: '#b91c1c', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
-                                >
-                                    حذف موعد الاختبار الحالي
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => handleToggleMinimize(true)}
+                                style={{
+                                    width: '100%',
+                                    padding: '8px',
+                                    backgroundColor: '#f1f5f9',
+                                    color: '#475569',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                تصغير المؤشر للشاشة 📉
+                            </button>
                         )}
                     </div>
                 </div>
             )}
 
+            {/* مودال التنبيهات العامة */}
             {showAlertModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, fontFamily: 'sans-serif' }}>
-                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '20px', borderRadius: '12px', width: '90%', maxWidth: '320px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', color: '#2C3531' }}>
-                        <p style={{ margin: '0 0 16px 0', fontSize: '14px', lineHeight: '1.5' }}>{alertMessage}</p>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '320px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center' }}>
+                        <p style={{ margin: '0 0 20px 0', fontSize: '0.95rem', fontWeight: 'bold', lineHeight: '1.5' }}>{alertMessage}</p>
                         <button
                             type="button"
                             onClick={() => setShowAlertModal(false)}
-                            style={{ padding: '0.5rem 1.5rem', backgroundColor: '#8B5E3C', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                backgroundColor: '#8B5E3C',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                            }}
                         >
                             حسناً
                         </button>

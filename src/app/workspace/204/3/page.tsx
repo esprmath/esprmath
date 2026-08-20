@@ -1,8 +1,10 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import GlobalTutor from '@/components/GlobalTutor'
+import { supabase } from '@/lib/supabase'
 
 export default function Module3Page() {
     const [activeChapter, setActiveChapter] = useState<'ch-6.1' | 'ch-6.2'>('ch-6.1')
@@ -19,6 +21,10 @@ export default function Module3Page() {
     const [errorMsg, setErrorMsg] = useState('')
     const [tutorInitialPrompt, setTutorInitialPrompt] = useState<string | null>(null)
 
+    // حالات مصادقة المستخدم وصلاحية الـ AI
+    const [userId, setUserId] = useState<string | null>(null)
+    const [isAiAllowed, setIsAiAllowed] = useState(false)
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('last_studied_module', '3')
@@ -28,6 +34,25 @@ export default function Module3Page() {
             if (saved61) setCompleted61(JSON.parse(saved61))
             if (saved62) setCompleted62(JSON.parse(saved62))
         }
+
+        // جلب جلسة المستخدم وصلاحية الـ AI من جدول profiles
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (session?.user) {
+                const currentUserId = session.user.id
+                setUserId(currentUserId)
+
+                const { data, error } = await supabase
+                    .from('user_courses') // تأكد هل اسم الجدول user_courses أو users_courses
+                    .select('is_ai_allowed')
+                    .eq('user_id', currentUserId) // استخدام user_id بدلاً من id
+                    .eq('course_id', '204')     // تحديد المقرر أيضاً لضمان جلب السطر الصحيح
+                    .single()
+
+                if (!error && data) {
+                    setIsAiAllowed(data.is_ai_allowed)
+                }
+            }
+        })
     }, [])
 
     const currentCompleted = activeChapter === 'ch-6.1' ? completed61 : completed62
@@ -370,6 +395,7 @@ export default function Module3Page() {
                     currentChapter={activeChapter}
                     currentQuestion={currentQuestionText}
                     initialPrompt={tutorInitialPrompt}
+                    isAiAllowed={isAiAllowed}
                 />
 
             </div>
