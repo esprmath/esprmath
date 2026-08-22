@@ -152,15 +152,20 @@ export default function QuestionBank101Page() {
     useEffect(() => {
         async function checkAuth() {
             setLoading(true)
+
             const { data: { session } } = await supabase.auth.getSession()
+
             if (session?.user) {
-                // استخدام مفتاح التحقق الخاص بكورس 101
-                const cachedStatus = localStorage.getItem(`course_approved_${session.user.id}_101`)
+                const cachedStatus = localStorage.getItem(
+                    `course_approved_${session.user.id}_101`
+                )
                 setIsAuthorized(cachedStatus === 'true')
             }
+
             setLoading(false)
         }
-        checkAuth()
+
+        void checkAuth()
     }, [])
 
     // ضع ملف القراف module1-q4-graph.png داخل: public/questions/

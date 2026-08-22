@@ -26,9 +26,7 @@
       "@/*": [
         "./src/*"
       ],
-      "@question-bank/*": [
-        "./question-bank/*"
-      ]
+
     }
   },
   "include": [
