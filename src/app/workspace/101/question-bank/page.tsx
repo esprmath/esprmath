@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
-import { math101Module1Questions } from './data'
+import type { QuizDataQuestion } from '@/app/workspace/101/exam-leaks/QuizEngine'
 
-// عرض رياضيات واضح بدون MathML حتى لا تظهر أخطاء TS2339
+const math101Module1Questions: QuizDataQuestion[] = []
+
 type FractionProps = {
     numerator: React.ReactNode
     denominator: React.ReactNode
@@ -167,8 +168,11 @@ export default function QuestionBank101Page() {
     const questionsData = math101Module1Questions
 
     const filteredQuestions = selectedChapter === 'all'
-        ? questionsData
-        : questionsData.filter(q => q.chapter === selectedChapter)
+    ? questionsData
+    : questionsData.filter(
+        (q: QuizDataQuestion) =>
+            q.chapter === selectedChapter
+    )
 
     if (loading) {
         return <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold' }}>جاري التحميل... ⏳</div>
@@ -226,7 +230,7 @@ export default function QuestionBank101Page() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {filteredQuestions.map((q) => (
+                    {filteredQuestions.map((q: QuizDataQuestion) => (
                         <div key={q.id} style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
