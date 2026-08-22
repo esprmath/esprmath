@@ -1,624 +1,280 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import type { QuizDataQuestion } from '@/app/workspace/101/exam-leaks/QuizEngine'
 
-export default function WorkspacePage() {
-    const router = useRouter()
-    const [progressMap, setProgressMap] = useState<{ [key: number]: number }>({
-        1: 0, 2: 0, 3: 0, 4: 0
-    })
+const math101Module1Questions: QuizDataQuestion[] = []
 
-    const [expandedModuleId, setExpandedModuleId] = useState<number | null>(null)
+type FractionProps = {
+    numerator: React.ReactNode
+    denominator: React.ReactNode
+}
+
+function Fraction({ numerator, denominator }: FractionProps) {
+    return (
+        <span style={{
+            display: 'inline-flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            verticalAlign: 'middle',
+            margin: '0 6px',
+            lineHeight: 1.25,
+            minWidth: '42px'
+        }}>
+            <span style={{ padding: '0 6px 4px', borderBottom: '1.6px solid #2C3531' }}>
+                {numerator}
+            </span>
+            <span style={{ padding: '4px 6px 0' }}>
+                {denominator}
+            </span>
+        </span>
+    )
+}
+
+function Limit({ variable, to }: { variable: string, to: React.ReactNode }) {
+    return (
+        <span style={{
+            display: 'inline-flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            verticalAlign: 'middle',
+            marginRight: '8px',
+            lineHeight: 1
+        }}>
+            <span style={{ fontSize: '21px' }}>lim</span>
+            <span style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap' }}>
+                {variable} → {to}
+            </span>
+        </span>
+    )
+}
+
+function SquareRoot({ children }: { children: React.ReactNode }) {
+    return (
+        <span style={{ display: 'inline-flex', alignItems: 'flex-start', verticalAlign: 'middle' }}>
+            <span style={{ fontSize: '27px', lineHeight: 1, transform: 'translateY(1px)' }}>√</span>
+            <span style={{
+                borderTop: '1.6px solid #2C3531',
+                padding: '2px 3px 0 2px',
+                marginLeft: '-2px',
+                lineHeight: 1.2
+            }}>
+                {children}
+            </span>
+        </span>
+    )
+}
+
+function MathLine({ children }: { children: React.ReactNode }) {
+    return (
+        <div style={{
+            direction: 'ltr',
+            textAlign: 'center',
+            color: '#2C3531',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: '19px',
+            lineHeight: 1.8,
+            padding: '8px 6px',
+            overflowX: 'auto'
+        }}>
+            {children}
+        </div>
+    )
+}
+
+function Cases({ rows }: { rows: React.ReactNode[] }) {
+    return (
+        <span style={{display:'inline-flex',alignItems:'center',verticalAlign:'middle'}}>
+            <span style={{fontSize:'50px',lineHeight:.8,marginRight:'6px'}}>{'{'}</span>
+            <span style={{display:'inline-flex',flexDirection:'column',alignItems:'flex-start',gap:'4px'}}>
+                {rows.map((r,i)=><span key={i}>{r}</span>)}
+            </span>
+        </span>
+    )
+}
+
+function renderMathContent(k: string) {
+    if (!k) return null
+    const ML = ({children}:{children:React.ReactNode}) => <MathLine>{children}</MathLine>
+    switch(k) {
+        case 'm15ex1': return <ML><Limit variable="t" to="0"/><Fraction numerator={<><SquareRoot>t² + 9</SquareRoot> − 3</>} denominator="t²"/></ML>
+        case 'm15q20': return <><ML><Limit variable="x" to="−3"/><Fraction numerator="x² − 3x" denominator="x² − 9"/></ML><div style={{direction:'ltr',textAlign:'center'}}>x = −2.5, −2.9, −2.95, −2.99, −2.999, −2.9999, −3.5, −3.1, −3.05, −3.01, −3.001, −3.0001</div></>
+        case 'm15q4': return <ML>a. lim x→2⁻ f(x)　 b. lim x→2⁺ f(x)　 c. lim x→2 f(x)　 d. f(2)　 e. lim x→4 f(x)　 f. f(4)</ML>
+        case 'm15q27': return <ML><Limit variable="x" to={<>5<sup>+</sup></>}/><Fraction numerator="x + 1" denominator="x − 5"/></ML>
+        case 'm15q31': return <ML><Limit variable="x" to={<>−2<sup>+</sup></>}/><Fraction numerator="x − 1" denominator={<>x²(x + 2)</>}/></ML>
+        case 'm15q33': return <ML><Limit variable="x" to={<>(π/2)<sup>+</sup></>}/><Fraction numerator="1" denominator="x"/> sec x</ML>
+        case 'm15q38': return <ML>y = <Fraction numerator="x² + 1" denominator="3x − 2x²"/></ML>
+        case 'm16ex2a': return <ML><Limit variable="x" to="5"/>(2x² − 3x + 4)</ML>
+        case 'm16ex2b': return <ML><Limit variable="x" to="−2"/><Fraction numerator="x³ + 2x² − 1" denominator="5 − 3x"/></ML>
+        case 'm16ex4': return <ML><Limit variable="x" to="1"/>g(x),　g(x)=<Cases rows={[<>x + 1　if x ≠ 1</>,<>π　if x = 1</>]}/></ML>
+        case 'm16ex9': return <ML>f(x)=<Cases rows={[<><SquareRoot>x − 4</SquareRoot>　if x &gt; 4</>,<>8 − 2x　if x &lt; 4</>]}/>　; lim x→4 f(x)</ML>
+        case 'm16q61': return <ML>If <Limit variable="x" to="1"/><Fraction numerator="f(x) − 8" denominator="x − 1"/> = 10, find lim x→1 f(x).</ML>
+        case 'm16ex6': return <ML><Limit variable="t" to="0"/><Fraction numerator={<><SquareRoot>t² + 9</SquareRoot> − 3</>} denominator="t²"/></ML>
+        case 'm16q23': return <ML><Limit variable="h" to="0"/><Fraction numerator={<><SquareRoot>9 + h</SquareRoot> − 3</>} denominator="h"/></ML>
+        case 'm16q27': return <ML><Limit variable="t" to="0"/><Fraction numerator={<><SquareRoot>1 + t</SquareRoot> − <SquareRoot>1 − t</SquareRoot></>} denominator="t"/></ML>
+        case 'm16q66': return <ML><Limit variable="x" to="2"/><Fraction numerator={<><SquareRoot>6 − x</SquareRoot> − 2</>} denominator={<><SquareRoot>3 − x</SquareRoot> − 1</>}/></ML>
+        case 'm21ex1': return <ML>m = <Limit variable="x" to="a"/><Fraction numerator="f(x) − f(a)" denominator="x − a"/>　; y = x², P(1,1)</ML>
+        case 'm21ex2': return <ML>m = <Limit variable="x" to="a"/><Fraction numerator="f(x) − f(a)" denominator="x − a"/>　; y = <Fraction numerator="3" denominator="x"/>, (3,1)</ML>
+        case 'm18q13': return <ML>f(x)=3x²+(x+2)⁵,　a=−1</ML>
+        case 'm18q15': return <ML>p(v)=2<SquareRoot>3v²+1</SquareRoot>,　a=1</ML>
+        case 'm18q49': return <ML>g(2)=6,　<Limit variable="x" to="2"/>[3f(x)+f(x)g(x)]=36. Find f(2).</ML>
+        case 'm18ex2a': return <ML>f(x)=<Fraction numerator="x² − x − 2" denominator="x − 2"/></ML>
+        case 'm18ex2c': return <ML>f(x)=<Cases rows={[<><Fraction numerator="1" denominator="x²"/>　if x ≠ 0</>,<>1　if x = 0</>]}/></ML>
+        case 'm18ex6a': return <ML>f(x)=x¹⁰⁰−2x³⁷+75</ML>
+        case 'm18ex6b': return <ML>g(x)=<Fraction numerator="x²+2x+17" denominator="x²−1"/></ML>
+        case 'm18ex8b': return <ML>F(x)=<Fraction numerator="1" denominator={<><SquareRoot>x²+7</SquareRoot>−4</>}/></ML>
+        case 'm18q19': return <ML>f(x)=<Fraction numerator="1" denominator="x+2"/>,　a=−2</ML>
+        case 'm18q23': return <ML>f(x)=<Cases rows={[<>cos x　if x &lt; 0</>,<>0　if x = 0</>,<>1−x²　if x &gt; 0</>]}/>,　a=0</ML>
+        case 'm34ex2a': return <ML><Limit variable="x" to="∞"/><Fraction numerator="1" denominator="x"/></ML>
+        case 'm34ex2b': return <ML><Limit variable="x" to="−∞"/><Fraction numerator="1" denominator="x"/></ML>
+        case 'm34ex3': return <ML><Limit variable="x" to="∞"/><Fraction numerator="3x²−x−2" denominator="5x²+4x+1"/></ML>
+        case 'm34ex5': return <ML><Limit variable="x" to="∞"/>(<SquareRoot>x²+1</SquareRoot>−x)</ML>
+        case 'm34ex10': return <ML><Limit variable="x" to="∞"/><Fraction numerator="x²+x" denominator="3−x"/></ML>
+        case 'm34q21': return <ML><Limit variable="x" to="−∞"/><Fraction numerator="2x⁵−x" denominator="x⁴+3"/></ML>
+        case 'm34q23': return <ML><Limit variable="x" to="∞"/>cos x</ML>
+        case 'm34ex4': return <ML>f(x)=<Fraction numerator={<SquareRoot>2x²+1</SquareRoot>} denominator="3x−5"/></ML>
+        default: return <ML>{k}</ML>
+    }
+}
+
+
+
+export default function QuestionBank101Page() {
     const [isAuthorized, setIsAuthorized] = useState<boolean>(false)
     const [loading, setLoading] = useState<boolean>(true)
-    const [showAlertModal, setShowAlertModal] = useState(false)
-    const [alertMessage, setAlertMessage] = useState('')
-    const [quizAccess, setQuizAccess] = useState<Record<string, boolean>>({})
+    const [selectedChapter, setSelectedChapter] = useState<string>('all')
 
-    // التحقق من الجلسة + حالة الاعتماد + حالة فتح الاختبارات من Supabase
     useEffect(() => {
-        async function checkLocalSession() {
+        async function checkAuth() {
             setLoading(true)
-
             const { data: { session } } = await supabase.auth.getSession()
-
-            if (!session?.user) {
-                setIsAuthorized(false)
-                setQuizAccess({})
-                setLoading(false)
-                return
+            if (session?.user) {
+                // استخدام مفتاح التحقق الخاص بكورس 101
+                const cachedStatus = localStorage.getItem(`course_approved_${session.user.id}_101`)
+                setIsAuthorized(cachedStatus === 'true')
             }
-
-            const userId = session.user.id
-            const cachedStatus = localStorage.getItem(`course_approved_${userId}_101`)
-            const approved = cachedStatus === 'true'
-
-            setIsAuthorized(approved)
-
-            // لا نجلب الاختبارات إلا للطالب المعتمد
-            if (approved) {
-                const { data, error } = await supabase
-                    .from('quiz_settings')
-                    .select('quiz_id, is_open, opens_at, closes_at')
-                    .eq('course_id', '101')
-
-                if (error) {
-                    console.error('Error loading quiz settings:', error)
-                    setQuizAccess({})
-                } else {
-                    const now = new Date()
-                    const accessMap: Record<string, boolean> = {}
-
-                    ;(data ?? []).forEach((quiz) => {
-                        const opensAt = quiz.opens_at ? new Date(quiz.opens_at) : null
-                        const closesAt = quiz.closes_at ? new Date(quiz.closes_at) : null
-
-                        const afterOpenTime = !opensAt || now.getTime() >= opensAt.getTime()
-                        const beforeCloseTime = !closesAt || now.getTime() <= closesAt.getTime()
-
-                        accessMap[quiz.quiz_id] =
-                            quiz.is_open === true &&
-                            afterOpenTime &&
-                            beforeCloseTime
-                    })
-
-                    setQuizAccess(accessMap)
-                }
-            } else {
-                setQuizAccess({})
-            }
-
             setLoading(false)
         }
-
-        checkLocalSession()
-
-        if (typeof window !== 'undefined') {
-            const newProgress: { [key: number]: number } = {}
-
-            for (let i = 1; i <= 4; i++) {
-                const saved = localStorage.getItem(`module_${i}_progress`)
-                newProgress[i] = saved ? parseInt(saved, 10) : 0
-            }
-
-            setProgressMap(newProgress)
-            localStorage.setItem('last_studied_course', '101')
-        }
+        checkAuth()
     }, [])
 
-    const modulesData = [
-        {
-            id: 1,
-            title: 'Module 1 - Limits Foundations',
-            desc: 'النهايات، قوانين النهايات، المماس ومعدل التغير، الاتصال، والنهايات عند اللانهاية.',
-            chapters: [
-                { name: 'Ch 1.5', title: 'Limit of a function', ideaCount: 2 },
-                { name: 'Ch 1.6', title: 'Calculating Limits Using the Limit Laws', ideaCount: 2 },
-                { name: 'Ch 2.1', title: 'Tangent, Rate of change, Velocity', ideaCount: 1 },
-                { name: 'Ch 1.8', title: 'Continuity', ideaCount: 2 },
-                { name: 'Ch 3.4', title: 'Limits at infinity and horizontal asymptotes', ideaCount: 2 },
-            ]
-        },
-        {
-            id: 2,
-            title: 'Module 2 - Differentiation Rules & Applications',
-            desc: 'قواعد الاشتقاق، الدوال المثلثية، قاعدة السلسلة، الاشتقاق الضمني، ومعدلات التغير.',
-            chapters: [
-                { name: 'Ch 2.3', title: 'Derivative Formulae', ideaCount: 2 },
-                { name: 'Ch 2.4', title: 'Derivatives of trigonometric functions', ideaCount: 2 },
-                { name: 'Ch 2.5', title: 'Chain Rule', ideaCount: 1 },
-                { name: 'Ch 2.6', title: 'Implicit Differentiation', ideaCount: 1 },
-                { name: 'Ch 2.7', title: 'Rates of Change in Natural and Social Sciences', ideaCount: 1 },
-            ]
-        },
-        {
-            id: 3,
-            title: 'Module 3 - Exponential, Logarithmic & Advanced Functions',
-            desc: 'الدوال الأسية واللوغاريتمية، الدوال المثلثية العكسية، النمو والاضمحلال، الدوال الزائدية، والتقريب الخطي.',
-            chapters: [
-                { name: 'Ch 6.2', title: 'Derivative Exponential function', ideaCount: 2 },
-                { name: 'Ch 6.4', title: 'Derivative Logarithmic function', ideaCount: 1 },
-                { name: 'Ch 6.6', title: 'Inverse Trig Functions', ideaCount: 1 },
-                { name: 'Ch 6.5', title: 'Exponential Growth and Decay', ideaCount: 1 },
-                { name: 'Ch 6.7', title: 'Hyperbolic functions and their derivatives', ideaCount: 1 },
-                { name: 'Ch 2.9', title: 'Linear approximation and differentials', ideaCount: 1 },
-            ]
-        },
-        {
-            id: 4,
-            title: 'Module 4 - L\'Hospital, Extrema & Newton\'s Method',
-            desc: 'صيغ عدم التعيين وقاعدة لوبيتال، القيم العظمى والصغرى، وطريقة نيوتن.',
-            chapters: [
-                { name: 'Ch 6.8', title: 'Indeterminate Forms and L\'Hospital\'s Rule', ideaCount: 3 },
-                { name: 'Ch 3.1', title: 'Maximum and Minimum Values', ideaCount: 3 },
-                { name: 'Ch 3.8', title: 'Newton’s Method', ideaCount: 2 },
-            ]
-        },
-    ]
+    // ضع ملف القراف module1-q4-graph.png داخل: public/questions/
+    // أسئلة Module-1 الجديدة فقط — مرتبة حسب أفكار Chapter 1.5
+    const questionsData = math101Module1Questions
 
-    const courseExams = [
-        { id: 'quiz-1', label: 'Q1', title: 'Quiz 1', path: '/workspace/101/exam-leaks/quiz-1' },
-        { id: 'quiz-2', label: 'Q2', title: 'Quiz 2', path: '/workspace/101/exam-leaks/quiz-2' },
-        { id: 'midterm', label: 'MID', title: 'Midterm', path: '/workspace/101/exam-leaks/midterm' },
-        { id: 'quiz-3', label: 'Q3', title: 'Quiz 3', path: '/workspace/101/exam-leaks/quiz-3' },
-        { id: 'quiz-4', label: 'Q4', title: 'Quiz 4', path: '/workspace/101/exam-leaks/quiz-4' },
-    ]
-
-    const handleExamClick = (exam: typeof courseExams[number]) => {
-        if (!isAuthorized) {
-            setAlertMessage(`🔒 قسم "${exam.title}" يتطلب اعتماد الكورس أولاً.`)
-            setShowAlertModal(true)
-            return
-        }
-
-        const isOpen = quizAccess[exam.id] === true
-
-        if (!isOpen) {
-            setAlertMessage(`🔒 ${exam.title} غير متاح حالياً. سيتم فتحه في الوقت المحدد.`)
-            setShowAlertModal(true)
-            return
-        }
-
-        router.push(exam.path)
-    }
-
-    // دالة محكمة لمنع الدخول وإيقاف الـ propagation والـ default behavior نهائياً
-    const handleModuleClick = (e: React.MouseEvent, modId: number) => {
-        if (modId === 1) return // الموديول الأول متاح دائماً
-
-        if (!isAuthorized) {
-            e.preventDefault()
-            e.stopPropagation()
-            setAlertMessage('🔒 هذا الموديول مقفل! الموديول الأول فقط متاح للتجربة المجانية. لفتح كامل الموديولات، يرجى طلب انضمام للكورس من الصفحة الرئيسية بانتظار موافقة المشرف.')
-            setShowAlertModal(true)
-            return false
-        }
-    }
-
-    // دالة خاصة للتعامل مع النقر على أقسام بنك الأسئلة، التسريبات، أو الفاينل إذا كانت تتطلب اعتماداً
-    const handleExtraFeatureClick = (e: React.MouseEvent, featureName: string) => {
-        if (!isAuthorized) {
-            e.preventDefault()
-            setAlertMessage(`🔒 قسم "${featureName}" يتطلب اعتماد الكورس أولاً. يرجى طلب الانضمام من الصفحة الرئيسية.`)
-            setShowAlertModal(true)
-        }
-    }
+    const filteredQuestions = selectedChapter === 'all'
+    ? questionsData
+    : questionsData.filter(
+        (q: QuizDataQuestion) =>
+            q.chapter === selectedChapter
+    )
 
     if (loading) {
+        return <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold' }}>جاري التحميل... ⏳</div>
+    }
+
+    if (!isAuthorized) {
         return (
-            <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', color: '#4A5550', fontSize: '1rem', fontWeight: 'bold' }}>
-                جاري تحميل محتوى الكورس... ⏳
+            <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif' }}>
+                <Navbar isLoggedIn={true} />
+                <div style={{ maxWidth: '600px', margin: '80px auto', padding: '30px', background: '#ffffff', borderRadius: '16px', textAlign: 'center', border: '1px solid #e6dec5' }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+                    <h2 style={{ fontSize: '22px', marginBottom: '10px' }}>هذا القسم مقفل</h2>
+                    <p style={{ color: '#4A5550', marginBottom: '20px' }}>بنك الأسئلة الشامل لمقرر Math 101 يتطلب اعتماد الكورس للوصول إليه.</p>
+                    <Link href="/workspace/101" style={{ background: '#DCA27B', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
+                        العودة لصفحة الكورس ➔
+                    </Link>
+                </div>
             </div>
         )
     }
 
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '60px' }}>
+        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', paddingBottom: '60px' }}>
             <Navbar isLoggedIn={true} />
-
-            <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
-
-                <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-                    <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2C3531', marginBottom: '8px' }}>
-                        📚 Course Modules - Calculus 101
-                    </h1>
-                    <p style={{ color: '#4A5550', fontSize: '15px' }}>
-                        اختر أي Module لبدء استعراض الشباتر، الأفكار، والتدريبات التفاعلية.
-                    </p>
-
-                    <div style={{ marginTop: '15px', padding: '10px 14px', borderRadius: '8px', background: isAuthorized ? '#CDD4B1' : '#FEECD0', color: isAuthorized ? '#2C3531' : '#8c5521', fontSize: '0.9rem', fontWeight: 'bold', display: 'inline-block', border: '1px solid #e6dec5' }}>
-                        {isAuthorized ? '✅ حسابك معتمد، فالك التوفيق' : '🎁 المعاينة المجانية مفعلة: الموديول الأول متاح، وباقي الموديولات تتطلب موافقة المشرف.'}
+            <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 20px' }}>
+                <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <div>
+                        <h1 style={{ fontSize: '26px', fontWeight: 'bold', marginBottom: '6px' }}>❓ بنك الأسئلة الشامل - Math 101</h1>
+                        <p style={{ color: '#4A5550', fontSize: '14px' }}>تدرب على أسئلة التفاضل والتكامل النموذجية مصنفة بأسماء واضحة ومرتبطة بأفكار المودل.</p>
                     </div>
-                </div>
-
-                {/* 🌟 إضافة قسم بنك الأسئلة وتسريبات الاختبارات */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-                    {/* بطاقة بنك الأسئلة */}
-                    <Link
-                        href={isAuthorized ? "/workspace/101/question-bank" : "#"}
-                        onClick={(e) => handleExtraFeatureClick(e, "بنك الأسئلة")}
-                        style={{
-                            textDecoration: 'none',
-                            background: '#ffffff',
-                            border: '1px solid #e6dec5',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '16px',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <div style={{ fontSize: '32px', background: '#FEECD0', padding: '12px', borderRadius: '12px' }}>
-                            ❓
-                        </div>
-                        <div>
-                            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2C3531', fontWeight: 'bold' }}>
-                                بنك الأسئلة الشامل
-                            </h3>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#4A5550' }}>
-                                تدرب على أسئلة متنوعة ومتوسطة وصعبة لجميع الشباتر.
-                            </p>
-                        </div>
+                    <Link href="/workspace/101" style={{ textDecoration: 'none', background: '#CDD4B1', color: '#2C3531', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold' }}>
+                        ← عودة للكورس
                     </Link>
-
-                    {/* بطاقة الاختبارات - أزرار مباشرة لكل اختبار */}
-                    <div
-                        style={{
-                            background: '#ffffff',
-                            border: '1px solid #e6dec5',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '14px',
-                            transition: 'all 0.3s ease',
-                            minWidth: 0
-                        }}
-                    >
-                        <div style={{ fontSize: '32px', background: '#fee2e2', padding: '12px', borderRadius: '12px', flexShrink: 0 }}>
-                            🔥
-                        </div>
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2C3531', fontWeight: 'bold' }}>
-                                الاختبارات والمراجعات
-                            </h3>
-
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    justifyContent: 'space-between',
-                                    gap: '6px',
-                                    width: '100%'
-                                }}
-                            >
-                                {courseExams.map((exam) => {
-                                    const isOpen = isAuthorized && quizAccess[exam.id] === true
-
-                                    return (
-                                        <div
-                                            key={exam.id}
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '4px',
-                                                flex: '1 1 0',
-                                                minWidth: 0
-                                            }}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => handleExamClick(exam)}
-                                                title={isOpen ? `${exam.title} - متاح` : `${exam.title} - مقفل`}
-                                                style={{
-                                                    width: exam.id === 'midterm' ? '44px' : '38px',
-                                                    height: exam.id === 'midterm' ? '44px' : '38px',
-                                                    borderRadius: '50%',
-                                                    border: isOpen ? '2px solid #DCA27B' : '1px solid #cbd5e1',
-                                                    background: isOpen ? '#FEECD0' : '#f1f5f9',
-                                                    color: isOpen ? '#8c5521' : '#64748b',
-                                                    fontSize: exam.id === 'midterm' ? '10px' : '11px',
-                                                    fontWeight: 'bold',
-                                                    cursor: isAuthorized && isOpen ? 'pointer' : 'not-allowed',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    padding: 0,
-                                                    position: 'relative',
-                                                    flexShrink: 0
-                                                }}
-                                            >
-                                                {exam.label}
-
-                                                {!isOpen && (
-                                                    <span
-                                                        style={{
-                                                            position: 'absolute',
-                                                            right: '-4px',
-                                                            bottom: '-4px',
-                                                            width: '17px',
-                                                            height: '17px',
-                                                            borderRadius: '50%',
-                                                            background: '#ffffff',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            fontSize: '9px',
-                                                            border: '1px solid #e2e8f0'
-                                                        }}
-                                                    >
-                                                        🔒
-                                                    </span>
-                                                )}
-                                            </button>
-
-                                            <span
-                                                style={{
-                                                    fontSize: '9px',
-                                                    color: isOpen ? '#8c5521' : '#64748b',
-                                                    fontWeight: 'bold',
-                                                    whiteSpace: 'nowrap'
-                                                }}
-                                            >
-                                                {exam.id === 'midterm'
-                                                    ? 'Mid'
-                                                    : exam.id === 'quiz-1'
-                                                        ? 'Quiz 1'
-                                                        : exam.id === 'quiz-2'
-                                                            ? 'Quiz 2'
-                                                            : exam.id === 'quiz-3'
-                                                                ? 'Quiz 3'
-                                                                : 'Quiz 4'}
-                                            </span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {modulesData.map((mod) => {
-                        const currentProgress = progressMap[mod.id] || 0
-                        const isExpanded = expandedModuleId === mod.id
-                        const isLocked = mod.id !== 1 && !isAuthorized
-
-                        return (
-                            <div
-                                key={mod.id}
-                                style={{
-                                    background: isLocked ? '#f5f2e6' : '#ffffff',
-                                    border: isExpanded && !isLocked ? '2px solid #DCA27B' : '1px solid #e6dec5',
-                                    borderRadius: '16px',
-                                    padding: '20px 24px',
-                                    boxShadow: isExpanded && !isLocked ? '0 8px 20px rgba(220, 162, 123, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.03)',
-                                    transition: 'all 0.3s ease',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'flex-start',
-                                    flexWrap: 'wrap',
-                                    gap: '16px',
-                                    cursor: isLocked ? 'not-allowed' : 'pointer',
-                                    opacity: isLocked ? 0.8 : 1
-                                }}
-                                onClick={() => {
-                                    if (!isLocked) {
-                                        setExpandedModuleId(isExpanded ? null : mod.id)
-                                    }
-                                }}
-                            >
-                                <div style={{ flex: 1, minWidth: '280px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            <span style={{
-                                                background: isExpanded && !isLocked ? '#FEECD0' : '#f0ebdc',
-                                                color: '#2C3531',
-                                                fontSize: '12px',
-                                                fontWeight: 'bold',
-                                                padding: '4px 10px',
-                                                borderRadius: '6px',
-                                                transition: 'background 0.3s'
-                                            }}>
-                                                Module {mod.id}
-                                            </span>
-
-                                            {mod.id === 1 && !isAuthorized && (
-                                                <span style={{ background: '#CDD4B1', color: '#2C3531', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                                    مجاني 🎁
-                                                </span>
-                                            )}
-
-                                            {isLocked && (
-                                                <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                                    🔒 مقفل
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2C3531', background: '#CDD4B1', padding: '4px 8px', borderRadius: '6px' }}>
-                                            التقدم: {currentProgress}%
-                                        </span>
-                                    </div>
-
-                                    <h2 style={{ fontSize: '18px', color: isExpanded && !isLocked ? '#DCA27B' : '#2C3531', margin: '6px 0', transition: 'color 0.3s' }}>
-                                        {mod.title}
-                                    </h2>
-
-                                    <p style={{ margin: '0 0 12px 0', color: '#4A5550', fontSize: '14px' }}>
-                                        {mod.desc}
-                                    </p>
-
-                                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                                        {mod.chapters.map((ch, idx) => (
-                                            <div
-                                                key={idx}
-                                                style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    gap: '4px'
-                                                }}
-                                            >
-                                                <span
-                                                    style={{
-                                                        background: '#FFF9E2',
-                                                        color: '#2C3531',
-                                                        fontSize: '11px',
-                                                        fontWeight: 'bold',
-                                                        padding: '4px 10px',
-                                                        borderRadius: '20px',
-                                                        border: '1px solid #e6dec5',
-                                                        display: 'inline-block'
-                                                    }}
-                                                    title={ch.title}
-                                                >
-                                                    📖 {ch.name}
-                                                </span>
-
-                                                {isExpanded && !isLocked && (
-                                                    <span
-                                                        style={{
-                                                            fontSize: '11px',
-                                                            color: '#DCA27B',
-                                                            fontWeight: 'bold',
-                                                            paddingLeft: '6px'
-                                                        }}
-                                                    >
-                                                        ✨ {ch.ideaCount} {ch.ideaCount === 1 ? 'فكرة رئيسية' : 'أفكار رئيسية'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <Link
-                                    href={isLocked ? '#' : `/workspace/101/${mod.id}`}
-                                    onClick={(e) => handleModuleClick(e, mod.id)}
-                                    style={{
-                                        textDecoration: 'none',
-                                        backgroundColor: isLocked ? '#94a3b8' : '#DCA27B',
-                                        color: '#ffffff',
-                                        padding: '10px 20px',
-                                        borderRadius: '10px',
-                                        fontWeight: 'bold',
-                                        fontSize: '14px',
-                                        boxShadow: isExpanded && !isLocked ? '0 4px 12px rgba(220, 162, 123, 0.3)' : 'none',
-                                        alignSelf: 'center',
-                                        cursor: isLocked ? 'not-allowed' : 'pointer'
-                                    }}
-                                >
-                                    {isLocked ? 'Locked 🔒' : 'Start ➔'}
-                                </Link>
-                            </div>
-                        )
-                    })}
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    {['all', '1.5', '1.6', '2.1', '1.8', '3.4'].map((ch) => (
+                        <button
+                            key={ch}
+                            onClick={() => setSelectedChapter(ch)}
+                            style={{
+                                background: selectedChapter === ch ? '#DCA27B' : '#ffffff',
+                                color: selectedChapter === ch ? '#ffffff' : '#2C3531',
+                                border: '1px solid #e6dec5',
+                                padding: '6px 14px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '13px'
+                            }}
+                        >
+                            {ch === 'all' ? 'جميع الشباتر' : `Ch ${ch}`}
+                        </button>
+                    ))}
                 </div>
 
-                {/* 🏆 قسم الفاينل - يبقى آخر الصفحة ويتحكم به Supabase */}
-                <div style={{ marginTop: '32px' }}>
-                    {(() => {
-                        const isFinalOpen =
-                            isAuthorized &&
-                            quizAccess['final-review'] === true
-
-                        const handleFinalClick = () => {
-                            if (!isAuthorized) {
-                                setAlertMessage('🔒 مراجعة الفاينل تتطلب اعتماد الكورس أولاً.')
-                                setShowAlertModal(true)
-                                return
-                            }
-
-                            if (!isFinalOpen) {
-                                setAlertMessage('🔒 مراجعة الاختبار النهائي غير متاحة حالياً. سيتم فتحها في الوقت المحدد.')
-                                setShowAlertModal(true)
-                                return
-                            }
-
-                            router.push('/workspace/101/final-review')
-                        }
-
-                        return (
-                            <div
-                                onClick={handleFinalClick}
-                                style={{
-                                    background: '#ffffff',
-                                    border: isFinalOpen ? '2px solid #DCA27B' : '2px solid #cbd5e1',
-                                    borderRadius: '16px',
-                                    padding: '24px',
-                                    boxShadow: isFinalOpen
-                                        ? '0 4px 12px rgba(220, 162, 123, 0.15)'
-                                        : '0 2px 6px rgba(0, 0, 0, 0.03)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    flexWrap: 'wrap',
-                                    gap: '16px',
-                                    transition: 'all 0.3s ease',
-                                    cursor: isFinalOpen ? 'pointer' : 'not-allowed',
-                                    opacity: isFinalOpen ? 1 : 0.78
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: '280px' }}>
-                                    <div
-                                        style={{
-                                            fontSize: '36px',
-                                            background: isFinalOpen ? '#FEECD0' : '#f1f5f9',
-                                            padding: '14px',
-                                            borderRadius: '14px'
-                                        }}
-                                    >
-                                        🏆
-                                    </div>
-
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                                            <h3 style={{ margin: 0, fontSize: '18px', color: '#2C3531', fontWeight: 'bold' }}>
-                                                مراجعة الاختبار النهائي (Final Review)
-                                            </h3>
-
-                                            <span
-                                                style={{
-                                                    background: isFinalOpen ? '#dcfce7' : '#fee2e2',
-                                                    color: isFinalOpen ? '#166534' : '#991b1b',
-                                                    padding: '2px 8px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '11px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
-                                                {isFinalOpen ? '✅ متاح' : '🔒 مقفل'}
-                                            </span>
-                                        </div>
-
-                                        <p style={{ margin: 0, fontSize: '14px', color: '#4A5550' }}>
-                                            تجميعات شاملة، نماذج اختبارات نهائية، وملخصات لأهم أفكار المنهج بالكامل.
-                                        </p>
-                                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {filteredQuestions.map((q: QuizDataQuestion) => (
+                        <div key={q.id} style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span style={{ background: '#FEECD0', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{q.chapter}</span>
+                                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#2C3531' }}>{q.questionName}</span>
                                 </div>
-
-                                <span
-                                    style={{
-                                        backgroundColor: isFinalOpen ? '#DCA27B' : '#94a3b8',
-                                        color: '#ffffff',
-                                        padding: '10px 20px',
-                                        borderRadius: '10px',
-                                        fontWeight: 'bold',
-                                        fontSize: '14px'
-                                    }}
-                                >
-                                    {isFinalOpen ? 'ابدأ المراجعة ➔' : 'مقفل 🔒'}
-                                </span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span style={{ background: q.level === 'صعب' ? '#fee2e2' : q.level === 'متوسط' ? '#fef08a' : '#CDD4B1', color: '#2C3531', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{q.level}</span>
+                                    {q.ideaLink && (
+                                        <Link href={q.ideaLink} style={{ background: '#CDD4B1', color: '#2C3531', textDecoration: 'none', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+                                            ربط بالفكرة ➔
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
-                        )
-                    })()}
+
+                            <p style={{ fontSize: '14px', marginBottom: '8px', color: '#4A5550' }}>{q.question}</p>
+
+                            {q.math && (
+                                <div style={{ background: '#fdfbf7', padding: '12px', borderRadius: '8px', border: '1px dashed #e6dec5', marginBottom: '12px' }}>
+                                    {renderMathContent(q.math)}
+                                </div>
+                            )}
+
+                            {q.image && (
+                                <div style={{ background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e6dec5', marginBottom: '12px', textAlign: 'center' }}>
+                                    <img
+                                        src={q.image}
+                                        alt="Question graph"
+                                        style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px' }}
+                                    />
+                                </div>
+                            )}
+
+                            <details style={{ background: '#FFF9E2', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e6dec5', cursor: 'pointer' }}>
+                                <summary style={{ fontWeight: 'bold', fontSize: '14px', color: '#DCA27B' }}>عرض الإجابة النموذجية 💡</summary>
+                                <div style={{ marginTop: '8px' }}>
+                                    {renderMathContent(q.answer)}
+                                </div>
+                            </details>
+                        </div>
+                    ))}
                 </div>
             </div>
-
-            {showAlertModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
-                    <div style={{ backgroundColor: '#FFF9E2', border: '1px solid #e6dec5', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', textAlign: 'center', fontFamily: 'sans-serif', color: '#2C3531' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔒</div>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#2C3531' }}>غير متاح حالياً</h3>
-                        <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#4A5550', lineHeight: '1.5' }}>{alertMessage}</p>
-                        <button
-                            type="button"
-                            onClick={() => setShowAlertModal(false)}
-                            style={{ width: '100%', padding: '10px 16px', backgroundColor: '#DCA27B', color: '#ffffff', border: '1px solid #e6dec5', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}
-                        >
-                            حسناً، فهمت 👍
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }
