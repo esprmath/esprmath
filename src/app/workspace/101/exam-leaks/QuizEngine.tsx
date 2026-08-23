@@ -148,6 +148,53 @@ const primaryButton: React.CSSProperties = {
     cursor: 'pointer'
 }
 
+
+function renderMathContent(mathKey: string) {
+    if (!mathKey) return null
+
+    const wrap = (content: React.ReactNode) => (
+        <div
+            style={{
+                direction: 'ltr',
+                textAlign: 'center',
+                padding: '12px',
+                fontSize: '14px',
+                overflowX: 'auto'
+            }}
+        >
+            {content}
+        </div>
+    )
+
+    const formulas: Record<string, React.ReactNode> = {
+        m15q20: <><div style={{fontSize:'20px'}}>
+            lim <sub>x→−3</sub>
+            [
+            <span style={{display:'inline-block', textAlign:'center', verticalAlign:'middle'}}>
+        <span style={{display:'block', borderBottom:'1px solid #222', padding:'0 8px'}}>
+            x² − 3x
+        </span>
+        <span style={{display:'block', padding:'0 8px'}}>
+            x² − 9
+        </span>
+    </span>
+            )
+            ]
+        </div></>,
+        m15q27: <>lim x→5⁺ (x+1)/(x−5)</>,
+        m15q31: <>lim x→(−2)⁺ (x−1)/(x²(x+2))</>,
+        m15q33: <>lim x→(π/2)⁺ (sec x)/x</>,
+        m15q38: <>Find the vertical asymptotes using limits</>,
+        m16ex2a: <>Evaluate the following limits and justify each step</>,
+        m16ex2b: <>Evaluate the following limits and justify each step</>,
+        m21ex1: <>y = x² , P(1,1)</>,
+        m21ex2: <>y = 3/x , P(3,1)</>,
+        m34ex3: <>Evaluate the following limit</>
+    }
+
+    return wrap(formulas[mathKey] ?? mathKey)
+}
+
 export default function QuizEngine({
                                        title,
                                        questions,
@@ -1823,11 +1870,42 @@ export default function QuizEngine({
                         }
                     </p>
 
-                    <h2>
-                        {
-                            currentQuestion.question
-                        }
-                    </h2>
+                    <div
+                        style={{
+                            background: '#ffffff',
+                            borderRadius: '12px',
+                            padding: '4px',
+                            marginTop: '0px',
+                            marginBottom: '6px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                        }}
+                    >
+                        <h2
+                            style={{
+                                marginBottom: '10px',
+                                lineHeight: '1.25'
+                            }}
+                        >
+                            {currentQuestion.question}
+                        </h2>
+
+                        {currentQuestion.math && (
+                            <div
+                                style={{
+                                    background: '#ffffff',
+                                    border: '1px solid #eee',
+                                    borderRadius: '12px',
+                                    padding: '12px',
+                                    marginTop: '0px',
+                                    marginBottom: '6px',
+                                    textAlign: 'center',
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.04)'
+                                }}
+                            >
+                                {renderMathContent(currentQuestion.math)}
+                            </div>
+                        )}
+                    </div>
 
                     {currentQuestion.image && (
                         <img

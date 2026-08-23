@@ -4,8 +4,7 @@ import QuizEngine from '../QuizEngine'
 import { math101Module1Questions } from '../../quesbank/data/module1'
 
 export default function Quiz1Page() {
-    // روابط تجريبية حتى تتأكد أن الفيديو يفتح داخل نفس صفحة الكويز.
-    // بعد التجربة استبدلها بروابط مقاطعك الحقيقية.
+
     const reviewVideoUrl =
         'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
@@ -16,10 +15,9 @@ export default function Quiz1Page() {
         <QuizEngine
             title="Quiz 1 - Math 101"
 
-            // مصدر الأسئلة من بنك الأسئلة
+            // الداتا التي تحتوي على math مثل m15q20
             questions={math101Module1Questions}
 
-            // الشباتر الداخلة في Quiz 1
             chapters={[
                 '1.5',
                 '1.6',
@@ -28,13 +26,10 @@ export default function Quiz1Page() {
                 '3.4'
             ]}
 
-            // زر العودة يرجع لصفحة الكورس
             coursePath="/workspace/101"
 
-            // مفتاح أخطاء Quiz 1
             savedMistakesKey="math101_quiz1_saved_mistakes"
 
-            // روابط المقاطع
             reviewVideoUrl={reviewVideoUrl}
             leaksVideoUrl={leaksVideoUrl}
         />

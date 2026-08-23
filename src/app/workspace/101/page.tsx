@@ -182,151 +182,73 @@ export default function WorkspacePage() {
                         {isAuthorized ? '✅ حسابك معتمد، فالك التوفيق' : '🎁 المعاينة المجانية مفعلة: الموديول الأول متاح، وباقي الموديولات تتطلب موافقة المشرف.'}
                     </div>
                 </div>
-                {/* 🌟 إضافة قسم بنك الأسئلة وتسريبات الاختبارات */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-                    {/* بطاقة بنك الأسئلة */}
-                    <Link
-                        href={isAuthorized ? "/workspace/101/question-bank" : "#"}
-                        onClick={(e) => handleExtraFeatureClick(e, "بنك الأسئلة")}
-                        style={{
-                            textDecoration: 'none',
-                            background: '#ffffff',
-                            border: '1px solid #e6dec5',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '16px',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <div style={{ fontSize: '32px', background: '#FEECD0', padding: '12px', borderRadius: '12px' }}>
-                            ❓
-                        </div>
-                        <div>
-                            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2C3531', fontWeight: 'bold' }}>
-                                بنك الأسئلة الشامل
-                            </h3>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#4A5550' }}>
-                                تدرب على أسئلة متنوعة ومتوسطة وصعبة لجميع الشباتر.
-                            </p>
-                        </div>
-                    </Link>
-                    {/* بطاقة الاختبارات - أزرار مباشرة لكل اختبار */}
-                    <div
-                        style={{
-                            background: '#ffffff',
-                            border: '1px solid #e6dec5',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '14px',
-                            transition: 'all 0.3s ease',
-                            minWidth: 0
-                        }}
-                    >
-                        <div style={{ fontSize: '32px', background: '#fee2e2', padding: '12px', borderRadius: '12px', flexShrink: 0 }}>
-                            🔥
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#2C3531', fontWeight: 'bold' }}>
-                                الاختبارات والمراجعات
-                            </h3>
-                            <div
-                                style={{
+                {/* الاختبارات والمراجعات - دوائر فقط */}
+                <div style={{
+                    marginBottom: '32px',
+                    textAlign: 'center'
+                }}>
+                    <h2 style={{
+                        fontSize: '20px',
+                        marginBottom: '18px',
+                        color: '#2C3531'
+                    }}>
+                        الاختبارات والمراجعات
+                    </h2>
+
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '22px',
+                        flexWrap: 'wrap'
+                    }}>
+                        {courseExams.map((exam) => {
+                            const isOpen = isAuthorized && quizAccess[exam.id] === true
+
+                            return (
+                                <div key={exam.id} style={{
                                     display: 'flex',
-                                    alignItems: 'flex-start',
-                                    justifyContent: 'space-between',
-                                    gap: '6px',
-                                    width: '100%'
-                                }}
-                            >
-                                {courseExams.map((exam) => {
-                                    const isOpen = isAuthorized && quizAccess[exam.id] === true
-                                    return (
-                                        <div
-                                            key={exam.id}
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '4px',
-                                                flex: '1 1 0',
-                                                minWidth: 0
-                                            }}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => handleExamClick(exam)}
-                                                title={isOpen ? `${exam.title} - متاح` : `${exam.title} - مقفل`}
-                                                style={{
-                                                    width: exam.id === 'midterm' ? '44px' : '38px',
-                                                    height: exam.id === 'midterm' ? '44px' : '38px',
-                                                    borderRadius: '50%',
-                                                    border: isOpen ? '2px solid #DCA27B' : '1px solid #cbd5e1',
-                                                    background: isOpen ? '#FEECD0' : '#f1f5f9',
-                                                    color: isOpen ? '#8c5521' : '#64748b',
-                                                    fontSize: exam.id === 'midterm' ? '10px' : '11px',
-                                                    fontWeight: 'bold',
-                                                    cursor: isAuthorized && isOpen ? 'pointer' : 'not-allowed',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    padding: 0,
-                                                    position: 'relative',
-                                                    flexShrink: 0
-                                                }}
-                                            >
-                                                {exam.label}
-                                                {!isOpen && (
-                                                    <span
-                                                        style={{
-                                                            position: 'absolute',
-                                                            right: '-4px',
-                                                            bottom: '-4px',
-                                                            width: '17px',
-                                                            height: '17px',
-                                                            borderRadius: '50%',
-                                                            background: '#ffffff',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            fontSize: '9px',
-                                                            border: '1px solid #e2e8f0'
-                                                        }}
-                                                    >
-                                                        🔒
-                                                    </span>
-                                                )}
-                                            </button>
-                                            <span
-                                                style={{
-                                                    fontSize: '9px',
-                                                    color: isOpen ? '#8c5521' : '#64748b',
-                                                    fontWeight: 'bold',
-                                                    whiteSpace: 'nowrap'
-                                                }}
-                                            >
-                                                {exam.id === 'midterm'
-                                                    ? 'Mid'
-                                                    : exam.id === 'quiz-1'
-                                                        ? 'Quiz 1'
-                                                        : exam.id === 'quiz-2'
-                                                            ? 'Quiz 2'
-                                                            : exam.id === 'quiz-3'
-                                                                ? 'Quiz 3'
-                                                                : 'Quiz 4'}
-                                            </span>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleExamClick(exam)}
+                                        style={{
+                                            width: '44px',
+                                            height: '44px',
+                                            borderRadius: '50%',
+                                            border: isOpen ? '2px solid #DCA27B' : '1px solid #cbd5e1',
+                                            background: isOpen ? '#FEECD0' : '#f1f5f9',
+                                            color: isOpen ? '#8c5521' : '#64748b',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            position: 'relative'
+                                        }}
+                                    >
+                                        {exam.label}
+                                        {!isOpen && <span style={{
+                                            position:'absolute',
+                                            right:'-5px',
+                                            bottom:'-5px',
+                                            background:'#fff',
+                                            borderRadius:'50%',
+                                            fontSize:'10px'
+                                        }}>🔒</span>}
+                                    </button>
+
+                                    <span style={{
+                                        fontSize:'11px',
+                                        fontWeight:'bold'
+                                    }}>
+                                        {exam.id === 'midterm' ? 'Mid' : exam.title}
+                                    </span>
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {modulesData.map((mod) => {
                         const currentProgress = progressMap[mod.id] || 0
@@ -467,6 +389,7 @@ export default function WorkspacePage() {
                         )
                     })}
                 </div>
+
                 {/* 🏆 قسم الفاينل - يبقى آخر الصفحة ويتحكم به Supabase */}
                 <div style={{ marginTop: '32px' }}>
                     {(() => {
@@ -558,6 +481,38 @@ export default function WorkspacePage() {
                     })()}
                 </div>
             </div>
+
+            {/* بنك الأسئلة بجانب الفاينل */}
+            <div style={{
+                background: '#FEECD0',
+                border: '1px solid #e6dec5',
+                borderRadius: '16px',
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                cursor: 'pointer'
+            }}
+                 onClick={() => router.push('/workspace/101/quesbank/data')}
+            >
+                <div style={{
+                    fontSize:'32px',
+                    background:'#ffffff',
+                    padding:'12px',
+                    borderRadius:'12px'
+                }}>
+                    ❓
+                </div>
+                <div>
+                    <h3 style={{margin:0, color:'#2C3531'}}>
+                        بنك الأسئلة الشامل
+                    </h3>
+                    <p style={{margin:'6px 0 0', color:'#4A5550', fontSize:'13px'}}>
+                        تدرب على أسئلة متنوعة لجميع الشباتر.
+                    </p>
+                </div>
+            </div>
+
             {showAlertModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
                     <div style={{ backgroundColor: '#FFF9E2', border: '1px solid #e6dec5', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', textAlign: 'center', fontFamily: 'sans-serif', color: '#2C3531' }}>

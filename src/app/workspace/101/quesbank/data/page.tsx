@@ -4,127 +4,144 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import { math101Module1Questions } from './module1'
 
-// عرض رياضيات واضح باستخدام MathML المدمج في المتصفح
-// يدعم النهايات، الكسور، الجذور، الأسس، وإشارات +∞ / -∞ المستخدمة في أسئلة Module-1.
-function MathFraction({ numerator, denominator }: { numerator: React.ReactNode, denominator: React.ReactNode }) {
+// عرض رياضيات واضح بدون MathML حتى لا تظهر أخطاء TS2339
+type FractionProps = {
+    numerator: React.ReactNode
+    denominator: React.ReactNode
+}
+
+function Fraction({ numerator, denominator }: FractionProps) {
     return (
-        <math display="inline" style={{ fontSize: '1.25rem', direction: 'ltr' }}>
-            <mfrac>
-                <mrow>{numerator}</mrow>
-                <mrow>{denominator}</mrow>
-            </mfrac>
-        </math>
+        <span style={{
+            display: 'inline-flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            verticalAlign: 'middle',
+            margin: '0 6px',
+            lineHeight: 1.25,
+            minWidth: '42px'
+        }}>
+            <span style={{ padding: '0 6px 4px', borderBottom: '1.6px solid #2C3531' }}>
+                {numerator}
+            </span>
+            <span style={{ padding: '4px 6px 0' }}>
+                {denominator}
+            </span>
+        </span>
     )
 }
 
-function renderMathContent(mathKey: string) {
-    if (!mathKey) return null
+function Limit({ variable, to }: { variable: string, to: React.ReactNode }) {
+    return (
+        <span style={{
+            display: 'inline-flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            verticalAlign: 'middle',
+            marginRight: '8px',
+            lineHeight: 1
+        }}>
+            <span style={{ fontSize: '21px' }}>lim</span>
+            <span style={{ fontSize: '11px', marginTop: '3px', whiteSpace: 'nowrap' }}>
+                {variable} → {to}
+            </span>
+        </span>
+    )
+}
 
-    const wrap = (content: React.ReactNode) => (
+function SquareRoot({ children }: { children: React.ReactNode }) {
+    return (
+        <span style={{ display: 'inline-flex', alignItems: 'flex-start', verticalAlign: 'middle' }}>
+            <span style={{ fontSize: '27px', lineHeight: 1, transform: 'translateY(1px)' }}>√</span>
+            <span style={{
+                borderTop: '1.6px solid #2C3531',
+                padding: '2px 3px 0 2px',
+                marginLeft: '-2px',
+                lineHeight: 1.2
+            }}>
+                {children}
+            </span>
+        </span>
+    )
+}
+
+function MathLine({ children }: { children: React.ReactNode }) {
+    return (
         <div style={{
             direction: 'ltr',
             textAlign: 'center',
-            padding: '8px 6px',
             color: '#2C3531',
-            fontSize: '18px',
-            lineHeight: 1.9,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: '19px',
+            lineHeight: 1.8,
+            padding: '8px 6px',
             overflowX: 'auto'
         }}>
-            {content}
+            {children}
         </div>
     )
+}
 
-    switch (mathKey) {
-        case 'ex1':
-            return wrap(
-                <math display="block" style={{ fontSize: '1.35rem' }}>
-                    <munder><mo>lim</mo><mrow><mi>t</mi><mo>→</mo><mn>0</mn></mrow></munder>
-                    <mfrac>
-                        <mrow>
-                            <msqrt><mrow><msup><mi>t</mi><mn>2</mn></msup><mo>+</mo><mn>9</mn></mrow></msqrt>
-                            <mo>−</mo><mn>3</mn>
-                        </mrow>
-                        <msup><mi>t</mi><mn>2</mn></msup>
-                    </mfrac>
-                </math>
-            )
+function Cases({ rows }: { rows: React.ReactNode[] }) {
+    return (
+        <span style={{display:'inline-flex',alignItems:'center',verticalAlign:'middle'}}>
+            <span style={{fontSize:'50px',lineHeight:.8,marginRight:'6px'}}>{'{'}</span>
+            <span style={{display:'inline-flex',flexDirection:'column',alignItems:'flex-start',gap:'4px'}}>
+                {rows.map((r,i)=><span key={i}>{r}</span>)}
+            </span>
+        </span>
+    )
+}
 
-        case 'q20':
-            return wrap(
-                <>
-                    <math display="block" style={{ fontSize: '1.35rem' }}>
-                        <munder><mo>lim</mo><mrow><mi>x</mi><mo>→</mo><mo>−</mo><mn>3</mn></mrow></munder>
-                        <mfrac>
-                            <mrow><msup><mi>x</mi><mn>2</mn></msup><mo>−</mo><mn>3</mn><mi>x</mi></mrow>
-                            <mrow><msup><mi>x</mi><mn>2</mn></msup><mo>−</mo><mn>9</mn></mrow>
-                        </mfrac>
-                    </math>
-                    <div style={{ marginTop: '10px', fontSize: '14px', lineHeight: 1.8 }}>
-                        x = -2.5, -2.9, -2.95, -2.99, -2.999, -2.9999,<br />
-                        -3.5, -3.1, -3.05, -3.01, -3.001, -3.0001
-                    </div>
-                </>
-            )
-
-        case 'q4':
-            return wrap(
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', textAlign: 'left' }}>
-                    <div>a. lim x→2⁻ f(x)</div>
-                    <div>b. lim x→2⁺ f(x)</div>
-                    <div>c. lim x→2 f(x)</div>
-                    <div>d. f(2)</div>
-                    <div>e. lim x→4 f(x)</div>
-                    <div>f. f(4)</div>
-                </div>
-            )
-
-        case 'q27':
-            return wrap(
-                <math display="block" style={{ fontSize: '1.35rem' }}>
-                    <munder><mo>lim</mo><mrow><mi>x</mi><mo>→</mo><msup><mn>5</mn><mo>+</mo></msup></mrow></munder>
-                    <mfrac><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mrow><mi>x</mi><mo>−</mo><mn>5</mn></mrow></mfrac>
-                </math>
-            )
-
-        case 'q31':
-            return wrap(
-                <math display="block" style={{ fontSize: '1.35rem' }}>
-                    <munder><mo>lim</mo><mrow><mi>x</mi><mo>→</mo><msup><mrow><mo>−</mo><mn>2</mn></mrow><mo>+</mo></msup></mrow></munder>
-                    <mfrac>
-                        <mrow><mi>x</mi><mo>−</mo><mn>1</mn></mrow>
-                        <mrow><msup><mi>x</mi><mn>2</mn></msup><mo>(</mo><mi>x</mi><mo>+</mo><mn>2</mn><mo>)</mo></mrow>
-                    </mfrac>
-                </math>
-            )
-
-        case 'q33':
-            return wrap(
-                <math display="block" style={{ fontSize: '1.35rem' }}>
-                    <munder>
-                        <mo>lim</mo>
-                        <mrow><mi>x</mi><mo>→</mo><msup><mrow><mi>π</mi><mo>/</mo><mn>2</mn></mrow><mo>+</mo></msup></mrow>
-                    </munder>
-                    <mfrac><mn>1</mn><mi>x</mi></mfrac>
-                    <mo>sec</mo><mi>x</mi>
-                </math>
-            )
-
-        case 'q38':
-            return wrap(
-                <math display="block" style={{ fontSize: '1.35rem' }}>
-                    <mi>y</mi><mo>=</mo>
-                    <mfrac>
-                        <mrow><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></mrow>
-                        <mrow><mn>3</mn><mi>x</mi><mo>−</mo><mn>2</mn><msup><mi>x</mi><mn>2</mn></msup></mrow>
-                    </mfrac>
-                </math>
-            )
-
-        default:
-            return wrap(mathKey)
+function renderMathContent(k: string) {
+    if (!k) return null
+    const ML = ({children}:{children:React.ReactNode}) => <MathLine>{children}</MathLine>
+    switch(k) {
+        case 'm15ex1': return <ML><Limit variable="t" to="0"/><Fraction numerator={<><SquareRoot>t² + 9</SquareRoot> − 3</>} denominator="t²"/></ML>
+        case 'm15q20': return <><ML><Limit variable="x" to="−3"/><Fraction numerator="x² − 3x" denominator="x² − 9"/></ML><div style={{direction:'ltr',textAlign:'center'}}>x = −2.5, −2.9, −2.95, −2.99, −2.999, −2.9999, −3.5, −3.1, −3.05, −3.01, −3.001, −3.0001</div></>
+        case 'm15q4': return <ML>a. lim x→2⁻ f(x)　 b. lim x→2⁺ f(x)　 c. lim x→2 f(x)　 d. f(2)　 e. lim x→4 f(x)　 f. f(4)</ML>
+        case 'm15q27': return <ML><Limit variable="x" to={<>5<sup>+</sup></>}/><Fraction numerator="x + 1" denominator="x − 5"/></ML>
+        case 'm15q31': return <ML><Limit variable="x" to={<>−2<sup>+</sup></>}/><Fraction numerator="x − 1" denominator={<>x²(x + 2)</>}/></ML>
+        case 'm15q33': return <ML><Limit variable="x" to={<>(π/2)<sup>+</sup></>}/><Fraction numerator="1" denominator="x"/> sec x</ML>
+        case 'm15q38': return <ML>y = <Fraction numerator="x² + 1" denominator="3x − 2x²"/></ML>
+        case 'm16ex2a': return <ML><Limit variable="x" to="5"/>(2x² − 3x + 4)</ML>
+        case 'm16ex2b': return <ML><Limit variable="x" to="−2"/><Fraction numerator="x³ + 2x² − 1" denominator="5 − 3x"/></ML>
+        case 'm16ex4': return <ML><Limit variable="x" to="1"/>g(x),　g(x)=<Cases rows={[<>x + 1　if x ≠ 1</>,<>π　if x = 1</>]}/></ML>
+        case 'm16ex9': return <ML>f(x)=<Cases rows={[<><SquareRoot>x − 4</SquareRoot>　if x &gt; 4</>,<>8 − 2x　if x &lt; 4</>]}/>　; lim x→4 f(x)</ML>
+        case 'm16q61': return <ML>If <Limit variable="x" to="1"/><Fraction numerator="f(x) − 8" denominator="x − 1"/> = 10, find lim x→1 f(x).</ML>
+        case 'm16ex6': return <ML><Limit variable="t" to="0"/><Fraction numerator={<><SquareRoot>t² + 9</SquareRoot> − 3</>} denominator="t²"/></ML>
+        case 'm16q23': return <ML><Limit variable="h" to="0"/><Fraction numerator={<><SquareRoot>9 + h</SquareRoot> − 3</>} denominator="h"/></ML>
+        case 'm16q27': return <ML><Limit variable="t" to="0"/><Fraction numerator={<><SquareRoot>1 + t</SquareRoot> − <SquareRoot>1 − t</SquareRoot></>} denominator="t"/></ML>
+        case 'm16q66': return <ML><Limit variable="x" to="2"/><Fraction numerator={<><SquareRoot>6 − x</SquareRoot> − 2</>} denominator={<><SquareRoot>3 − x</SquareRoot> − 1</>}/></ML>
+        case 'm21ex1': return <ML>m = <Limit variable="x" to="a"/><Fraction numerator="f(x) − f(a)" denominator="x − a"/>　; y = x², P(1,1)</ML>
+        case 'm21ex2': return <ML>m = <Limit variable="x" to="a"/><Fraction numerator="f(x) − f(a)" denominator="x − a"/>　; y = <Fraction numerator="3" denominator="x"/>, (3,1)</ML>
+        case 'm18q13': return <ML>f(x)=3x²+(x+2)⁵,　a=−1</ML>
+        case 'm18q15': return <ML>p(v)=2<SquareRoot>3v²+1</SquareRoot>,　a=1</ML>
+        case 'm18q49': return <ML>g(2)=6,　<Limit variable="x" to="2"/>[3f(x)+f(x)g(x)]=36. Find f(2).</ML>
+        case 'm18ex2a': return <ML>f(x)=<Fraction numerator="x² − x − 2" denominator="x − 2"/></ML>
+        case 'm18ex2c': return <ML>f(x)=<Cases rows={[<><Fraction numerator="1" denominator="x²"/>　if x ≠ 0</>,<>1　if x = 0</>]}/></ML>
+        case 'm18ex6a': return <ML>f(x)=x¹⁰⁰−2x³⁷+75</ML>
+        case 'm18ex6b': return <ML>g(x)=<Fraction numerator="x²+2x+17" denominator="x²−1"/></ML>
+        case 'm18ex8b': return <ML>F(x)=<Fraction numerator="1" denominator={<><SquareRoot>x²+7</SquareRoot>−4</>}/></ML>
+        case 'm18q19': return <ML>f(x)=<Fraction numerator="1" denominator="x+2"/>,　a=−2</ML>
+        case 'm18q23': return <ML>f(x)=<Cases rows={[<>cos x　if x &lt; 0</>,<>0　if x = 0</>,<>1−x²　if x &gt; 0</>]}/>,　a=0</ML>
+        case 'm34ex2a': return <ML><Limit variable="x" to="∞"/><Fraction numerator="1" denominator="x"/></ML>
+        case 'm34ex2b': return <ML><Limit variable="x" to="−∞"/><Fraction numerator="1" denominator="x"/></ML>
+        case 'm34ex3': return <ML><Limit variable="x" to="∞"/><Fraction numerator="3x²−x−2" denominator="5x²+4x+1"/></ML>
+        case 'm34ex5': return <ML><Limit variable="x" to="∞"/>(<SquareRoot>x²+1</SquareRoot>−x)</ML>
+        case 'm34ex10': return <ML><Limit variable="x" to="∞"/><Fraction numerator="x²+x" denominator="3−x"/></ML>
+        case 'm34q21': return <ML><Limit variable="x" to="−∞"/><Fraction numerator="2x⁵−x" denominator="x⁴+3"/></ML>
+        case 'm34q23': return <ML><Limit variable="x" to="∞"/>cos x</ML>
+        case 'm34ex4': return <ML>f(x)=<Fraction numerator={<SquareRoot>2x²+1</SquareRoot>} denominator="3x−5"/></ML>
+        default: return <ML>{k}</ML>
     }
 }
+
+
 
 export default function QuestionBank101Page() {
     const [isAuthorized, setIsAuthorized] = useState<boolean>(false)
@@ -147,79 +164,7 @@ export default function QuestionBank101Page() {
 
     // ضع ملف القراف module1-q4-graph.png داخل: public/questions/
     // أسئلة Module-1 الجديدة فقط — مرتبة حسب أفكار Chapter 1.5
-    const questionsData = [
-        {
-            id: 1,
-            chapter: '1.5',
-            level: 'سهل',
-            questionName: 'Example 1 (فهم مفهوم النهاية وإيجادها عددياً)',
-            question: 'Estimate the value of',
-            math: 'ex1',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        },
-        {
-            id: 2,
-            chapter: '1.5',
-            level: 'متوسط',
-            questionName: 'Q-20 (فهم مفهوم النهاية وإيجادها عددياً)',
-            question: 'Guess the value of the limit (if it exists) by evaluating the function at the given numbers (correct to six decimal places).',
-            math: 'q20',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        },
-        {
-            id: 3,
-            chapter: '1.5',
-            level: 'متوسط',
-            questionName: 'Q-4 (النهايات من اليمين واليسار وتحديد وجود النهاية)',
-            question: 'Use the given graph of f to state the value of each quantity, if it exists. If it does not exist, explain why.',
-            math: 'q4',
-            image: '/questions/module1-q4-graph.png',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        },
-        {
-            id: 4,
-            chapter: '1.5',
-            level: 'متوسط',
-            questionName: 'Q-27 (النهايات من اليمين واليسار وتحديد وجود النهاية)',
-            question: 'Determine the infinite limit.',
-            math: 'q27',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        },
-        {
-            id: 5,
-            chapter: '1.5',
-            level: 'متوسط',
-            questionName: 'Q-31 (النهايات من اليمين واليسار وتحديد وجود النهاية)',
-            question: 'Determine the infinite limit.',
-            math: 'q31',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        },
-        {
-            id: 6,
-            chapter: '1.5',
-            level: 'متوسط',
-            questionName: 'Q-33 (النهايات من اليمين واليسار وتحديد وجود النهاية)',
-            question: 'Determine the infinite limit.',
-            math: 'q33',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        },
-        {
-            id: 7,
-            chapter: '1.5',
-            level: 'متوسط',
-            questionName: 'Q-38 (النهايات من اليمين واليسار وتحديد وجود النهاية)',
-            question: '(a) Find the vertical asymptotes of the function using limits.',
-            math: 'q38',
-            ideaLink: '/workspace/101/3',
-            answer: ''
-        }
-    ]
+    const questionsData = math101Module1Questions
 
     const filteredQuestions = selectedChapter === 'all'
         ? questionsData
@@ -260,7 +205,7 @@ export default function QuestionBank101Page() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                    {['all', '1.5'].map((ch) => (
+                    {['all', '1.5', '1.6', '2.1', '1.8', '3.4'].map((ch) => (
                         <button
                             key={ch}
                             onClick={() => setSelectedChapter(ch)}
@@ -319,7 +264,7 @@ export default function QuestionBank101Page() {
                             <details style={{ background: '#FFF9E2', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e6dec5', cursor: 'pointer' }}>
                                 <summary style={{ fontWeight: 'bold', fontSize: '14px', color: '#DCA27B' }}>عرض الإجابة النموذجية 💡</summary>
                                 <div style={{ marginTop: '8px' }}>
-                                    {renderMathContent(q.answer)}
+                                    {q.solutionText || q.answer || 'لا يوجد حل مضاف'}
                                 </div>
                             </details>
                         </div>
