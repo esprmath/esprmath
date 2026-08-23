@@ -124,7 +124,7 @@ export default function FinalReviewPage() {
                     }}
                 >
                     <Link
-                        href="/workspace/101/question-bank"
+                        href="/workspace/101"
                         style={{
                             textDecoration: 'none',
                             color: '#2C3531',

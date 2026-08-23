@@ -96,150 +96,121 @@ export default function QuestionBankPage() {
             id: 1,
             chapter: 'Ch 7',
             level: 'سهل',
-            questionName: 'السؤال الأول (المعادلات التفاضلية المتجانسة ذات المعاملات الثابتة)',
             question: 'Find the general solution of the differential equation',
             math: String.raw`y''-7y'+12y=0`,
-            ideaLink: '/workspace/204/3', // رابط يربط الفكرة بصفحة المودل
-            answer: 'y = c_1 e^{3x} + c_2 e^{4x}'
+            answer: ''
         },
         {
             id: 2,
             chapter: 'Ch 7',
             level: 'سهل',
-            questionName: 'السؤال الثاني (الجذور المتكررة للمعادلة المميزة)',
             question: 'Find the characteristic equation',
             math: String.raw`y''-8y'+16y=0`,
-            ideaLink: '/workspace/204/3',
-            answer: 'r^2 - 8r + 16 = 0 \implies (r-4)^2 = 0 \implies y = (c_1 + c_2 x)e^{4x}'
+            answer: ''
         },
         {
             id: 3,
             chapter: 'Ch 7',
             level: 'متوسط',
-            questionName: 'السؤال الثالث (الجذور المركبة للمعادلة المميزة)',
             question: 'Find the general solution of the differential equation',
             math: String.raw`y''-6y'+13y=0`,
-            ideaLink: '/workspace/204/3',
-            answer: 'y = e^{3x}(c_1 \cos(2x) + c_2 \sin(2x))'
+            answer: ''
         },
         {
             id: 4,
             chapter: 'Ch 7',
             level: 'سهل',
-            questionName: 'السؤال الرابع (عامل التكامل للمعادلات الخطية)',
             question: 'Find the integrating factor of',
             math: String.raw`\frac{dy}{dx}+P(x)y=Q(x)`,
-            ideaLink: '/workspace/204/3',
-            answer: 'I(x) = e^{\int P(x) \, dx}'
+            answer: ''
         },
         {
             id: 5,
             chapter: 'Ch 6',
             level: 'متوسط',
-            questionName: 'السؤال الخامس (إيجاد القيم الذاتية للمصفوفات)',
             question: 'Find the eigenvalues of the matrix',
             math: String.raw`A=\begin{bmatrix} 2 & 6 & 3\\ 1 & -4 & 1\\ 0 & 0 & -1 \end{bmatrix}`,
-            ideaLink: '/workspace/204/3',
-            answer: 'det(A - \lambda I) = 0 \implies \lambda = 5, -5, -1'
+            answer: ''
         },
         {
             id: 6,
             chapter: 'Ch 2',
             level: 'صعب',
-            questionName: 'السؤال السادس (المصفوفة الملحقة والمعكوس)',
             question: 'Find adj(A) and A^{-1}',
             math: String.raw`A=\begin{bmatrix} -3 & -2 & 2\\ 4 & 5 & -3\\ 1 & 5 & -2 \end{bmatrix}`,
-            ideaLink: '/workspace/204/3',
-            answer: 'A^{-1} = \frac{1}{\det(A)} \text{adj}(A)'
+            answer: ''
         },
         {
             id: 7,
             chapter: 'Ch 1',
             level: 'متوسط',
-            questionName: 'السؤال السابع (حذف غاوس جوردان والمصفوفة الموسعة)',
             question: 'Find the echelon form of the augmented matrix and solve the system',
             math: String.raw`\begin{cases} x_1+2x_2+x_3=4\\ 3x_1+8x_2+7x_3=20\\ 2x_1+7x_2+9x_3=23 \end{cases}`,
-            ideaLink: '/workspace/204/3',
-            answer: 'x_1 = 1, x_2 = 2, x_3 = -1'
+            answer: ''
         },
         {
             id: 8,
             chapter: 'Ch 4',
             level: 'متوسط',
-            questionName: 'السؤال الثامن (اختبار فضاء جزئي Subspace)',
             question: 'Determine whether W is a subspace of R^4',
             math: String.raw`W=\{(x_1,x_2,x_3,x_4)\in R^4: x_1x_3=0\}`,
-            answer: 'Not a subspace (fails closure under addition)'
+            answer: ''
         },
         {
             id: 9,
             chapter: 'Ch 4',
             level: 'متوسط',
-            questionName: 'السؤال التاسع (إيجاد أساس لفضاء الحلول Null Space)',
             question: 'Find a basis for the solution space of the homogeneous system',
             math: String.raw`\left[\begin{array}{ccc|c} 1 & -2 & 3 & 0\\ 0 & 1 & -7 & 0 \end{array}\right]`,
-            ideaLink: '/workspace/204/3',
-            answer: 'Basis = \{(11, 7, 1)\}'
+            answer: ''
         },
         {
             id: 10,
             chapter: 'Ch 6',
             level: 'صعب',
-            questionName: 'السؤال العاشر (القيم والمتجهات الذاتية Eigenvalues & Eigenvectors)',
             question: 'Find the eigenvalues and the associated eigenvectors',
             math: String.raw`A=\begin{bmatrix} 5 & 6\\ 3 & -4 \end{bmatrix}`,
-            ideaLink: '/workspace/204/3',
-            answer: '\lambda_1 = 7, \lambda_2 = -6'
+            answer: ''
         },
         {
             id: 11,
             chapter: 'Ch 7',
             level: 'صعب',
-            questionName: 'السؤال الحادي عشر (المعادلات التفاضلية غير الخطية)',
             question: 'Solve the differential equation',
             math: String.raw`y\,dx=(5x-y^2)\,dy`,
-            ideaLink: '/workspace/204/3',
-            answer: 'x = \frac{1}{3}y^2 + c y^{-5}'
+            answer: ''
         },
         {
             id: 12,
             chapter: 'Ch 7',
             level: 'صعب',
-            questionName: 'السؤال الثاني عشر (التعويض المباشر في المعادلات التفاضلية)',
             question: 'Solve using substitution',
             math: String.raw`\frac{dy}{dx}=(4x+y)^2`,
-            ideaLink: '/workspace/204/3',
-            answer: 'Use v = 4x + y'
+            answer: ''
         },
         {
             id: 13,
             chapter: 'Ch 7',
             level: 'متوسط',
-            questionName: 'السؤال الثالث عشر (مسائل القيمة الابتدائية IVP)',
             question: 'Solve the initial value problem',
             math: String.raw`\frac{dy}{dx}+\frac{1}{3}y=e^{-x/3},\qquad y(0)=1`,
-            ideaLink: '/workspace/204/3',
-            answer: 'y = (x + 1)e^{-x/3}'
+            answer: ''
         },
         {
             id: 14,
             chapter: 'Ch 7',
             level: 'صعب',
-            questionName: 'السؤال الرابع عشر (معاملة عدم التجانس بالطريقة العامة)',
             question: 'Find the complete solution satisfying the initial conditions',
             math: String.raw`y''-2y'-3y=6, \quad y(0)=1, \quad y'(0)=5`,
-            ideaLink: '/workspace/204/3',
-            answer: 'y = e^{-x} + e^{3x} - 2'
+            answer: ''
         },
         {
             id: 15,
             chapter: 'Ch 7',
             level: 'متوسط',
-            questionName: 'السؤال الخامس عشر (تطبيقات نماذج النمو السكاني)',
             question: 'Rabbit population problem',
             math: String.raw`\frac{dP}{dt}\propto\sqrt{P}, \quad P(0)=100, \quad \text{Rate} = 25/\text{month}, \quad \text{Find } P(8)`,
-            ideaLink: '/workspace/204/3',
-            answer: 'P(8) = 400'
+            answer: ''
         }
     ]
 
@@ -274,7 +245,7 @@ export default function QuestionBankPage() {
                 <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <div>
                         <h1 style={{ fontSize: '26px', fontWeight: 'bold', marginBottom: '6px' }}>❓ بنك الأسئلة الشامل</h1>
-                        <p style={{ color: '#4A5550', fontSize: '14px' }}>تدرب على أسئلة نموذجية مصنفة بأسماء واضحة ومرتبطة بأفكار المودل.</p>
+                        <p style={{ color: '#4A5550', fontSize: '14px' }}>تدرب على أسئلة متنوعة مصنفة حسب الشباتر ومستويات الصعوبة.</p>
                     </div>
                     <Link href="/workspace/204" style={{ textDecoration: 'none', background: '#CDD4B1', color: '#2C3531', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold' }}>
                         ← عودة للكورس
@@ -305,23 +276,11 @@ export default function QuestionBankPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {filteredQuestions.map((q) => (
                         <div key={q.id} style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <span style={{ background: '#FEECD0', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{q.chapter}</span>
-                                    {/* اسم السؤال المميز */}
-                                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#2C3531' }}>{q.questionName}</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                    <span style={{ background: q.level === 'صعب' ? '#fee2e2' : q.level === 'متوسط' ? '#fef08a' : '#CDD4B1', color: '#2C3531', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{q.level}</span>
-                                    {q.ideaLink && (
-                                        <Link href={q.ideaLink} style={{ background: '#CDD4B1', color: '#2C3531', textDecoration: 'none', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
-                                            ربط بالفكرة ➔
-                                        </Link>
-                                    )}
-                                </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                <span style={{ background: '#FEECD0', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{q.chapter}</span>
+                                <span style={{ background: q.level === 'صعب' ? '#fee2e2' : q.level === 'متوسط' ? '#fef08a' : '#CDD4B1', color: '#2C3531', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>{q.level}</span>
                             </div>
-
-                            <p style={{ fontSize: '14px', marginBottom: '8px', color: '#4A5550' }}>{q.question}</p>
+                            <h3 style={{ fontSize: '16px', marginBottom: '8px', color: '#2C3531' }}>{q.question}</h3>
 
                             {/* عرض المعادلات والمصفوفات بشكل منظم واحترافي */}
                             {q.math && (
@@ -332,9 +291,7 @@ export default function QuestionBankPage() {
 
                             <details style={{ background: '#FFF9E2', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e6dec5', cursor: 'pointer' }}>
                                 <summary style={{ fontWeight: 'bold', fontSize: '14px', color: '#DCA27B' }}>عرض الإجابة النموذجية 💡</summary>
-                                <div style={{ marginTop: '8px' }}>
-                                    {renderMathContent(q.answer)}
-                                </div>
+                                <p style={{ marginTop: '8px', fontSize: '14px', color: '#4A5550' }}>{q.answer || 'قريباً...'}</p>
                             </details>
                         </div>
                     ))}
