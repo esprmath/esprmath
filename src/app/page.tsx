@@ -507,6 +507,19 @@ export default function HomePage() {
           </div>
         </section>
 
+
+        {/* رسالة الكورسات القادمة */}
+        <section style={{ maxWidth: '800px', margin: '0 auto 40px auto', padding: '0 20px' }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '8px' }}>
+              🚀 قريباً في EsprMath
+            </h3>
+            <p style={{ color: '#4A5550', fontSize: '0.95rem', lineHeight: '1.7', margin: 0 }}>
+              كورسات جديدة قادمة قريباً بإذن الله ✨
+            </p>
+          </div>
+        </section>
+
         {/* قسم عن EsprMath */}
         <section style={{ maxWidth: '800px', margin: '0 auto 40px auto', padding: '0 20px' }}>
           <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '16px' }}>

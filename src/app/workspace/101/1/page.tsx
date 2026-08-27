@@ -34,42 +34,108 @@ export default function Module1Page() {
     const [isAiAllowed, setIsAiAllowed] = useState(false)
 
     // الترتيب الدقيق حسب طلبك تماماً: 1.5 -> 1.6 -> 2.1 -> 1.8 -> 3.4
+    // =====================================================
+// 📘 CHAPTERS DATA
+// كل شابتر مستقل هنا
+// عند التعبئة:
+// - title = اسم الشابتر
+// - ideas = أفكار الشابتر
+// =====================================================
+
     const chaptersData = {
+
+        // =================================================
+        // 📖 Chapter 1.5
+        // الأفكار + الشرح + رابط الفيديو + السؤال
+        // =================================================
         '1.5': {
-            title: '1.5 نهاية الدالة (Limit of a function)',
+            title: '1.5 مفهوم النهاية والنهايات اللانهائية (Limits & Infinite Limits)',
             ideas: [
-                { id: 'idea-1', name: 'فهم مفهوم النهاية عددياً وبيانياً' },
-                { id: 'idea-2', name: 'النهايات من اليمين واليسار ووجود النهاية' }
+                // 💡 Idea 1
+                // theory: الشرح النظري هنا
+                // video: رابط المقطع هنا
+                // question: السؤال التدريبي هنا
+                // solution: شرح الحل هنا
+                { id: 'idea-1', name: '1.1: المفهوم الحدسي للنهاية وتقديرها عدديًا وبيانيًا' },
+                { id: 'idea-2', name: '1.2: النهايات أحادية الجانب (One-Sided Limits) وقيم الدالة' },
+                { id: 'idea-3', name: '1.3: النهايات اللانهائية (Infinite Limits)' },
+                { id: 'idea-4', name: '1.4: خطوط التقارب الرأسية (Vertical Asymptotes)' }
             ]
         },
+
+        // =================================================
+        // 📖 Chapter 1.6
+        // =================================================
         '1.6': {
-            title: '1.6 قوانين النهايات (Limit Laws)',
+            title: '1.6 حساب النهايات باستخدام قوانين النهايات والتقنيات الجبرية',
             ideas: [
-                { id: 'idea-1', name: 'الخصائص الجبرية والتعويض المباشر' },
-                { id: 'idea-2', name: 'معالجة الحالات الصفرية (0/0) بالتحليل' }
+                // 💡 Idea 1
+                // theory: الشرح النظري هنا
+                // video: رابط المقطع هنا
+                // question: السؤال التدريبي هنا
+                // solution: شرح الحل هنا
+                { id: 'idea-1', name: '2.1: تطبيق قوانين النهايات الأساسية وقاعدة التعويض المباشر' },
+                { id: 'idea-2', name: '2.2: حساب نهايات الدوال المعرفة بقواعد متعددة (Piecewise Functions)' },
+                { id: 'idea-3', name: '2.3: تقنيات الضرب بالمرافق (Conjugate Technique) لإزالة عدم التعيين' },
+                { id: 'idea-4', name: '2.4: استنتاج نهايات غير مباشرة والتعامل مع الدوال المجهولة' }
             ]
         },
-        '2.1': {
-            title: '2.1 المماس ومعدل التغير والسرعة',
-            ideas: [
-                { id: 'idea-1', name: 'ميل المماس ومعدل التغير اللحظي' },
-                { id: 'idea-2', name: 'السرعة اللحظية كفكرة أساسية' }
-            ]
-        },
+
+        // =================================================
+        // 📖 Chapter 1.8
+        // =================================================
         '1.8': {
-            title: '1.8 الاتصال (Continuity)',
+            title: '1.8 الاتصال وخواص الدوال المتصلة (Continuity)',
             ideas: [
-                { id: 'idea-1', name: 'شروط الاتصال الثلاثة عند نقطة' },
-                { id: 'idea-2', name: 'أنواع وأسباب عدم الاتصال' }
+                // 💡 Idea 1
+                // theory: الشرح النظري هنا
+                // video: رابط المقطع هنا
+                // question: السؤال التدريبي هنا
+                // solution: شرح الحل هنا
+                { id: 'idea-1', name: '3.1: شروط الاتصال عند نقطة والتحقق منها' },
+                { id: 'idea-2', name: '3.2: تصنيف أسباب عدم الاتصال (Discontinuity)' },
+                { id: 'idea-3', name: '3.3: خواص الجبر للدوال المتصلة وفترات الاتصال' },
+                { id: 'idea-4', name: '3.4: اتصال الدوال الجذرية والكسرية المركبة' }
             ]
         },
+
+        // =================================================
+        // 📖 Chapter 3.4
+        // =================================================
         '3.4': {
-            title: '3.4 النهايات عند اللانهاية والمحاذيات',
+            title: '3.4 النهايات عند اللانهاية وخطوط التقارب الأفقية',
             ideas: [
-                { id: 'idea-1', name: 'سلوك الدوال عند المالانهاية (±∞)' },
-                { id: 'idea-2', name: 'إيجاد خطوط التقارب الأفقية' }
+                // 💡 Idea 1
+                // theory: الشرح النظري هنا
+                // video: رابط المقطع هنا
+                // question: السؤال التدريبي هنا
+                // solution: شرح الحل هنا
+                { id: 'idea-1', name: '4.1: المفهوم الأساسي للنهايات عند اللانهاية للدوال المقلوبة والمثلثية' },
+                { id: 'idea-2', name: '4.2: نهايات الدوال النسبية والجذرية عند اللانهاية وتحديد خطوط التقارب الأفقية' },
+                { id: 'idea-3', name: '4.3: الضرب بالمرافق عند اللانهاية لحالات (∞ - ∞)' },
+                { id: 'idea-4', name: '4.4: النهايات اللانهائية عند اللانهاية (Infinite Limits at Infinity)' }
+            ]
+        },
+
+        // =================================================
+        // 📖 Chapter 2.1
+        // =================================================
+        '2.1': {
+            title: '2.1 المماس ومعدل التغير والسرعة اللحظية',
+            ideas: [
+                // 💡 Idea 1
+                // theory: الشرح النظري هنا
+                // video: رابط المقطع هنا
+                // question: السؤال التدريبي هنا
+                // solution: شرح الحل هنا
+                { id: 'idea-1', name: '5.1: ميل خط المماس ومعادلته باستخدام تعريف النهاية' },
+                { id: 'idea-2', name: '5.2: التطبيقات الفيزيائية (السرعة اللحظية ومعدل التغير)' }
             ]
         }
+    }
+
+    const conceptVideos: Record<string, string> = {
+        '1.5': 'https://www.youtube.com/embed/etBkIWWOBY0'
     }
 
     useEffect(() => {
@@ -439,6 +505,63 @@ export default function Module1Page() {
 
                 {isChapterView && (
                     <>
+
+                        {activeIdea === 'concept' && (
+                            <div style={{
+                                background: '#ffffff',
+                                border: '1px solid #e6dec5',
+                                borderRadius: '16px',
+                                padding: '24px',
+                                marginBottom: '20px'
+                            }}>
+                                <h3 style={{color:'#2C3531'}}>
+                                    💡 Concept
+                                </h3>
+
+                                <p style={{
+                                    color:'#4A5550',
+                                    lineHeight:'1.8'
+                                }}>
+                                    اكتب شرح الكونسبت هنا...
+                                </p>
+
+                                <div style={{
+                                    marginTop:'20px',
+                                    background:'#fff',
+                                    border:'1px solid #e6dec5',
+                                    padding:'20px',
+                                    borderRadius:'16px'
+                                }}>
+                                    <h4 style={{color:'#2C3531'}}>
+                                        📺 فيديو الكونسبت
+                                    </h4>
+
+                                    <div style={{
+                                        position:'relative',
+                                        width:'100%',
+                                        paddingTop:'56.25%',
+                                        background:'#000',
+                                        borderRadius:'12px',
+                                        overflow:'hidden'
+                                    }}>
+                                        <iframe
+                                            src={conceptVideos[activeChapter]}
+                                            title="Concept Video"
+                                            style={{
+                                                position:'absolute',
+                                                top:0,
+                                                left:0,
+                                                width:'100%',
+                                                height:'100%',
+                                                border:'none'
+                                            }}
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* صندوق خطوات الحل (How to Solve) */}
                         <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', marginBottom: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
@@ -450,7 +573,7 @@ export default function Module1Page() {
                                     onClick={() => handleAskAIExample(currentIdeaObj.name)}
                                     style={{ background: '#FEECD0', color: '#8c5521', border: '1px solid #e6dec5', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                                 >
-                                    ✨ اسأل التوتور مثال إضافي
+                                    ✨ اسأل فيكتور مثال إضافي
                                 </button>
                             </div>
 
