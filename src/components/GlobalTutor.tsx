@@ -13,19 +13,20 @@ interface GlobalTutorProps {
 }
 
 export default function GlobalTutor({
-                                        courseId = '204',
-                                        currentModule = 3,
-                                        currentChapter = 'ch-6.1',
+                                        courseId = '101',
+                                        currentModule = 1,
+                                        currentChapter = '1.5',
                                         currentQuestion = '',
                                         initialPrompt = null,
                                         isAiAllowed = true,
                                         mode = 'floating'
                                     }: GlobalTutorProps) {
     const [isChatOpen, setIsChatOpen] = useState(mode === 'inline')
+
     const [messages, setMessages] = useState([
         {
             role: 'ai',
-            text: `أهلاً بك! أنا فيكتور (Vector)، معلمك الذكي لمقرر الرياضيات (Math ${courseId}). أنا معك هنا في الموديول ${currentModule} (${currentChapter}). كيف أقدر أساعدك اليوم؟`
+            text: `أهلاً بك! أنا فيكتور (Vector)، معلمك الذكي لمقرر الرياضيات (Math ${courseId}). نحن الآن في الشابتر (${currentChapter})${currentQuestion ? ` الفكرة: (${currentQuestion})` : ''}. كيف أقدر أساعدك اليوم؟`
         }
     ])
     const [input, setInput] = useState('')
@@ -162,7 +163,7 @@ export default function GlobalTutor({
                 }}
             >
                 <span style={{ fontWeight: 'bold' }}>
-                    🤖 فيكتور - Vector (Math {courseId} - Mod {currentModule})
+                    🤖 فيكتور - Vector (Math {courseId} - Ch {currentChapter})
                 </span>
 
                 {mode === 'floating' && (
@@ -290,7 +291,7 @@ export default function GlobalTutor({
                     onClick={sendMessage}
                     disabled={loading || !isAiAllowed}
                     style={{
-                        background: isAiAllowed ? '#DCA27B' : '#9ca3af',
+                        backgroundColor: isAiAllowed ? '#DCA27B' : '#9ca3af',
                         color: '#fff',
                         border: 'none',
                         padding: '8px 16px',

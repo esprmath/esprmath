@@ -16,14 +16,15 @@ export async function POST(req: Request) {
 
         const openai = new OpenAI({ apiKey })
 
-        const { messages, currentModule, currentChapter, currentQuestion } = await req.json()
+        // تم إضافة courseId هنا لاستخراجه من الطلب
+        const { messages, courseId, currentModule, currentChapter, currentQuestion } = await req.json()
 
         const systemInstruction = `
-أنت معلم مساعد ذكي لمقرر الجبر الخطي (Math 204) في منصة EsprMath.
+أنت معلم مساعد ذكي لمقرر الرياضيات (${courseId ? 'Math ' + courseId : 'المقرر الحالي'}) في منصة EsprMath.
 سياق الطالب الحالي:
-- الموديول: ${currentModule || 3}
+- الموديول: ${currentModule || 1}
 - الشابتر: ${currentChapter || 'غير محدد'}
-- السؤال المعروض أمامه: "${currentQuestion || 'لا يوجد سؤال محدد'}".
+- الفكرة أو السؤال المعروض أمامه: "${currentQuestion || 'لا يوجد سؤال محدد'}".
 
 ⚠️ قواعد صارمة جداً:
 1. كن مباشراً ومختصراً جداً. امنع تماماً الشروحات الطويلة أو "التفلسف" النظري أو سرد مقدمات ترحيبية متكررة.

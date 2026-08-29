@@ -49,17 +49,12 @@ export default function Module1Page() {
         // الأفكار + الشرح + رابط الفيديو + السؤال
         // =================================================
         '1.5': {
-            title: '1.5 مفهوم النهاية والنهايات اللانهائية (Limits & Infinite Limits)',
+            title: '1.5 The Concept of a Limit and Infinite Limits',
             ideas: [
-                // 💡 Idea 1
-                // theory: الشرح النظري هنا
-                // video: رابط المقطع هنا
-                // question: السؤال التدريبي هنا
-                // solution: شرح الحل هنا
-                { id: 'idea-1', name: '1.1: المفهوم الحدسي للنهاية وتقديرها عدديًا وبيانيًا' },
-                { id: 'idea-2', name: '1.2: النهايات أحادية الجانب (One-Sided Limits) وقيم الدالة' },
-                { id: 'idea-3', name: '1.3: النهايات اللانهائية (Infinite Limits)' },
-                { id: 'idea-4', name: '1.4: خطوط التقارب الرأسية (Vertical Asymptotes)' }
+                { id: 'idea-1', name: '1.1: The Intuitive Idea of a Limit and Estimating Limits Numerically' },
+                { id: 'idea-2', name: '1.2: Estimating Limits Graphically' },
+                { id: 'idea-3', name: '1.3: Infinite Limits' },
+                { id: 'idea-4', name: '1.4: Vertical Asymptotes' }
             ]
         },
 
@@ -67,17 +62,12 @@ export default function Module1Page() {
         // 📖 Chapter 1.6
         // =================================================
         '1.6': {
-            title: '1.6 حساب النهايات باستخدام قوانين النهايات والتقنيات الجبرية',
+            title: '1.6 Calculating Limits Using Limit Laws and Algebraic Techniques',
             ideas: [
-                // 💡 Idea 1
-                // theory: الشرح النظري هنا
-                // video: رابط المقطع هنا
-                // question: السؤال التدريبي هنا
-                // solution: شرح الحل هنا
-                { id: 'idea-1', name: '2.1: تطبيق قوانين النهايات الأساسية وقاعدة التعويض المباشر' },
-                { id: 'idea-2', name: '2.2: حساب نهايات الدوال المعرفة بقواعد متعددة (Piecewise Functions)' },
-                { id: 'idea-3', name: '2.3: تقنيات الضرب بالمرافق (Conjugate Technique) لإزالة عدم التعيين' },
-                { id: 'idea-4', name: '2.4: استنتاج نهايات غير مباشرة والتعامل مع الدوال المجهولة' }
+                { id: 'idea-1', name: '2.1: Applying Basic Limit Laws and the Direct Substitution Property' },
+                { id: 'idea-2', name: '2.2: Evaluating Limits of Piecewise Functions' },
+                { id: 'idea-3', name: '2.3: The Conjugate Technique for Indeterminate Forms' },
+                { id: 'idea-4', name: '2.4: Indirect Limit Evaluation and Handling Unknown Functions' }
             ]
         },
 
@@ -87,11 +77,6 @@ export default function Module1Page() {
         '1.8': {
             title: '1.8 الاتصال وخواص الدوال المتصلة (Continuity)',
             ideas: [
-                // 💡 Idea 1
-                // theory: الشرح النظري هنا
-                // video: رابط المقطع هنا
-                // question: السؤال التدريبي هنا
-                // solution: شرح الحل هنا
                 { id: 'idea-1', name: '3.1: شروط الاتصال عند نقطة والتحقق منها' },
                 { id: 'idea-2', name: '3.2: تصنيف أسباب عدم الاتصال (Discontinuity)' },
                 { id: 'idea-3', name: '3.3: خواص الجبر للدوال المتصلة وفترات الاتصال' },
@@ -105,11 +90,6 @@ export default function Module1Page() {
         '3.4': {
             title: '3.4 النهايات عند اللانهاية وخطوط التقارب الأفقية',
             ideas: [
-                // 💡 Idea 1
-                // theory: الشرح النظري هنا
-                // video: رابط المقطع هنا
-                // question: السؤال التدريبي هنا
-                // solution: شرح الحل هنا
                 { id: 'idea-1', name: '4.1: المفهوم الأساسي للنهايات عند اللانهاية للدوال المقلوبة والمثلثية' },
                 { id: 'idea-2', name: '4.2: نهايات الدوال النسبية والجذرية عند اللانهاية وتحديد خطوط التقارب الأفقية' },
                 { id: 'idea-3', name: '4.3: الضرب بالمرافق عند اللانهاية لحالات (∞ - ∞)' },
@@ -123,19 +103,25 @@ export default function Module1Page() {
         '2.1': {
             title: '2.1 المماس ومعدل التغير والسرعة اللحظية',
             ideas: [
-                // 💡 Idea 1
-                // theory: الشرح النظري هنا
-                // video: رابط المقطع هنا
-                // question: السؤال التدريبي هنا
-                // solution: شرح الحل هنا
                 { id: 'idea-1', name: '5.1: ميل خط المماس ومعادلته باستخدام تعريف النهاية' },
                 { id: 'idea-2', name: '5.2: التطبيقات الفيزيائية (السرعة اللحظية ومعدل التغير)' }
             ]
         }
     }
 
-    const conceptVideos: Record<string, string> = {
-        '1.5': 'https://www.youtube.com/embed/etBkIWWOBY0'
+    const conceptVideos: Record<string, Record<string, string>> = {
+        '1.5': {
+            'idea-1': 'https://www.youtube.com/embed/djHhCU1yENQ',
+            'idea-2': 'https://www.youtube.com/embed/J9y13Rn9R5k',
+            'idea-3': 'https://www.youtube.com/embed/T2_YaOw-g4c',
+            'idea-4': 'https://www.youtube.com/embed/o7rjD4v5oN8'
+        },
+        '1.6': {
+            'idea-1': 'https://www.youtube.com/embed/h4RXkKCZcpc',
+            'idea-2': 'https://www.youtube.com/embed/27yDQF3NEYo',
+            'idea-3': 'https://www.youtube.com/embed/s-7uz1x90ZY',
+            'idea-4': 'https://www.youtube.com/embed/Cjyf0zaevuI'
+        }
     }
 
     useEffect(() => {
@@ -216,44 +202,84 @@ export default function Module1Page() {
         explanation: string
     }> = {
         '1.5-idea-1': {
-            question: 'ما الطريقة الأساسية لفهم قيمة نهاية الدالة عند اقتراب x من c؟',
+            question: 'ما الطريقة الأساسية لفهم قيمة نهاية الدالة عند اقتراب x من c عددياً؟',
             options: [
-                'A) مراقبة قيم الدالة عددياً وبيانياً عندما يقترب x من c',
+                'A) مراقبة قيم الدالة في جدول قيم عندما يقترب x من c من اليمين واليسار',
                 'B) استخدام قيمة الدالة عند c فقط دون النظر لما حولها',
                 'C) افتراض أن النهاية دائماً تساوي صفراً'
             ],
-            correct: 'A) مراقبة قيم الدالة عددياً وبيانياً عندما يقترب x من c',
-            explanation: 'النهاية تصف سلوك الدالة عندما تقترب x من قيمة معينة، ويمكن تقديرها عددياً أو بيانياً.'
+            correct: 'A) مراقبة قيم الدالة في جدول قيم عندما يقترب x من c من اليمين واليسار',
+            explanation: 'التقدير العددي للنهاية يتم عن طريق اختيار قيم لـ x تقترب تدريجياً من c وملاحظة سلوك قيم الدالة f(x).'
         },
         '1.5-idea-2': {
-            question: 'متى توجد النهاية الثنائية للدالة عند نقطة؟',
+            question: 'كيف يتم تقدير النهاية بيانياً من رسم المنحنى؟',
             options: [
-                'A) تتساوى النهاية من اليمين مع النهاية من اليسار (L = R)',
-                'B) تكون النهاية من اليمين موجودة فقط',
-                'C) تكون قيمة الدالة عند النقطة صفراً'
+                'A) بالنظر إلى القيمة التي تقترب منها y عندما تتحرك x نحو c على المنحنى من الطرفين',
+                'B) بمعرفة أعلى نقطة في الرسم البياني فقط (القيمة العظمى)',
+                'C) بحساب ميل الخط المستقيم الواصل بين طرفي الرسم'
             ],
-            correct: 'A) تتساوى النهاية من اليمين مع النهاية من اليسار (L = R)',
-            explanation: 'توجد النهاية الثنائية عندما تكون نهايتا اليمين واليسار موجودتين ومتساويتين.'
+            correct: 'A) بالنظر إلى القيمة التي تقترب منها y عندما تتحرك x نحو c على المنحنى من الطرفين',
+            explanation: 'التقدير البياني يعتمد على تتبع الرسم لمعرفة قيمة المخرج y عندما يقترب المدخل x من القيمة المطلوبة.'
+        },
+        '1.5-idea-3': {
+            question: 'ماذا تعني النهاية اللانهائية (Infinite Limit) لدالة عندما تقترب x من c؟',
+            options: [
+                'A) أن قيم الدالة تزداد أو تتناقص بلا حدود (تتوجه نحو موجب أو سالب مالانهاية)',
+                'B) أن النهاية تساوي عدداً ثابتاً ومحدوداً تماماً',
+                'C) أن الدالة غير معرفة عند أي نقطة في المجال'
+            ],
+            correct: 'A) أن قيم الدالة تزداد أو تتناقص بلا حدود (تتوجه نحو موجب أو سالب مالانهاية)',
+            explanation: 'النهاية اللانهائية تعبر عن حالة ارتفاع أو انخفاض قيم الدالة بشكل غير محدود عندما تقترب x من c.'
+        },
+        '1.5-idea-4': {
+            question: 'متى يقال أن للمنحنى خط تقارب رأسي (Vertical Asymptote) عند x = c؟',
+            options: [
+                'A) إذا كانت النهاية من اليمين أو اليسار عند c تساوي ∞ أو -∞',
+                'B) إذا كانت الدالة متصلة تماماً عند c وقيمتها صفراً',
+                'C) إذا كان ميل المماس عند c يساوي واحداً صحيحاً'
+            ],
+            correct: 'A) إذا كانت النهاية من اليمين أو اليسار عند c تساوي ∞ أو -∞',
+            explanation: 'خط التقارب الراسي هو خط رأسي x = c يتقارب معه منحنى الدالة بلا إنهاء عندما تقترب x من c.'
         },
         '1.6-idea-1': {
-            question: 'ما الخطوة المناسبة أولاً عند حساب نهاية يمكن التعويض فيها مباشرة؟',
+            question: 'ما الخطوة الأولى المعتمدة لحساب النهاية باستخدام قوانين النهايات والتعويض المباشر؟',
             options: [
-                'A) التعويض المباشر وتطبيق خصائص الجمع والضرب',
-                'B) الضرب بالمرافق دائماً',
-                'C) اشتقاق الدالة قبل حساب النهاية'
+                'A) محاولة التعويض المباشر بالقيمة c في الدالة إن كانت معرفة',
+                'B) الاشتقاق الفوري للدالة بغض النظر عن شكلها',
+                'C) القسمة المطولة على x في جميع الحالات'
             ],
-            correct: 'A) التعويض المباشر وتطبيق خصائص الجمع والضرب',
-            explanation: 'إذا لم ينتج عن التعويض المباشر حالة غير معينة، نستخدم قوانين النهايات والعمليات الجبرية مباشرة.'
+            correct: 'A) محاولة التعويض المباشر بالقيمة c في الدالة إن كانت معرفة',
+            explanation: 'التعويض المباشر هو خطوة البداية الأساسية، فإذا نتج عدد حقيقي، فهذه هي قيمة النهاية مباشرة.'
         },
         '1.6-idea-2': {
-            question: 'إذا أعطى التعويض المباشر الحالة 0/0، فما الأسلوب المناسب؟',
+            question: 'عند حساب نهايات الدوال المعرفة بقواعد متعددة (Piecewise Functions) عند نقطة التشعب، ماذا نشترط؟',
             options: [
-                'A) التحليل والتبسيط أو الضرب بالمرافق لإزالة العامل الصفري',
-                'B) اعتبار النهاية غير موجودة مباشرة',
-                'C) استبدال x بالمالانهاية'
+                'A) أن تتساوى النهاية من اليمين مع النهاية من اليسار',
+                'B) أن نستخدم القاعدة الأولى فقط دائماً',
+                'C) أن تكون الدالة قابلة للاشتقاق بلا توقف'
             ],
-            correct: 'A) التحليل والتبسيط أو الضرب بالمرافق لإزالة العامل الصفري',
-            explanation: 'الحالة 0/0 غير معينة، وغالباً تُزال بالتحليل والاختصار أو بالمرافق في مسائل الجذور.'
+            correct: 'A) أن تتساوى النهاية من اليمين مع النهاية من اليسار',
+            explanation: 'عند نقاط التحول، يجب حساب النهاية اليمنى واليسرى، ولا توجد النهاية إلا بتساويهما.'
+        },
+        '1.6-idea-3': {
+            question: 'متى نلجأ لاستخدام تقنية الضرب بالمرافق (Conjugate Technique) في النهايات؟',
+            options: [
+                'A) لإزالة حالة عدم التعيين (0/0) الناتجة عن وجود جذور تربيعية',
+                'B) للتخلص من الأسس السالبة في الدوال الاسية',
+                'C) لحساب مشتقات الدوال المثلثية العكسية'
+            ],
+            correct: 'A) لإزالة حالة عدم التعيين (0/0) الناتجة عن وجود جذور تربيعية',
+            explanation: 'الضرب بالمرافق يساهم في تبسيط البسط أو المقام الذي يحتوي على جذور عبر إزالة الجذر من أحد الطرفين.'
+        },
+        '1.6-idea-4': {
+            question: 'كيف نتعامل مع استنتاج نهايات الدوال المجهولة أو غير المحددة بقاعدة صريحة؟',
+            options: [
+                'A) باستخدام نظريات الحصر (Squeeze Theorem) أو العلاقات الجبرية المعطاة',
+                'B) بفرض أن قيمتها تساوي صفراً دائماً',
+                'C) بإهمال الدالة مجهولة القاعدة وحساب بقية الحدود'
+            ],
+            correct: 'A) باستخدام نظريات الحصر (Squeeze Theorem) أو العلاقات الجبرية المعطاة',
+            explanation: 'في حال غياب القاعدة الصريحة، نعتمد على الخواص والمعادلات المرطبة والعلاقات المعطاة بالسؤال.'
         },
         '2.1-idea-1': {
             question: 'كيف نحصل على ميل المماس أو معدل التغير اللحظي باستخدام النهاية؟',
@@ -347,6 +373,8 @@ export default function Module1Page() {
 
     const currentChapterInfo = chaptersData[activeChapter]
     const currentIdeaObj = currentChapterInfo.ideas.find(i => i.id === activeIdea) || currentChapterInfo.ideas[0]
+
+    const activeEmbedUrl = conceptVideos[activeChapter]?.[activeIdea] || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
 
     return (
         <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '80px' }}>
@@ -505,63 +533,6 @@ export default function Module1Page() {
 
                 {isChapterView && (
                     <>
-
-                        {activeIdea === 'concept' && (
-                            <div style={{
-                                background: '#ffffff',
-                                border: '1px solid #e6dec5',
-                                borderRadius: '16px',
-                                padding: '24px',
-                                marginBottom: '20px'
-                            }}>
-                                <h3 style={{color:'#2C3531'}}>
-                                    💡 Concept
-                                </h3>
-
-                                <p style={{
-                                    color:'#4A5550',
-                                    lineHeight:'1.8'
-                                }}>
-                                    اكتب شرح الكونسبت هنا...
-                                </p>
-
-                                <div style={{
-                                    marginTop:'20px',
-                                    background:'#fff',
-                                    border:'1px solid #e6dec5',
-                                    padding:'20px',
-                                    borderRadius:'16px'
-                                }}>
-                                    <h4 style={{color:'#2C3531'}}>
-                                        📺 فيديو الكونسبت
-                                    </h4>
-
-                                    <div style={{
-                                        position:'relative',
-                                        width:'100%',
-                                        paddingTop:'56.25%',
-                                        background:'#000',
-                                        borderRadius:'12px',
-                                        overflow:'hidden'
-                                    }}>
-                                        <iframe
-                                            src={conceptVideos[activeChapter]}
-                                            title="Concept Video"
-                                            style={{
-                                                position:'absolute',
-                                                top:0,
-                                                left:0,
-                                                width:'100%',
-                                                height:'100%',
-                                                border:'none'
-                                            }}
-                                            allowFullScreen
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {/* صندوق خطوات الحل (How to Solve) */}
                         <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', marginBottom: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
@@ -600,7 +571,7 @@ export default function Module1Page() {
                             <h4 style={{ margin: '0 0 12px 0', color: '#2C3531', fontSize: '1rem' }}>📺 فيديو الشرح التوضيحي</h4>
                             <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: '12px', overflow: 'hidden' }}>
                                 <iframe
-                                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                                    src={activeEmbedUrl}
                                     title="Lesson Explanation"
                                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -624,7 +595,7 @@ export default function Module1Page() {
                                             name="opts"
                                             checked={selected === opt}
                                             onChange={() => setSelected(opt)}
-                                            style={{ marginRight: '8px' }}
+                                            style={{ marginLeft: '10px' }}
                                         />
                                         {opt}
                                     </label>
@@ -632,47 +603,50 @@ export default function Module1Page() {
                             </div>
 
                             {errorMsg && (
-                                <p style={{ color: '#991b1b', fontWeight: 'bold', marginBottom: '12px', fontSize: '13px' }}>{errorMsg}</p>
+                                <div style={{ color: '#991b1b', background: '#fee2e2', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px', fontWeight: 'bold' }}>
+                                    {errorMsg}
+                                </div>
                             )}
 
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                <button type="button" onClick={handleQuizVerify} style={{ background: '#DCA27B', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
-                                    تحقق من الإجابة واحفظ التقدم
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <button
+                                    type="button"
+                                    onClick={handleQuizVerify}
+                                    style={{ background: '#DCA27B', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+                                >
+                                    تحقق من الإجابة ✅
                                 </button>
 
                                 {hasAttempted && (
                                     <button
                                         type="button"
                                         onClick={() => setShowSolutionBox(!showSolutionBox)}
-                                        style={{ background: '#FEECD0', color: '#8c5521', border: '1px solid #e6dec5', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                                        style={{ background: '#FEECD0', color: '#8c5521', border: '1px solid #e6dec5', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
                                     >
-                                        {showSolutionBox ? 'إخفاء الحل المفصل 🔼' : '🔍 إظهار الحل المفصل'}
+                                        {showSolutionBox ? 'إخفاء الحل 💡' : 'عرض طريقة الحل 💡'}
                                     </button>
                                 )}
                             </div>
 
-                            {showSolutionBox && (
-                                <div style={{ marginTop: '20px', background: '#FFF9E2', border: '1px solid #e6dec5', padding: '16px', borderRadius: '12px', color: '#2C3531', lineHeight: '1.7' }}>
-                                    <h5 style={{ margin: '0 0 10px 0', color: '#8c5521', fontSize: '1rem' }}>💡 الحل المفصل والشرح:</h5>
-                                    <p style={{ margin: 0, fontSize: '0.95rem' }}>{currentQuiz?.explanation}</p>
+                            {showSolutionBox && currentQuiz && (
+                                <div style={{ marginTop: '16px', padding: '16px', background: '#FFF9E2', borderRadius: '10px', border: '1px solid #e6dec5' }}>
+                                    <h5 style={{ margin: '0 0 6px 0', color: '#2C3531', fontSize: '14px' }}>📌 الشرح التوضيحي للحل:</h5>
+                                    <p style={{ margin: 0, color: '#4A5550', fontSize: '13px', lineHeight: '1.6' }}>
+                                        {currentQuiz.explanation}
+                                    </p>
                                 </div>
                             )}
                         </div>
-
                     </>
                 )}
 
-                {isChapterView && (
-                    <GlobalTutor
-                        currentModule={1}
-                        currentChapter={activeChapter as any}
-                        currentQuestion={currentIdeaObj.name}
-                        initialPrompt={tutorInitialPrompt}
-                        isAiAllowed={isAiAllowed}
-                    />
-                )}
-
             </div>
+
+            {isAiAllowed && userId && (
+                <GlobalTutor
+                    initialPrompt={tutorInitialPrompt}
+                />
+            )}
         </div>
     )
 }
