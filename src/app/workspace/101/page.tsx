@@ -1,9 +1,12 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import GuideTip from '@/components/GuideTip'
+
 export default function WorkspacePage() {
     const router = useRouter()
     const [progressMap, setProgressMap] = useState<{ [key: number]: number }>({
@@ -15,6 +18,7 @@ export default function WorkspacePage() {
     const [showAlertModal, setShowAlertModal] = useState(false)
     const [alertMessage, setAlertMessage] = useState('')
     const [quizAccess, setQuizAccess] = useState<Record<string, boolean>>({})
+
 // التحقق من الجلسة + حالة الاعتماد + حالة فتح الاختبارات من Supabase
     useEffect(() => {
         async function checkLocalSession() {
@@ -70,6 +74,7 @@ export default function WorkspacePage() {
             localStorage.setItem('last_studied_course', '101')
         }
     }, [])
+
     const modulesData = [
         {
             id: 1,
@@ -99,7 +104,7 @@ export default function WorkspacePage() {
         {
             id: 3,
             title: 'Module 3 - Advanced Functions & Applications',
-            desc: 'الدوال الأسية واللوغاريتمية، الدوال المثلثية العكسية، النمو والاضمحلال، والدوال الزائدية.',
+            desc: 'الدوال الأسية واللوغاريتمية، الدوال المثلثية العكسية النمو والاضمحلال، والدوال الزائدية.',
             chapters: [
                 { name: 'Ch 6.2', ideaCount: 2 },
                 { name: 'Ch 6.4', ideaCount: 1 },
@@ -120,6 +125,7 @@ export default function WorkspacePage() {
             ]
         },
     ]
+
     const courseExams = [
         { id: 'quiz-1', label: 'Q1', title: 'Quiz 1', path: '/workspace/101/exam-leaks/quiz-1' },
         { id: 'quiz-2', label: 'Q2', title: 'Quiz 2', path: '/workspace/101/exam-leaks/quiz-2' },
@@ -127,6 +133,7 @@ export default function WorkspacePage() {
         { id: 'quiz-3', label: 'Q3', title: 'Quiz 3', path: '/workspace/101/exam-leaks/quiz-3' },
         { id: 'quiz-4', label: 'Q4', title: 'Quiz 4', path: '/workspace/101/exam-leaks/quiz-4' },
     ]
+
     const handleExamClick = (exam: typeof courseExams[number]) => {
         if (!isAuthorized) {
             setAlertMessage(`🔒 قسم "${exam.title}" يتطلب اعتماد الكورس أولاً.`)
@@ -141,6 +148,7 @@ export default function WorkspacePage() {
         }
         router.push(exam.path)
     }
+
 // دالة محكمة لمنع الدخول وإيقاف الـ propagation والـ default behavior نهائياً
     const handleModuleClick = (e: React.MouseEvent, modId: number) => {
         if (modId === 1) return // الموديول الأول متاح دائماً
@@ -152,14 +160,7 @@ export default function WorkspacePage() {
             return false
         }
     }
-// دالة خاصة للتعامل مع النقر على أقسام بنك الأسئلة، التسريبات، أو الفاينل إذا كانت تتطلب اعتماداً
-    const handleExtraFeatureClick = (e: React.MouseEvent, featureName: string) => {
-        if (!isAuthorized) {
-            e.preventDefault()
-            setAlertMessage(`🔒 قسم "${featureName}" يتطلب اعتماد الكورس أولاً. يرجى طلب الانضمام من الصفحة الرئيسية.`)
-            setShowAlertModal(true)
-        }
-    }
+
     if (loading) {
         return (
             <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', color: '#4A5550', fontSize: '1rem', fontWeight: 'bold' }}>
@@ -167,9 +168,17 @@ export default function WorkspacePage() {
             </div>
         )
     }
+
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '60px' }}>
+        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '60px', position: 'relative' }}>
             <Navbar isLoggedIn={true} />
+
+            {/* رسالة التوجيه الترحيبية داخل صفحة الكورس */}
+            <GuideTip
+                id="workspace-intro-101"
+                text="أهلاً بك في مساحة كورس Calculus 101! 🚀 يمكنك تصفح الموديولات، الاستفادة من التجربة المجانية للموديول الأول، ومتابعة اختباراتك بكل سهولة."
+            />
+
             <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
                 <div style={{ marginBottom: '24px', textAlign: 'center' }}>
                     <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2C3531', marginBottom: '8px' }}>
@@ -182,6 +191,7 @@ export default function WorkspacePage() {
                         {isAuthorized ? '✅ حسابك معتمد، فالك التوفيق' : '🎁 المعاينة المجانية مفعلة: الموديول الأول متاح، وباقي الموديولات تتطلب موافقة المشرف.'}
                     </div>
                 </div>
+
                 {/* الاختبارات والمراجعات - دوائر فقط */}
                 <div style={{
                     marginBottom: '32px',
@@ -358,10 +368,8 @@ export default function WorkspacePage() {
                                                             whiteSpace: 'nowrap'
                                                         }}
                                                     >
-                                                            ✨ {ch.ideaCount !== null
-                                                        ? `${ch.ideaCount} أفكار رئيسية`
-                                                        : 'العدد لاحقاً'}
-                                                        </span>
+                                                        ✨ {ch.ideaCount !== null ? `${ch.ideaCount} أفكار رئيسية` : 'العدد لاحقاً'}
+                                                    </span>
                                                 )}
                                             </div>
                                         ))}
@@ -390,12 +398,10 @@ export default function WorkspacePage() {
                     })}
                 </div>
 
-                {/* 🏆 قسم الفاينل - يبقى آخر الصفحة ويتحكم به Supabase */}
+                {/* 🏆 قسم الفاينل */}
                 <div style={{ marginTop: '32px' }}>
                     {(() => {
-                        const isFinalOpen =
-                            isAuthorized &&
-                            quizAccess['final-review'] === true
+                        const isFinalOpen = isAuthorized && quizAccess['final-review'] === true
                         const handleFinalClick = () => {
                             if (!isAuthorized) {
                                 setAlertMessage('🔒 مراجعة الفاينل تتطلب اعتماد الكورس أولاً.')
@@ -417,9 +423,7 @@ export default function WorkspacePage() {
                                     border: isFinalOpen ? '2px solid #DCA27B' : '2px solid #cbd5e1',
                                     borderRadius: '16px',
                                     padding: '24px',
-                                    boxShadow: isFinalOpen
-                                        ? '0 4px 12px rgba(220, 162, 123, 0.15)'
-                                        : '0 2px 6px rgba(0, 0, 0, 0.03)',
+                                    boxShadow: isFinalOpen ? '0 4px 12px rgba(220, 162, 123, 0.15)' : '0 2px 6px rgba(0, 0, 0, 0.03)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
@@ -431,14 +435,7 @@ export default function WorkspacePage() {
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: '280px' }}>
-                                    <div
-                                        style={{
-                                            fontSize: '36px',
-                                            background: isFinalOpen ? '#FEECD0' : '#f1f5f9',
-                                            padding: '14px',
-                                            borderRadius: '14px'
-                                        }}
-                                    >
+                                    <div style={{ fontSize: '36px', background: isFinalOpen ? '#FEECD0' : '#f1f5f9', padding: '14px', borderRadius: '14px' }}>
                                         🏆
                                     </div>
                                     <div>
@@ -446,16 +443,7 @@ export default function WorkspacePage() {
                                             <h3 style={{ margin: 0, fontSize: '18px', color: '#2C3531', fontWeight: 'bold' }}>
                                                 مراجعة الاختبار النهائي (Final Review)
                                             </h3>
-                                            <span
-                                                style={{
-                                                    background: isFinalOpen ? '#dcfce7' : '#fee2e2',
-                                                    color: isFinalOpen ? '#166534' : '#991b1b',
-                                                    padding: '2px 8px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '11px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
+                                            <span style={{ background: isFinalOpen ? '#dcfce7' : '#fee2e2', color: isFinalOpen ? '#166534' : '#991b1b', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>
                                                 {isFinalOpen ? '✅ متاح' : '🔒 مقفل'}
                                             </span>
                                         </div>
@@ -464,52 +452,39 @@ export default function WorkspacePage() {
                                         </p>
                                     </div>
                                 </div>
-                                <span
-                                    style={{
-                                        backgroundColor: isFinalOpen ? '#DCA27B' : '#94a3b8',
-                                        color: '#ffffff',
-                                        padding: '10px 20px',
-                                        borderRadius: '10px',
-                                        fontWeight: 'bold',
-                                        fontSize: '14px'
-                                    }}
-                                >
+                                <span style={{ backgroundColor: isFinalOpen ? '#DCA27B' : '#94a3b8', color: '#ffffff', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px' }}>
                                     {isFinalOpen ? 'ابدأ المراجعة ➔' : 'مقفل 🔒'}
                                 </span>
                             </div>
                         )
                     })()}
                 </div>
-            </div>
 
-            {/* بنك الأسئلة بجانب الفاينل */}
-            <div style={{
-                background: '#FEECD0',
-                border: '1px solid #e6dec5',
-                borderRadius: '16px',
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px',
-                cursor: 'pointer'
-            }}
-                 onClick={() => router.push('/workspace/101/quesbank/data')}
-            >
+                {/* بنك الأسئلة الشامل */}
                 <div style={{
-                    fontSize:'32px',
-                    background:'#ffffff',
-                    padding:'12px',
-                    borderRadius:'12px'
-                }}>
-                    ❓
-                </div>
-                <div>
-                    <h3 style={{margin:0, color:'#2C3531'}}>
-                        بنك الأسئلة الشامل
-                    </h3>
-                    <p style={{margin:'6px 0 0', color:'#4A5550', fontSize:'13px'}}>
-                        تدرب على أسئلة متنوعة لجميع الشباتر.
-                    </p>
+                    marginTop: '20px',
+                    background: '#FEECD0',
+                    border: '1px solid #e6dec5',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    cursor: 'pointer'
+                }}
+                     onClick={() => router.push('/workspace/101/quesbank/data')}
+                >
+                    <div style={{ fontSize:'32px', background:'#ffffff', padding:'12px', borderRadius:'12px' }}>
+                        ❓
+                    </div>
+                    <div>
+                        <h3 style={{margin:0, color:'#2C3531'}}>
+                            بنك الأسئلة الشامل
+                        </h3>
+                        <p style={{margin:'6px 0 0', color:'#4A5550', fontSize:'13px'}}>
+                            تدرب على أسئلة متنوعة لجميع الشباتر.
+                        </p>
+                    </div>
                 </div>
             </div>
 

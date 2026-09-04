@@ -1,112 +1,85 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 interface GuideTipProps {
     id: string
     text: string
-    position?: 'top' | 'bottom' | 'left' | 'right'
+    position?: string
 }
 
-export default function GuideTip({
-                                     id,
-                                     text,
-                                     position = 'right'
-                                 }: GuideTipProps) {
-
+export default function GuideTip({ id, text }: GuideTipProps) {
     const [show, setShow] = useState(false)
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        setMounted(true)
         const seen = localStorage.getItem(`esprmath_guide_${id}`)
 
         if (!seen) {
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 setShow(true)
-            }, 800)
+            }, 600)
+            return () => clearTimeout(timer)
         }
     }, [id])
 
-
     const closeTip = () => {
-        localStorage.setItem(
-            `esprmath_guide_${id}`,
-            'true'
-        )
-
+        localStorage.setItem(`esprmath_guide_${id}`, 'true')
         setShow(false)
     }
 
+    if (!show || !mounted) return null
 
-    if (!show) return null
-
-
-    const positions = {
-        right: {
-            left: '105%',
-            top: '50%',
-            transform: 'translateY(-50%)'
-        },
-        left: {
-            right: '105%',
-            top: '50%',
-            transform: 'translateY(-50%)'
-        },
-        top: {
-            bottom: '105%',
-            left: '50%',
-            transform: 'translateX(-50%)'
-        },
-        bottom: {
-            top: '105%',
-            left: '50%',
-            transform: 'translateX(-50%)'
-        }
-    }
-
-
-    return (
+    // نستخدم createPortal لضمان ظهور الرسالة مباشرة في أعلى الهيكل العام وخارج أي حاويات قد تحجبها
+    return createPortal(
         <div
             style={{
-                position: 'absolute',
-                ...positions[position],
-                width: '240px',
-                zIndex: 1000
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 999999,
+                margin: 0,
+                padding: '20px',
+                boxSizing: 'border-box'
             }}
         >
-
             <div
                 style={{
                     background: '#FFF9E2',
-                    border: '1px solid #DCA27B',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                    border: '2px solid #DCA27B',
+                    borderRadius: '20px',
+                    padding: '32px 28px',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                     color: '#2C3531',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    width: '100%',
+                    maxWidth: '450px',
+                    fontFamily: 'sans-serif'
                 }}
             >
-
-                <div
-                    style={{
-                        fontSize: '22px',
-                        marginBottom: '8px'
-                    }}
-                >
+                <div style={{ fontSize: '36px', marginBottom: '14px' }}>
                     👋
                 </div>
-
 
                 <p
                     style={{
                         whiteSpace: 'pre-line',
-                        fontSize: '14px',
-                        lineHeight: '1.7',
-                        marginBottom: '12px'
+                        fontSize: '16px',
+                        lineHeight: '1.8',
+                        marginBottom: '24px',
+                        fontWeight: '600'
                     }}
                 >
                     {text}
                 </p>
-
 
                 <button
                     onClick={closeTip}
@@ -114,40 +87,19 @@ export default function GuideTip({
                         background: '#3A4D39',
                         color: '#fff',
                         border: 'none',
-                        padding: '8px 20px',
-                        borderRadius: '8px',
+                        padding: '12px 30px',
+                        borderRadius: '10px',
                         cursor: 'pointer',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        width: '100%',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                     }}
                 >
                     تمام ✓
                 </button>
-
             </div>
-
-
-            {/* السهم */}
-            <div
-                style={{
-                    position: 'absolute',
-                    fontSize: '24px',
-                    color: '#DCA27B',
-                    [position === 'right'
-                        ? 'left'
-                        : position === 'left'
-                            ? 'right'
-                            : 'left']: '50%',
-                    [position === 'top'
-                        ? 'bottom'
-                        : position === 'bottom'
-                            ? 'top'
-                            : 'auto']: '-25px'
-                }}
-            >
-                ➜
-            </div>
-
-
-        </div>
+        </div>,
+        document.body
     )
 }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import GuideTip from '@/components/GuideTip'
 
 // تعريف هيكل الكورس القادم من Supabase
 interface Course {
@@ -461,14 +462,23 @@ export default function HomePage() {
       <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
         <Navbar isLoggedIn={isLoggedIn} />
 
-        <header className="hero-container" style={{ textAlign: 'center', padding: '40px 20px' }}>
+        <header className="hero-container" style={{ textAlign: 'center', padding: '40px 20px', position: 'relative' }}>
+          {/* رسالة التوجيه الترحيبية لتوضيح المنصة بشكل عام وبسيط */}
+          <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+            <GuideTip
+                id="home-welcome-general"
+                text="أهلاً بك في منصة EsprMath! 🚀 منصتك الذكية لتبسيط وتسهيل مقررات الرياضيات الجامعية بخطوات منظمة وواضحة."
+                position="bottom"
+            />
+          </div>
+
           {isLoggedIn && (
-              <h2 style={{ fontSize: '1.25rem', color: '#DCA27B', fontWeight: 'bold', marginBottom: '15px' }}>
+              <h2 style={{ fontSize: '1.25rem', color: '#DCA27B', fontWeight: 'bold', marginBottom: '15px', marginTop: '20px' }}>
                 مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px' }}>🤖 ميزة الـ AI مفعلة</span>}
               </h2>
           )}
 
-          <h1 className="hero-title" style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#2C3531', marginBottom: '10px' }}>
+          <h1 className="hero-title" style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#2C3531', marginBottom: '10px', marginTop: isLoggedIn ? '0' : '20px' }}>
             {isLoggedIn ? 'رحلتك للـ A+ 🚀' : 'تبي الـ A+ ؟'}
           </h1>
           <p className="hero-subtitle" style={{ fontSize: '1.1rem', color: '#4A5550' }}>

@@ -5,9 +5,11 @@ import { useState, useRef, useEffect } from 'react'
 interface GlobalTutorProps {
     courseId?: string | number
     currentModule?: number
+    userId?: string | null;
     currentChapter?: string
     currentQuestion?: string
     initialPrompt?: string | null
+    onPromptConsumed?: () => void;
     isAiAllowed?: boolean
     mode?: 'floating' | 'inline'
 }
