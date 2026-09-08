@@ -19,7 +19,7 @@ export default function WorkspacePage() {
     const [alertMessage, setAlertMessage] = useState('')
     const [quizAccess, setQuizAccess] = useState<Record<string, boolean>>({})
 
-// التحقق من الجلسة + حالة الاعتماد + حالة فتح الاختبارات من Supabase
+    // التحقق من الجلسة + حالة الاعتماد + حالة فتح الاختبارات من Supabase
     useEffect(() => {
         async function checkLocalSession() {
             setLoading(true)
@@ -34,7 +34,7 @@ export default function WorkspacePage() {
             const cachedStatus = localStorage.getItem(`course_approved_${userId}_101`)
             const approved = cachedStatus === 'true'
             setIsAuthorized(approved)
-// لا نجلب الاختبارات إلا للطالب المعتمد
+            // لا نجلب الاختبارات إلا للطالب المعتمد
             if (approved) {
                 const { data, error } = await supabase
                     .from('quiz_settings')
@@ -86,7 +86,8 @@ export default function WorkspacePage() {
                 { name: 'Ch 2.1', ideaCount: 2 },
                 { name: 'Ch 1.8', ideaCount: 2 },
                 { name: 'Ch 3.4', ideaCount: 2 },
-            ]
+            ],
+            isReady: true
         },
         {
             id: 2,
@@ -98,8 +99,8 @@ export default function WorkspacePage() {
                 { name: 'Ch 2.5', ideaCount: 1 },
                 { name: 'Ch 2.6', ideaCount: 1 },
                 { name: 'Ch 2.7', ideaCount: 1 },
-
-            ]
+            ],
+            isReady: false
         },
         {
             id: 3,
@@ -112,7 +113,8 @@ export default function WorkspacePage() {
                 { name: 'Ch 6.5', ideaCount: 1 },
                 { name: 'Ch 6.7', ideaCount: 1 },
                 { name: 'Ch 2.9', ideaCount: 1 },
-            ]
+            ],
+            isReady: false
         },
         {
             id: 4,
@@ -122,7 +124,8 @@ export default function WorkspacePage() {
                 { name: 'Ch 6.8', ideaCount: 2 },
                 { name: 'Ch 3.1', ideaCount: 2 },
                 { name: 'Ch 3.8', ideaCount: 1 },
-            ]
+            ],
+            isReady: false
         },
     ]
 
@@ -149,10 +152,16 @@ export default function WorkspacePage() {
         router.push(exam.path)
     }
 
-// دالة محكمة لمنع الدخول وإيقاف الـ propagation والـ default behavior نهائياً
-    const handleModuleClick = (e: React.MouseEvent, modId: number) => {
-        if (modId === 1) return // الموديول الأول متاح دائماً
-        if (!isAuthorized) {
+    // دالة محكمة لمنع الدخول وإيقاف الـ propagation والـ default behavior للموديولات المغلقة
+    const handleModuleClick = (e: React.MouseEvent, mod: typeof modulesData[number]) => {
+        if (!mod.isReady) {
+            e.preventDefault()
+            e.stopPropagation()
+            setAlertMessage('🚧 هذا الموديول قيد التجهيز وقريباً سيكون متاحاً لك!')
+            setShowAlertModal(true)
+            return false
+        }
+        if (mod.id !== 1 && !isAuthorized) {
             e.preventDefault()
             e.stopPropagation()
             setAlertMessage('🔒 هذا الموديول مقفل! الموديول الأول فقط متاح للتجربة المجانية. لفتح كامل الموديولات، يرجى طلب انضمام للكورس من الصفحة الرئيسية بانتظار موافقة المشرف.')
@@ -263,12 +272,12 @@ export default function WorkspacePage() {
                     {modulesData.map((mod) => {
                         const currentProgress = progressMap[mod.id] || 0
                         const isExpanded = expandedModuleId === mod.id
-                        const isLocked = mod.id !== 1 && !isAuthorized
+                        const isLocked = !mod.isReady || (mod.id !== 1 && !isAuthorized)
                         return (
                             <div
                                 key={mod.id}
                                 style={{
-                                    background: isLocked ? '#f5f2e6' : '#ffffff',
+                                    background: isLocked && !mod.isReady ? '#f5f2e6' : '#ffffff',
                                     border: isExpanded && !isLocked ? '2px solid #DCA27B' : '1px solid #e6dec5',
                                     borderRadius: '16px',
                                     padding: '20px 24px',
@@ -279,12 +288,15 @@ export default function WorkspacePage() {
                                     alignItems: 'flex-start',
                                     flexWrap: 'wrap',
                                     gap: '16px',
-                                    cursor: isLocked ? 'not-allowed' : 'pointer',
-                                    opacity: isLocked ? 0.8 : 1
+                                    cursor: 'pointer',
+                                    opacity: isLocked && !mod.isReady ? 0.8 : 1
                                 }}
                                 onClick={() => {
-                                    if (!isLocked) {
+                                    if (mod.isReady) {
                                         setExpandedModuleId(isExpanded ? null : mod.id)
+                                    } else {
+                                        setAlertMessage('🚧 هذا الموديول قيد التجهيز وقريباً سيكون متاحاً لك!')
+                                        setShowAlertModal(true)
                                     }
                                 }}
                             >
@@ -307,9 +319,9 @@ export default function WorkspacePage() {
                                                     مجاني 🎁
                                                 </span>
                                             )}
-                                            {isLocked && (
-                                                <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                                    🔒 مقفل
+                                            {!mod.isReady && (
+                                                <span style={{ background: '#FEECD0', color: '#8c5521', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                                    🚧 قريباً / قيد التجهيز
                                                 </span>
                                             )}
                                         </div>
@@ -359,7 +371,7 @@ export default function WorkspacePage() {
                                                     📖 {ch.name}
                                                 </div>
 
-                                                {isExpanded && (
+                                                {isExpanded && mod.isReady && (
                                                     <span
                                                         style={{
                                                             color: '#DCA27B',
@@ -376,22 +388,22 @@ export default function WorkspacePage() {
                                     </div>
                                 </div>
                                 <Link
-                                    href={isLocked ? '#' : `/workspace/101/${mod.id}`}
-                                    onClick={(e) => handleModuleClick(e, mod.id)}
+                                    href={!mod.isReady ? '#' : (mod.id !== 1 && !isAuthorized ? '#' : `/workspace/101/${mod.id}`)}
+                                    onClick={(e) => handleModuleClick(e, mod)}
                                     style={{
                                         textDecoration: 'none',
-                                        backgroundColor: isLocked ? '#94a3b8' : '#DCA27B',
+                                        backgroundColor: !mod.isReady ? '#94a3b8' : '#DCA27B',
                                         color: '#ffffff',
                                         padding: '10px 20px',
                                         borderRadius: '10px',
                                         fontWeight: 'bold',
                                         fontSize: '14px',
-                                        boxShadow: isExpanded && !isLocked ? '0 4px 12px rgba(220, 162, 123, 0.3)' : 'none',
+                                        boxShadow: isExpanded && mod.isReady ? '0 4px 12px rgba(220, 162, 123, 0.3)' : 'none',
                                         alignSelf: 'center',
-                                        cursor: isLocked ? 'not-allowed' : 'pointer'
+                                        cursor: !mod.isReady ? 'not-allowed' : 'pointer'
                                     }}
                                 >
-                                    {isLocked ? 'Locked 🔒' : 'Start ➔'}
+                                    {!mod.isReady ? 'قريباً 🚧' : 'Start ➔'}
                                 </Link>
                             </div>
                         )
@@ -463,36 +475,52 @@ export default function WorkspacePage() {
                 {/* بنك الأسئلة الشامل */}
                 <div style={{
                     marginTop: '20px',
-                    background: '#FEECD0',
+                    background: '#f5f2e6',
                     border: '1px solid #e6dec5',
                     borderRadius: '16px',
                     padding: '20px',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
                     gap: '16px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    opacity: 0.85
                 }}
-                     onClick={() => router.push('/workspace/101/quesbank/data')}
+                     onClick={() => {
+                         setAlertMessage('🚧 بنك الأسئلة الشامل قيد التجهيز وقريباً سيكون متاحاً للتدريب!')
+                         setShowAlertModal(true)
+                     }}
                 >
-                    <div style={{ fontSize:'32px', background:'#ffffff', padding:'12px', borderRadius:'12px' }}>
-                        ❓
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ fontSize:'32px', background:'#ffffff', padding:'12px', borderRadius:'12px' }}>
+                            ❓
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <h3 style={{margin:0, color:'#2C3531'}}>
+                                    بنك الأسئلة الشامل
+                                </h3>
+                                <span style={{ background: '#FEECD0', color: '#8c5521', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                    🚧 قريباً / قيد التجهيز
+                                </span>
+                            </div>
+                            <p style={{margin:'6px 0 0', color:'#4A5550', fontSize:'13px'}}>
+                                تدرب على أسئلة متنوعة لجميع الشباتر.
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 style={{margin:0, color:'#2C3531'}}>
-                            بنك الأسئلة الشامل
-                        </h3>
-                        <p style={{margin:'6px 0 0', color:'#4A5550', fontSize:'13px'}}>
-                            تدرب على أسئلة متنوعة لجميع الشباتر.
-                        </p>
-                    </div>
+                    <span style={{ backgroundColor: '#94a3b8', color: '#ffffff', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px' }}>
+                        قريباً 🔒
+                    </span>
                 </div>
             </div>
 
             {showAlertModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
                     <div style={{ backgroundColor: '#FFF9E2', border: '1px solid #e6dec5', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', textAlign: 'center', fontFamily: 'sans-serif', color: '#2C3531' }}>
-                        <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔒</div>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#2C3531' }}>غير متاح حالياً</h3>
+                        <div style={{ fontSize: '36px', marginBottom: '12px' }}>🚧</div>
+                        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#2C3531' }}>تنبيه</h3>
                         <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#4A5550', lineHeight: '1.5' }}>{alertMessage}</p>
                         <button
                             type="button"

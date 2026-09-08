@@ -21,6 +21,7 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState<string>('')
   const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null) // أضفنا تخزين للإيميل لمعرفة الأدمن
 
   // حالة صلاحية الذكاء الاصطناعي للطالب من جدول profiles
   const [isAiAllowed, setIsAiAllowed] = useState(false)
@@ -35,21 +36,37 @@ export default function HomePage() {
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertMessage, setAlertMessage] = useState('')
 
-  // دالة لجلب الكورسات النشطة من Supabase
-  const fetchCourses = async () => {
+  // 🛑 ضع إيميلك الشخصي هنا الذي تسجل به دخولك كأدمن في المنصة
+  const ADMIN_EMAIL = 'sofe@gmail.com'
+
+  // دالة لجلب الكورسات من Supabase (نستعلم عن الكل ثم نفرزها برمجياً حسب إيميل الأدمن)
+  // دالة لجلب الكورسات (محدثة لتضمن ظهور الكورسات المعطلة للأدمن حصرياً)
+  const fetchCourses = async (currentEmail?: string | null) => {
     const { data, error } = await supabase
         .from('courses')
         .select('*')
-        .eq('is_active', true)
         .order('id')
 
     if (!error && data) {
-      setCourses(data)
+      console.log("All courses fetched from DB:", data); // للتأكد من ظهورها في الـ Console
+
+      // تصفية الكورسات:
+      const visibleCourses = data.filter(course => {
+        // إذا كان إيميلك هو إيميل الأدمن (مع تحويل الحروف الصغيرة لضمان التطابق)
+        if (currentEmail && currentEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          return true // يظهر لك كل الكورسات (النشطة والمعطلة)
+        }
+        return course.is_active === true // الطلاب لا يرون إلا النشط
+      })
+
+      setCourses(visibleCourses)
       const initialStatuses: Record<string, string> = {}
-      data.forEach(course => {
+      visibleCourses.forEach(course => {
         initialStatuses[course.id] = 'none'
       })
       setCourseStatuses(initialStatuses)
+    } else {
+      console.error("Error fetching courses:", error);
     }
   }
 
@@ -93,36 +110,35 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    fetchCourses().then(() => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setIsLoggedIn(!!session)
-        if (session?.user) {
-          setUserId(session.user.id)
-          const fullName = session.user.user_metadata?.full_name
-          setUserName(fullName || '')
-          fetchUserProfile(session.user.id)
-        }
-      })
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const email = session?.user?.email || null
       setIsLoggedIn(!!session)
+      setUserEmail(email)
       if (session?.user) {
         setUserId(session.user.id)
         const fullName = session.user.user_metadata?.full_name
         setUserName(fullName || '')
         fetchUserProfile(session.user.id)
+      }
+      fetchCourses(email)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const email = session?.user?.email || null
+      setIsLoggedIn(!!session)
+      setUserEmail(email)
+      if (session?.user) {
+        setUserId(session.user.id)
+        const fullName = session.user.user_metadata?.full_name
+        setUserName(fullName || '')
+        fetchUserProfile(session.user.id)
+        fetchCourses(email)
       } else {
         setUserId(null)
         setUserName('')
+        setUserEmail(null)
         setIsAiAllowed(false)
-        if (courses.length > 0) {
-          const resetStatuses: Record<string, string> = {}
-          courses.forEach(course => {
-            resetStatuses[course.id] = 'none'
-          })
-          setCourseStatuses(resetStatuses)
-        }
+        fetchCourses(null)
       }
     })
 
@@ -474,7 +490,7 @@ export default function HomePage() {
 
           {isLoggedIn && (
               <h2 style={{ fontSize: '1.25rem', color: '#DCA27B', fontWeight: 'bold', marginBottom: '15px', marginTop: '20px' }}>
-                مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px' }}>🤖 ميزة الـ AI مفعلة</span>}
+                مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px', marginLeft: '5px' }}>🤖 ميزة الـ AI مفعلة</span>} {userEmail === ADMIN_EMAIL && <span style={{ fontSize: '0.8rem', background: '#b91c1c', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>وضع الأدمن (كورس 204 ظاهر لك وحدك)</span>}
               </h2>
           )}
 
@@ -500,9 +516,17 @@ export default function HomePage() {
                 <div key={course.id} className="course-card" style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
                   <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>{course.title}</h3>
-                    <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                  Math{course.id}
-                </span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      {/* تنبيه صغير يظهر بجانب الكورس إذا كان مغلقاً (is_active: false) ولا يراه غيرك */}
+                      {!course.is_active && (
+                          <span style={{ background: '#FEECD0', color: '#8c5521', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                        مخفي عن الطلاب 🔒
+                      </span>
+                      )}
+                      <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    Math{course.id}
+                  </span>
+                    </div>
                   </div>
 
                   <p className="course-description" style={{ color: '#4A5550', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
