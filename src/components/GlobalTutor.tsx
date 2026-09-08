@@ -8,6 +8,7 @@ interface GlobalTutorProps {
     userId?: string | null;
     currentChapter?: string
     currentQuestion?: string
+    currentIdea?: string | { id: string; name: string } | null // دعم الشابتر والفكرة المحددة
     initialPrompt?: string | null
     onPromptConsumed?: () => void;
     isAiAllowed?: boolean
@@ -19,16 +20,20 @@ export default function GlobalTutor({
                                         currentModule = 1,
                                         currentChapter = '1.5',
                                         currentQuestion = '',
+                                        currentIdea = null, // استقبال الفكرة هنا
                                         initialPrompt = null,
                                         isAiAllowed = true,
                                         mode = 'floating'
                                     }: GlobalTutorProps) {
     const [isChatOpen, setIsChatOpen] = useState(mode === 'inline')
 
+    // استخلاص اسم الفكرة سواء كانت نص أو كائن
+    const ideaName = typeof currentIdea === 'object' && currentIdea !== null ? currentIdea.name : currentIdea;
+
     const [messages, setMessages] = useState([
         {
             role: 'ai',
-            text: `أهلاً بك! أنا فيكتور (Vector)، معلمك الذكي لمقرر الرياضيات (Math ${courseId}). نحن الآن في الشابتر (${currentChapter})${currentQuestion ? ` الفكرة: (${currentQuestion})` : ''}. كيف أقدر أساعدك اليوم؟`
+            text: `أهلاً بك! أنا فيكتور (Vector)، معلمك الذكي لمقرر الرياضيات (Math ${courseId}). نحن الآن في الشابتر (${currentChapter})${ideaName ? ` - الفكرة: (${ideaName})` : currentQuestion ? ` - الفكرة: (${currentQuestion})` : ''}. كيف أقدر أساعدك اليوم؟`
         }
     ])
     const [input, setInput] = useState('')
@@ -79,6 +84,7 @@ export default function GlobalTutor({
                     currentModule,
                     currentChapter,
                     currentQuestion,
+                    currentIdea: ideaName, // إرسال الفكرة مع الطلب للـ API ليفهمها الذكاء الاصطناعي
                     messages: [
                         ...messages.map(m => ({
                             role: m.role === 'ai' ? 'assistant' : 'user',
@@ -165,7 +171,7 @@ export default function GlobalTutor({
                 }}
             >
                 <span style={{ fontWeight: 'bold' }}>
-                    🤖 فيكتور - Vector (Math {courseId} - Ch {currentChapter})
+                    🤖 فيكتور (Math {courseId} - Ch {currentChapter})
                 </span>
 
                 {mode === 'floating' && (
@@ -269,7 +275,7 @@ export default function GlobalTutor({
                     type="text"
                     placeholder={
                         isAiAllowed
-                            ? 'اسأل فيكتور عن هذا السؤال...'
+                            ? 'اسأل فيكتور عن هذا الشابتر أو الفكرة...'
                             : 'المحادثة غير مفعلة...'
                     }
                     value={input}
@@ -328,7 +334,7 @@ export default function GlobalTutor({
                     style={{
                         backgroundColor: '#DCA27B',
                         color: '#ffffff',
-                        border: 'none',
+                        border: '0',
                         borderRadius: '50px',
                         padding: '12px 24px',
                         fontWeight: 'bold',

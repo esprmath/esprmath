@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import GuideTip from '@/components/GuideTip';
+import GlobalTutor from '@/components/GlobalTutor'; // زر المعلم الذكي العائم أسفل الشاشة
 import { ChapterData } from '@/types/math';
 import { chapter1_5Data } from './1.5';
 import { chapter1_6Data } from './1.6';
@@ -21,6 +22,9 @@ type ChapterKey = '1.5' | '1.6' | '1.8' | '2.1' | '3.4' | 'additional-questions'
 export default function ModulePage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+
+    // حالات الذكاء الاصطناعي (مفعلة فقط للزر العائم)
+    const [isAiAllowed] = useState<boolean>(true);
 
     const allChaptersMap: Record<Exclude<ChapterKey, 'additional-questions'>, ChapterData> = {
         '1.5': chapter1_5Data,
@@ -42,26 +46,20 @@ export default function ModulePage() {
     const currentChapterData = !isAdditionalView ? allChaptersMap[activeChapter as Exclude<ChapterKey, 'additional-questions'>] || chapter1_5Data : null;
     const [activeIdeaId, setActiveIdeaId] = useState(currentChapterData ? currentChapterData.ideas[0].id : '');
 
-    // حالة جديدة لتحديد الشابتر المختار داخل صفحة الأسئلة الإضافية ('all' أو رقم الشابتر)
     const [selectedAdditionalChapterTab, setSelectedAdditionalChapterTab] = useState<string>('all');
-
     const [completedItems, setCompletedItems] = useState<string[]>([]);
 
-    // للأسئلة الرئيسية العادية
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [hasAttempted, setHasAttempted] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
-    // للأسئلة الإضافية في الصفحة الخاصة بها
     const [additionalSelected, setAdditionalSelected] = useState<Record<number, string>>({});
     const [additionalAttempted, setAdditionalAttempted] = useState<Record<number, boolean>>({});
 
-    // حالات الأجزاء المتعددة (subQuestions) للأفكار داخل الشباتر
     const [activeSubPartIndex, setActiveSubPartIndex] = useState<number>(0);
     const [subPartSelectedOptions, setSubPartSelectedOptions] = useState<Record<number, string>>({});
     const [subPartAttempted, setSubPartAttempted] = useState<Record<number, boolean>>({});
 
-    // حالات الأجزاء المتعددة للأسئلة الإضافية
     const [activeSubPartIndexMap, setActiveSubPartIndexMap] = useState<Record<number, number>>({});
     const [subPartSelectedOptionsMap, setSubPartSelectedOptionsMap] = useState<Record<string, string>>({});
     const [subPartAttemptedMap, setSubPartAttemptedMap] = useState<Record<string, boolean>>({});
@@ -79,25 +77,31 @@ export default function ModulePage() {
         }
     }, []);
 
+    // 🚀 التحديث الأهم: مزامنة الشابتر والفكرة النشطة بدقة مع المتغيرات ورابط الـ URL مباشرة
     useEffect(() => {
         if (chapterParam && (validChapters.includes(chapterParam as ChapterKey) || chapterParam === 'additional-questions')) {
             setActiveChapter(chapterParam);
             if (chapterParam !== 'additional-questions') {
                 const targetChapterData = allChaptersMap[chapterParam as Exclude<ChapterKey, 'additional-questions'>];
-                const ideasForChapter = targetChapterData.ideas;
-                const validIdea = ideaParam && ideasForChapter.some(idea => idea.id === ideaParam)
-                    ? ideaParam
-                    : ideasForChapter[0].id;
+                if (targetChapterData) {
+                    const ideasForChapter = targetChapterData.ideas;
+                    const validIdea = ideaParam && ideasForChapter.some(idea => idea.id === ideaParam)
+                        ? ideaParam
+                        : ideasForChapter[0].id;
 
-                setActiveIdeaId(validIdea);
+                    setActiveIdeaId(validIdea);
+                }
             }
-            setSelectedOption(null);
-            setHasAttempted(false);
-            setErrorMsg('');
-            setActiveSubPartIndex(0);
-            setSubPartSelectedOptions({});
-            setSubPartAttempted({});
+        } else {
+            // إذا لم يكن هناك شابتر محدد في الـ URL، نضبطه على الافتراضي أو نحتفظ به
+            setActiveChapter('1.5');
         }
+        setSelectedOption(null);
+        setHasAttempted(false);
+        setErrorMsg('');
+        setActiveSubPartIndex(0);
+        setSubPartSelectedOptions({});
+        setSubPartAttempted({});
     }, [chapterParam, ideaParam]);
 
     const totalIdeasCount = Object.values(allChaptersMap).reduce((acc, ch) => acc + ch.ideas.length, 0);
@@ -216,7 +220,6 @@ export default function ModulePage() {
         );
     }
 
-    // تصفية الأسئلة الإضافية بناءً على الشابتر المختار في الشريط العلوي الجديد
     const filteredAdditionalQuestions = moreQuesData.filter((q) => {
         if (selectedAdditionalChapterTab === 'all') return true;
         return q.meta && q.meta.chapterNumber === selectedAdditionalChapterTab;
@@ -225,6 +228,14 @@ export default function ModulePage() {
     return (
         <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '80px', position: 'relative' }}>
             <Navbar isLoggedIn={true} />
+
+            {/* مكون المعلم الذكي - الزر العائم مع إرسال السياق الحالي للشابتر والفكرة */}
+            {isAiAllowed && (
+                <GlobalTutor
+                    currentChapter={activeChapter}
+                    currentIdea={currentIdeaObj ? { id: currentIdeaObj.id, name: currentIdeaObj.ideaName } : undefined}
+                />
+            )}
 
             {!isChapterView && (
                 <GuideTip
@@ -356,7 +367,6 @@ export default function ModulePage() {
                             </h2>
                             <p style={{ color: '#8c5521', fontSize: '13px', margin: '0 0 16px 0' }}>تجميع لجميع الأسئلة الإضافية المستخرجة مع الشرح والتفاعل وربطها بالأفكار.</p>
 
-                            {/* 🌟 شريط تقسيم الشباتر الجديد في أعلى الأسئلة الإضافية */}
                             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', borderBottom: '1px solid #e6dec5' }}>
                                 <button
                                     type="button"
@@ -407,7 +417,6 @@ export default function ModulePage() {
                                     return (
                                         <div key={index} style={{ marginBottom: '24px', padding: '18px', background: '#FAFAFA', borderRadius: '12px', border: '1px solid #eae5d5' }}>
 
-                                            {/* ترويسة بيانات الفكرة والشابتر المرتبطة بالسؤال الإضافي */}
                                             {q.meta && (
                                                 <div style={{
                                                     marginBottom: '12px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
@@ -421,16 +430,18 @@ export default function ModulePage() {
                                                             فكرة ({q.meta.ideaNumber}): {q.meta.ideaName}
                                                         </span>
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => jumpToIdeaFromAdditional(q.meta.chapterNumber, q.meta.ideaAnchorId)}
-                                                        style={{
-                                                            background: 'none', border: 'none', color: '#8c5521', fontWeight: 'bold',
-                                                            cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px'
-                                                        }}
-                                                    >
-                                                        الرجوع للفكرة ↗
-                                                    </button>
+                                                    <div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => jumpToIdeaFromAdditional(q.meta!.chapterNumber, q.meta!.ideaAnchorId)}
+                                                            style={{
+                                                                background: 'none', border: 'none', color: '#8c5521', fontWeight: 'bold',
+                                                                cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px'
+                                                            }}
+                                                        >
+                                                            الرجوع للفكرة ↗
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
 
@@ -635,9 +646,11 @@ export default function ModulePage() {
                         {/* تفاصيل الفكرة النشطة */}
                         {currentIdeaObj && (
                             <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                                <h2 style={{ color: '#8c5521', marginBottom: '16px', fontSize: '1.2rem' }}>
-                                    فكرة {currentIdeaObj.ideaNumber}: {currentIdeaObj.ideaName}
-                                </h2>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                                    <h2 style={{ color: '#8c5521', margin: 0, fontSize: '1.2rem' }}>
+                                        فكرة {currentIdeaObj.ideaNumber}: {currentIdeaObj.ideaName}
+                                    </h2>
+                                </div>
 
                                 {/* الشرح النظري */}
                                 <div style={{ marginBottom: '24px' }}>

@@ -21,7 +21,7 @@ export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userName, setUserName] = useState<string>('')
   const [userId, setUserId] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string | null>(null) // أضفنا تخزين للإيميل لمعرفة الأدمن
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   // حالة صلاحية الذكاء الاصطناعي للطالب من جدول profiles
   const [isAiAllowed, setIsAiAllowed] = useState(false)
@@ -39,7 +39,6 @@ export default function HomePage() {
   // 🛑 ضع إيميلك الشخصي هنا الذي تسجل به دخولك كأدمن في المنصة
   const ADMIN_EMAIL = 'sofe@gmail.com'
 
-  // دالة لجلب الكورسات من Supabase (نستعلم عن الكل ثم نفرزها برمجياً حسب إيميل الأدمن)
   // دالة لجلب الكورسات (محدثة لتضمن ظهور الكورسات المعطلة للأدمن حصرياً)
   const fetchCourses = async (currentEmail?: string | null) => {
     const { data, error } = await supabase
@@ -48,15 +47,14 @@ export default function HomePage() {
         .order('id')
 
     if (!error && data) {
-      console.log("All courses fetched from DB:", data); // للتأكد من ظهورها في الـ Console
+      console.log("All courses fetched from DB:", data);
 
       // تصفية الكورسات:
       const visibleCourses = data.filter(course => {
-        // إذا كان إيميلك هو إيميل الأدمن (مع تحويل الحروف الصغيرة لضمان التطابق)
         if (currentEmail && currentEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          return true // يظهر لك كل الكورسات (النشطة والمعطلة)
+          return true
         }
-        return course.is_active === true // الطلاب لا يرون إلا النشط
+        return course.is_active === true
       })
 
       setCourses(visibleCourses)
@@ -176,7 +174,6 @@ export default function HomePage() {
 
     const studentEmail = session.user.email || ''
 
-    // أولاً: نتأكد هل يوجد سجل سابق لنفس الطالب في نفس الكورس.
     const { data: existingRows, error: checkError } = await supabase
         .from('user_courses')
         .select('user_id, course_id')
@@ -185,13 +182,7 @@ export default function HomePage() {
         .limit(1)
 
     if (checkError) {
-      console.error('Check user_courses error:', {
-        message: checkError.message,
-        details: checkError.details,
-        hint: checkError.hint,
-        code: checkError.code,
-      })
-
+      console.error('Check user_courses error:', checkError)
       setAlertMessage(`حدث خطأ أثناء التحقق من الكورس: ${checkError.message}`)
       setShowAlertModal(true)
       return
@@ -200,7 +191,6 @@ export default function HomePage() {
     let accessError = null
 
     if (existingRows && existingRows.length > 0) {
-      // يوجد سجل مسبق: نحوله إلى معتمد مباشرة ونحدّث بيانات الطالب.
       const { error } = await supabase
           .from('user_courses')
           .update({
@@ -213,7 +203,6 @@ export default function HomePage() {
 
       accessError = error
     } else {
-      // لا يوجد سجل: ننشئه مباشرة كطالب معتمد لأن الكورس مفتوح.
       const { error } = await supabase
           .from('user_courses')
           .insert([
@@ -230,13 +219,7 @@ export default function HomePage() {
     }
 
     if (accessError) {
-      console.error('Direct course access error:', {
-        message: accessError.message,
-        details: accessError.details,
-        hint: accessError.hint,
-        code: accessError.code,
-      })
-
+      console.error('Direct course access error:', accessError)
       setAlertMessage(`حدث خطأ أثناء تفعيل الكورس: ${accessError.message}`)
       setShowAlertModal(true)
       return
@@ -338,7 +321,6 @@ export default function HomePage() {
       )
     }
 
-    // إذا الكورس لا يحتاج موافقة: يدخل كامل الكورس مباشرة
     if (!course.requires_approval) {
       return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -358,7 +340,6 @@ export default function HomePage() {
             >
               دخول الكورس مباشرة 🚀
             </button>
-
           </div>
       )
     }
@@ -479,7 +460,6 @@ export default function HomePage() {
         <Navbar isLoggedIn={isLoggedIn} />
 
         <header className="hero-container" style={{ textAlign: 'center', padding: '40px 20px', position: 'relative' }}>
-          {/* رسالة التوجيه الترحيبية لتوضيح المنصة بشكل عام وبسيط */}
           <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
             <GuideTip
                 id="home-welcome-general"
@@ -490,7 +470,7 @@ export default function HomePage() {
 
           {isLoggedIn && (
               <h2 style={{ fontSize: '1.25rem', color: '#DCA27B', fontWeight: 'bold', marginBottom: '15px', marginTop: '20px' }}>
-                مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px', marginLeft: '5px' }}>🤖 ميزة الـ AI مفعلة</span>} {userEmail === ADMIN_EMAIL && <span style={{ fontSize: '0.8rem', background: '#b91c1c', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>وضع الأدمن (كورس 204 ظاهر لك وحدك)</span>}
+                مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px', marginLeft: '5px' }}>🤖 ميزة الـ AI مفعلة</span>} {userEmail === ADMIN_EMAIL && <span style={{ fontSize: '0.8rem', background: '#b91c1c', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>وضع الأدمن (الكورسات المعطلة ظاهرة لك وحدك)</span>}
               </h2>
           )}
 
@@ -508,7 +488,6 @@ export default function HomePage() {
             <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', margin: 0 }}>
               📚 كورساتك المتاحة
             </h3>
-
           </div>
 
           <div style={{ display: 'grid', gap: '20px' }}>
@@ -517,15 +496,15 @@ export default function HomePage() {
                   <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>{course.title}</h3>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      {/* تنبيه صغير يظهر بجانب الكورس إذا كان مغلقاً (is_active: false) ولا يراه غيرك */}
                       {!course.is_active && (
                           <span style={{ background: '#FEECD0', color: '#8c5521', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                         مخفي عن الطلاب 🔒
                       </span>
                       )}
+                      {/* تم إزالة كلمة Math وعرض كود الكورس المحفوظ في الـ id مباشرة (مثل 101) */}
                       <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                    Math{course.id}
-                  </span>
+                        {course.id}
+                      </span>
                     </div>
                   </div>
 
@@ -541,8 +520,7 @@ export default function HomePage() {
           </div>
         </section>
 
-
-        {/* رسالة الكورسات القادمة */}
+        {/* باقي الأقسام */}
         <section style={{ maxWidth: '800px', margin: '0 auto 40px auto', padding: '0 20px' }}>
           <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)', textAlign: 'center' }}>
             <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '8px' }}>
@@ -554,7 +532,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* قسم عن EsprMath */}
         <section style={{ maxWidth: '800px', margin: '0 auto 40px auto', padding: '0 20px' }}>
           <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '16px' }}>
             💡 عن EsprMath
@@ -566,39 +543,30 @@ export default function HomePage() {
           </div>
         </section>
 
-
-        {/* قسم Why EsprMath (المربعات الأربعة) */}
         <section style={{ maxWidth: '800px', margin: '0 auto 60px auto', padding: '0 20px' }}>
           <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '16px' }}>
             ⭐ Why EsprMath ؟
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-
             <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
               <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>🎯 شرح مبسط ومباشر</h4>
               <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>نختصر عليك تشتت المصادر ونعطيك الزبدة لتفهم بسرعة.</p>
             </div>
-
             <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
               <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>🎁 Module 1 مجاني</h4>
               <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>جرب بنفسك احكم على جودة الشرح بعد تسجيل الدخول.</p>
             </div>
-
             <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
               <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>📊 متابعة تقدمك</h4>
               <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>تتبع إنجازك لكل شابتر أول بأول وبكل سهولة.</p>
             </div>
-
-            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+            <div style={{ background: `ffffff`, border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
               <h4 style={{ margin: '0 0 8px 0', color: '#2C3531', fontSize: '1.05rem' }}>💡 أمثلة واختبارات</h4>
               <p style={{ margin: 0, color: '#4A5550', fontSize: '0.9rem', lineHeight: '1.5' }}>تدرب على أسئلة اختبارات سابقة تضمن لك الـ A+ بإذن الله.</p>
             </div>
-
           </div>
         </section>
 
-
-        {/* نافذة التنبيه المخصصة داخل الموقع (Modal) */}
         {showAlertModal && (
             <div style={{
               position: 'fixed',
@@ -631,7 +599,6 @@ export default function HomePage() {
                 <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#4A5550', lineHeight: '1.5' }}>
                   {alertMessage}
                 </p>
-
                 <button
                     type="button"
                     onClick={() => setShowAlertModal(false)}
