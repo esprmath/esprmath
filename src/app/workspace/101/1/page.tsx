@@ -28,7 +28,6 @@ export default function ModulePage() {
         '2.1': chapter2_1Data,
         '1.8': chapter1_8Data,
         '3.4': chapter3_4Data,
-
     };
 
     const validChapters = Object.keys(allChaptersMap) as ChapterKey[];
@@ -42,6 +41,9 @@ export default function ModulePage() {
     const isAdditionalView = activeChapter === 'additional-questions';
     const currentChapterData = !isAdditionalView ? allChaptersMap[activeChapter as Exclude<ChapterKey, 'additional-questions'>] || chapter1_5Data : null;
     const [activeIdeaId, setActiveIdeaId] = useState(currentChapterData ? currentChapterData.ideas[0].id : '');
+
+    // حالة جديدة لتحديد الشابتر المختار داخل صفحة الأسئلة الإضافية ('all' أو رقم الشابتر)
+    const [selectedAdditionalChapterTab, setSelectedAdditionalChapterTab] = useState<string>('all');
 
     const [completedItems, setCompletedItems] = useState<string[]>([]);
 
@@ -127,6 +129,10 @@ export default function ModulePage() {
         router.push(`/workspace/101/1?chapter=${encodeURIComponent(chKey)}&idea=${encodeURIComponent(ideaId)}`);
     }
 
+    function jumpToIdeaFromAdditional(chapterKey: string, ideaAnchorId: string) {
+        router.push(`/workspace/101/1?chapter=${encodeURIComponent(chapterKey)}&idea=${encodeURIComponent(ideaAnchorId)}`);
+    }
+
     const currentIdeaObj = currentChapterData?.ideas.find(i => i.id === activeIdeaId) || currentChapterData?.ideas[0];
 
     function handleQuizVerify() {
@@ -178,6 +184,43 @@ export default function ModulePage() {
         }
         return opt;
     }
+
+    function renderStructuredExplanation(text?: string) {
+        if (!text) return null;
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                <div style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>💡 خطوات الحل والتفصيل:</span>
+                </div>
+                {lines.map((line, idx) => (
+                    <div
+                        key={idx}
+                        style={{
+                            background: '#ffffff',
+                            border: '1px solid #bbf7d0',
+                            padding: '10px 14px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            color: '#2C3531',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                            lineHeight: '1.5',
+                            whiteSpace: 'pre-line'
+                        }}
+                    >
+                        {line}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    // تصفية الأسئلة الإضافية بناءً على الشابتر المختار في الشريط العلوي الجديد
+    const filteredAdditionalQuestions = moreQuesData.filter((q) => {
+        if (selectedAdditionalChapterTab === 'all') return true;
+        return q.meta && q.meta.chapterNumber === selectedAdditionalChapterTab;
+    });
 
     return (
         <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '80px', position: 'relative' }}>
@@ -311,14 +354,51 @@ export default function ModulePage() {
                             <h2 style={{ margin: '0 0 6px 0', color: '#2C3531', fontSize: '1.25rem' }}>
                                 ➕ صفحة الأسئلة الإضافية الشاملة
                             </h2>
-                            <p style={{ color: '#8c5521', fontSize: '13px', margin: '0 0 20px 0' }}>تجميع لجميع الأسئلة الإضافية المستخرجة مع الشرح والتفاعل.</p>
+                            <p style={{ color: '#8c5521', fontSize: '13px', margin: '0 0 16px 0' }}>تجميع لجميع الأسئلة الإضافية المستخرجة مع الشرح والتفاعل وربطها بالأفكار.</p>
 
-                            {moreQuesData.length === 0 ? (
+                            {/* 🌟 شريط تقسيم الشباتر الجديد في أعلى الأسئلة الإضافية */}
+                            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', borderBottom: '1px solid #e6dec5' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedAdditionalChapterTab('all')}
+                                    style={{
+                                        whiteSpace: 'nowrap', padding: '8px 14px', borderRadius: '8px', border: '1px solid #e6dec5',
+                                        background: selectedAdditionalChapterTab === 'all' ? '#8c5521' : '#FEECD0',
+                                        color: selectedAdditionalChapterTab === 'all' ? '#ffffff' : '#8c5521',
+                                        fontWeight: 'bold', cursor: 'pointer', fontSize: '12px'
+                                    }}
+                                >
+                                    🌟 جميع الأسئلة ({moreQuesData.length})
+                                </button>
+                                {(Object.keys(allChaptersMap) as ChapterKey[]).map((chKey) => {
+                                    const chData = allChaptersMap[chKey as Exclude<ChapterKey, 'additional-questions'>];
+                                    const countForCh = moreQuesData.filter(q => q.meta && q.meta.chapterNumber === chKey).length;
+                                    const isTabActive = selectedAdditionalChapterTab === chKey;
+
+                                    return (
+                                        <button
+                                            key={chKey}
+                                            type="button"
+                                            onClick={() => setSelectedAdditionalChapterTab(chKey)}
+                                            style={{
+                                                whiteSpace: 'nowrap', padding: '8px 14px', borderRadius: '8px', border: '1px solid #e6dec5',
+                                                background: isTabActive ? '#8c5521' : '#FEECD0',
+                                                color: isTabActive ? '#ffffff' : '#8c5521',
+                                                fontWeight: 'bold', cursor: 'pointer', fontSize: '12px'
+                                            }}
+                                        >
+                                            شابتر {chData.chapterNumber} ({countForCh})
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {filteredAdditionalQuestions.length === 0 ? (
                                 <div style={{ padding: '30px', textAlign: 'center', color: '#8c5521', background: '#FAFAFA', borderRadius: '12px' }}>
-                                    لا توجد أسئلة إضافية مضافة حالياً في الملف.
+                                    لا توجد أسئلة إضافية مضافة لهذا الشابتر حالياً.
                                 </div>
                             ) : (
-                                moreQuesData.map((q, index) => {
+                                filteredAdditionalQuestions.map((q, index) => {
                                     const activeSubIdx = activeSubPartIndexMap[index] || 0;
                                     const userChoice = additionalSelected[index] || null;
                                     const isAttempted = additionalAttempted[index] || false;
@@ -326,6 +406,34 @@ export default function ModulePage() {
 
                                     return (
                                         <div key={index} style={{ marginBottom: '24px', padding: '18px', background: '#FAFAFA', borderRadius: '12px', border: '1px solid #eae5d5' }}>
+
+                                            {/* ترويسة بيانات الفكرة والشابتر المرتبطة بالسؤال الإضافي */}
+                                            {q.meta && (
+                                                <div style={{
+                                                    marginBottom: '12px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+                                                    background: '#FEECD0', border: '1px solid #e6dec5', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', color: '#8c5521'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                                                        <span style={{ background: '#8c5521', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
+                                                            شابتر {q.meta.chapterNumber}
+                                                        </span>
+                                                        <span>
+                                                            فكرة ({q.meta.ideaNumber}): {q.meta.ideaName}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => jumpToIdeaFromAdditional(q.meta.chapterNumber, q.meta.ideaAnchorId)}
+                                                        style={{
+                                                            background: 'none', border: 'none', color: '#8c5521', fontWeight: 'bold',
+                                                            cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px'
+                                                        }}
+                                                    >
+                                                        الرجوع للفكرة ↗
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '10px', color: '#2C3531' }}>
                                                 سؤال {index + 1}: {q.questionText}
                                             </div>
@@ -417,13 +525,14 @@ export default function ModulePage() {
                                                                 {isSubTried && (
                                                                     <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: isSubCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isSubCorrect ? '#bbf7d0' : '#fca5a5'}`, fontSize: '13px' }}>
                                                                         {isSubCorrect ? (
-                                                                            <div style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                                                                ✅ إجابة صحيحة!
-                                                                                <p style={{ margin: '6px 0 0 0', fontWeight: 'normal', whiteSpace: 'pre-line' }}>{currentSub.questionExplanation}</p>
+                                                                            <div>
+                                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ إجابة صحيحة!</div>
+                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
                                                                             </div>
                                                                         ) : (
                                                                             <div style={{ color: '#991b1b', fontWeight: 'bold' }}>
                                                                                 ❌ إجابة خاطئة، حاول مرة أخرى في هذه الجزئية!
+                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -433,13 +542,13 @@ export default function ModulePage() {
                                                     })()}
                                                 </div>
                                             ) : (
-                                                <div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                                                        {q.options.map((opt) => (
-                                                            <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: userChoice === opt ? '#FEECD0' : '#FFF9E2', border: '1px solid #e6dec5', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
+                                                <>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                                                        {q.options?.map((opt) => (
+                                                            <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: userChoice === opt ? '#FEECD0' : '#fff', border: '1px solid #e6dec5', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
                                                                 <input
                                                                     type="radio"
-                                                                    name={`add-q-${index}`}
+                                                                    name={`additional-${index}`}
                                                                     checked={userChoice === opt}
                                                                     onChange={() => setAdditionalSelected(prev => ({ ...prev, [index]: opt }))}
                                                                 />
@@ -451,26 +560,27 @@ export default function ModulePage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleAdditionalVerify(index)}
-                                                        style={{ background: '#8c5521', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                        style={{ background: '#DCA27B', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
                                                     >
-                                                        تحقق من الإجابة الإضافية
+                                                        تحقق من الإجابة ✅
                                                     </button>
 
                                                     {isAttempted && (
-                                                        <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: isCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isCorrect ? '#bbf7d0' : '#fca5a5'}`, fontSize: '13px' }}>
+                                                        <div style={{ marginTop: '14px', padding: '12px', borderRadius: '8px', background: isCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isCorrect ? '#bbf7d0' : '#fca5a5'}` }}>
                                                             {isCorrect ? (
-                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                                                    ✅ إجابة صحيحة!
-                                                                    <p style={{ margin: '6px 0 0 0', fontWeight: 'normal', whiteSpace: 'pre-line' }}>{q.questionExplanation}</p>
+                                                                <div>
+                                                                    <div style={{ color: '#16a34a', fontWeight: 'bold', fontSize: '13px' }}>✅ كفو! الإجابة صحيحة.</div>
+                                                                    {renderStructuredExplanation(q.questionExplanation)}
                                                                 </div>
                                                             ) : (
-                                                                <div style={{ color: '#991b1b', fontWeight: 'bold' }}>
-                                                                    ❌ إجابة خاطئة، حاول مرة أخرى!
+                                                                <div>
+                                                                    <div style={{ color: '#991b1b', fontWeight: 'bold', fontSize: '13px' }}>❌ إجابة خاطئة، حاول مرة أخرى!</div>
+                                                                    {renderStructuredExplanation(q.questionExplanation)}
                                                                 </div>
                                                             )}
                                                         </div>
                                                     )}
-                                                </div>
+                                                </>
                                             )}
                                         </div>
                                     );
@@ -558,7 +668,7 @@ export default function ModulePage() {
                                     </div>
                                 )}
 
-                                {/* السؤال التطبيقي للفكرة (مع دعم الـ subQuestions بالكامل) */}
+                                {/* السؤال التطبيقي للفكرة */}
                                 <div style={{ background: '#FAFAFA', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px' }}>
                                     <h3 style={{ fontSize: '1rem', color: '#8c5521', marginBottom: '12px' }}>✍️ السؤال التطبيقي:</h3>
 
@@ -584,7 +694,6 @@ export default function ModulePage() {
                                                 </div>
                                             )}
 
-                                            {/* التحقق من وجود subQuestions لعرض أزرار الجزئيات */}
                                             {currentIdeaObj.practiceQuestion.subQuestions && currentIdeaObj.practiceQuestion.subQuestions.length > 0 ? (
                                                 <div>
                                                     <div style={{ margin: '15px 0 12px 0', display: 'flex', gap: '8px', flexWrap: 'wrap', borderBottom: '2px solid #e6dec5', paddingBottom: '10px' }}>
@@ -654,13 +763,14 @@ export default function ModulePage() {
                                                                 {isSubTried && (
                                                                     <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: isSubCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isSubCorrect ? '#bbf7d0' : '#fca5a5'}`, fontSize: '13px' }}>
                                                                         {isSubCorrect ? (
-                                                                            <div style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                                                                ✅ إجابة صحيحة!
-                                                                                <p style={{ margin: '6px 0 0 0', fontWeight: 'normal', whiteSpace: 'pre-line' }}>{currentSub.questionExplanation}</p>
+                                                                            <div>
+                                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ إجابة صحيحة!</div>
+                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
                                                                             </div>
                                                                         ) : (
                                                                             <div style={{ color: '#991b1b', fontWeight: 'bold' }}>
                                                                                 ❌ إجابة خاطئة، حاول مرة أخرى في هذه الجزئية!
+                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -697,10 +807,15 @@ export default function ModulePage() {
 
                                                     {hasAttempted && selectedOption === currentIdeaObj.practiceQuestion.correctAnswer && (
                                                         <div style={{ marginTop: '14px', padding: '14px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: '13px', color: '#16a34a' }}>
-                                                            <strong>✅ إجابة صحيحة!</strong>
-                                                            <p style={{ margin: '8px 0 0 0', fontWeight: 'normal', whiteSpace: 'pre-line', lineHeight: '1.5', color: '#2C3531' }}>
-                                                                {currentIdeaObj.practiceQuestion.questionExplanation}
-                                                            </p>
+                                                            <div style={{ fontWeight: 'bold' }}>✅ إجابة صحيحة!</div>
+                                                            {renderStructuredExplanation(currentIdeaObj.practiceQuestion.questionExplanation)}
+                                                        </div>
+                                                    )}
+
+                                                    {hasAttempted && selectedOption !== currentIdeaObj.practiceQuestion.correctAnswer && (
+                                                        <div style={{ marginTop: '14px', padding: '14px', borderRadius: '8px', background: '#fee2e2', border: '1px solid #fca5a5', fontSize: '13px', color: '#991b1b' }}>
+                                                            <div style={{ fontWeight: 'bold' }}>❌ إجابة خاطئة، حاول مرة أخرى!</div>
+                                                            {renderStructuredExplanation(currentIdeaObj.practiceQuestion.questionExplanation)}
                                                         </div>
                                                     )}
                                                 </div>
