@@ -61,7 +61,7 @@ export default function HomePage() {
   // 🌳 حالة تبديل عرض الشجرة لكل كورس
   const [activeTreeCourseId, setActiveTreeCourseId] = useState<string | null>(null)
 
-  // ⚙️ بيانات هيكل الشجرة للكورسات (هنا تكتب الأرقام أو النصوص التي تريدها بيدك داخل title)
+  // ⚙️ بيانات هيكل الشجرة للكورسات
   const courseTrees: Record<string, { subtitle: string; modules: ModuleItem[] }> = {
     "101": {
       subtitle: "مقرر 4 ساعات معتمدة يغطي أساسيات التفاضل والتكامل وتطبيقاتها الحياتية.",
@@ -77,8 +77,6 @@ export default function HomePage() {
             { id: "3", title: "Ch 2.1", link: "/workspace/101/1?chapter=2.1", lessons: [] },
             { id: "4", title: "Ch 1.8", link: "/workspace/101/1?chapter=1.8", lessons: [] },
             { id: "5", title: "Ch 3.4", link: "/workspace/101/1?chapter=3.4", lessons: [] },
-
-
           ]
         },
         {
@@ -86,27 +84,21 @@ export default function HomePage() {
           title: "Module 2 لم يكتمل بعد",
           badge: "Module 2 ",
           icon: "",
-          chapters: [
-
-          ]
+          chapters: []
         },
         {
           id: "m1",
           title: "Module 3 لم يكتمل بعد",
           badge: "Module 3",
           icon: "",
-          chapters: [
-
-          ]
+          chapters: []
         },
         {
           id: "m3",
           title: "Module 4 لم يكتمل بعد",
           badge: "Module 4",
           icon: "",
-          chapters: [
-
-          ]
+          chapters: []
         }
       ]
     }
@@ -198,6 +190,7 @@ export default function HomePage() {
         setUserName('')
         setUserEmail(null)
         setIsAiAllowed(false)
+        setActiveTreeCourseId(null) // إغلاق الشجرة تلقائياً عند تسجيل الخروج
         fetchCourses(null)
       }
     })
@@ -496,7 +489,7 @@ export default function HomePage() {
 
           <div style={{ display: 'grid', gap: '20px' }}>
             {courses.map((course) => {
-              const isTreeOpen = activeTreeCourseId === course.id
+              const isTreeOpen = isLoggedIn && activeTreeCourseId === course.id
               const treeData = courseTrees[course.id]
 
               return (
@@ -522,7 +515,8 @@ export default function HomePage() {
                         <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>{course.title}</h3>
 
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          {treeData && (
+                          {/* زر شجرة الكورس: يظهر حصرياً إذا كان المستخدم مسجلاً لدخوله isLoggedIn === true */}
+                          {isLoggedIn && treeData && (
                               <button
                                   type="button"
                                   onClick={() => setActiveTreeCourseId(isTreeOpen ? null : course.id)}
@@ -565,8 +559,8 @@ export default function HomePage() {
                           </>
                       )}
 
-                      {/* 🌲 عرض الشجرة */}
-                      {isTreeOpen && treeData && (
+                      {/* 🌲 عرض الشجرة (مشروطة بـ isLoggedIn أيضاً) */}
+                      {isLoggedIn && isTreeOpen && treeData && (
                           <div className="desktop-tree-view" style={{
                             backgroundColor: '#C3A25C',
                             border: '2px solid #8F7236',
@@ -642,7 +636,7 @@ export default function HomePage() {
                               </svg>
                             </div>
 
-                            {/* شبكة مربعات الدروس (تقرأ وتظهر ما تكتبه يدوياً في خانة title لكل عنصر مباشرة) */}
+                            {/* شبكة مربعات الدروس */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', width: '100%', alignItems: 'start' }}>
                               {treeData.modules.map((mod) => (
                                   <div key={mod.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
