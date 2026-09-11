@@ -63,11 +63,12 @@ export const chapter1_5Data: ChapterData = {
             practiceQuestion: {
                 questionText: "Use the given graph of f to state the value of each quantity, if it exists.",
                 graphImage: "/q04-graph.png",
-                mathExpression: "Q-4)",
+                mathExpression: "Q-4)يفضل \\ التدرب\\  للسؤال\\ على\\ ورقه \\ قبل \\ تحديد \\ الاجابة",
                 options: [],
                 correctAnswer: "",
                 questionExplanation: "تحليل شامل للرسم البياني لإيجاد النهايات وقيم الدوال عند النقاط المستهدفة بدقة.",
                 subQuestions: [
+
                     {
                         questionText: "أ) إيجاد النهاية الكلية عندما تقترب x من القيمة 1.",
                         mathExpression: "\\lim_{x \\to 1} f(x)",

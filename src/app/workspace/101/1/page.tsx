@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import GuideTip from '@/components/GuideTip';
-import GlobalTutor from '@/components/GlobalTutor'; // زر المعلم الذكي العائم أسفل الشاشة
+import GlobalTutor from '@/components/GlobalTutor';
 import { ChapterData } from '@/types/math';
 import { chapter1_5Data } from './1.5';
 import { chapter1_6Data } from './1.6';
@@ -19,12 +19,341 @@ import 'katex/dist/katex.min.css';
 
 type ChapterKey = '1.5' | '1.6' | '1.8' | '2.1' | '3.4' | 'additional-questions';
 
+// مكون تصميم شكل رأس القلم الخشبي
+function PencilIcon({ color, active }: { color: string; active: boolean }) {
+    return (
+        <div style={{
+            width: '26px', height: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+            position: 'relative', filter: active ? 'drop-shadow(0 0 4px rgba(140, 85, 33, 0.6))' : 'none',
+            transform: active ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.2s'
+        }}>
+            {/* سن القلم الملون */}
+            <div style={{
+                width: 0, height: 0,
+                borderLeft: '7px solid transparent',
+                borderRight: '7px solid transparent',
+                borderBottom: `13px solid ${color}`
+            }} />
+            {/* الجزء الخشبي المقصوص */}
+            <div style={{
+                width: '14px', height: '8px', backgroundColor: '#e2b17c',
+                clipPath: 'polygon(0 0, 100% 0, 80% 100%, 20% 100%)',
+                marginTop: '-1px'
+            }} />
+            {/* جسم القلم السفلي */}
+            <div style={{
+                width: '16px', height: '7px', backgroundColor: color,
+                borderRadius: '0 0 3px 3px', marginTop: '1px'
+            }} />
+        </div>
+    );
+}
+
+// 🖥️ سبورة الحل الكاملة
+function FullScreenCanvasModal({
+                                   isOpen,
+                                   onClose,
+                                   questionImage,
+                                   mathText,
+                                   modalStorageKey,
+                                   activeChapter,
+                                   activeIdeaMeta
+                               }: {
+    isOpen: boolean;
+    onClose: () => void;
+    questionImage?: string;
+    mathText?: string;
+    modalStorageKey: string;
+    activeChapter: ChapterKey;
+    activeIdeaMeta?: { id: string; name: string };
+}) {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [brushColor, setBrushColor] = useState('#8c5521');
+    const [brushSize, setBrushSize] = useState(3);
+    const [isEraser, setIsEraser] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && typeof window !== 'undefined') {
+            const savedTime = sessionStorage.getItem(`${modalStorageKey}_time`);
+            const savedCanvasData = sessionStorage.getItem(`${modalStorageKey}_canvas`);
+
+            if (savedTime && savedCanvasData) {
+                const elapsed = Date.now() - parseInt(savedTime, 10);
+                if (elapsed < 7 * 60 * 1000) {
+                    const canvas = canvasRef.current;
+                    if (canvas) {
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            const img = new Image();
+                            img.src = savedCanvasData;
+                            img.onload = () => {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                ctx.drawImage(img, 0, 0);
+                            };
+                        }
+                    }
+                } else {
+                    sessionStorage.removeItem(`${modalStorageKey}_time`);
+                    sessionStorage.removeItem(`${modalStorageKey}_canvas`);
+                }
+            } else {
+                const canvas = canvasRef.current;
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+            }
+        }
+    }, [isOpen, modalStorageKey]);
+
+    if (!isOpen) return null;
+
+    const saveCanvasState = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const dataURL = canvas.toDataURL();
+        sessionStorage.setItem(`${modalStorageKey}_canvas`, dataURL);
+        sessionStorage.setItem(`${modalStorageKey}_time`, Date.now().toString());
+    };
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        setIsDrawing(true);
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    };
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isDrawing) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+
+        ctx.strokeStyle = isEraser ? 'rgba(0,0,0,1)' : brushColor;
+        ctx.lineWidth = isEraser ? 20 : brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (isEraser) {
+            ctx.globalCompositeOperation = 'destination-out';
+        } else {
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    };
+
+    const stopDrawing = () => {
+        setIsDrawing(false);
+        saveCanvasState();
+    };
+
+    const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        sessionStorage.removeItem(`${modalStorageKey}_canvas`);
+        sessionStorage.removeItem(`${modalStorageKey}_time`);
+    };
+
+    return (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            backgroundColor: '#FFF9E2', zIndex: 99999, display: 'flex', flexDirection: 'column',
+            overflow: 'hidden'
+        }}>
+            <GlobalTutor
+                key={`modal_tutor_${modalStorageKey}`}
+                currentChapter={activeChapter}
+                currentIdea={activeIdeaMeta}
+            />
+
+            {/* شريط التحكم العلوي */}
+            <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 24px', backgroundColor: '#ffffff', borderBottom: '1px solid #e6dec5',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 'bold', color: '#8c5521', fontSize: '15px' }}>🎨 سبورة الحل:</span>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
+                        {/* قلم بني */}
+                        <button
+                            type="button"
+                            title="قلم بني"
+                            onClick={() => { setBrushColor('#8c5521'); setIsEraser(false); }}
+                            style={{
+                                background: '#FFF9E2',
+                                border: !isEraser && brushColor === '#8c5521' ? '2px solid #8c5521' : '1px solid #d1c7a3',
+                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >
+                            <PencilIcon color="#8c5521" active={!isEraser && brushColor === '#8c5521'} />
+                        </button>
+
+                        {/* قلم أحمر */}
+                        <button
+                            type="button"
+                            title="قلم أحمر"
+                            onClick={() => { setBrushColor('#b91c1c'); setIsEraser(false); }}
+                            style={{
+                                background: '#FFF9E2',
+                                border: !isEraser && brushColor === '#b91c1c' ? '2px solid #b91c1c' : '1px solid #d1c7a3',
+                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >
+                            <PencilIcon color="#b91c1c" active={!isEraser && brushColor === '#b91c1c'} />
+                        </button>
+
+                        {/* قلم أسود */}
+                        <button
+                            type="button"
+                            title="قلم أسود"
+                            onClick={() => { setBrushColor('#000000'); setIsEraser(false); }}
+                            style={{
+                                background: '#FFF9E2',
+                                border: !isEraser && brushColor === '#000000' ? '2px solid #000000' : '1px solid #d1c7a3',
+                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >
+                            <PencilIcon color="#000000" active={!isEraser && brushColor === '#000000'} />
+                        </button>
+
+                        {/* المساحة */}
+                        <button
+                            type="button"
+                            title="المساحة"
+                            onClick={() => setIsEraser(true)}
+                            style={{
+                                background: isEraser ? '#FEECD0' : '#FFF9E2',
+                                border: isEraser ? '2px solid #8c5521' : '1px solid #d1c7a3',
+                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px',
+                                boxShadow: isEraser ? '0 0 6px rgba(140, 85, 33, 0.4)' : 'none'
+                            }}
+                        >
+                            🧹
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={clearCanvas}
+                            style={{ background: '#b91c1c', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
+                        >
+                            مسح الكل 🗑️
+                        </button>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={onClose}
+                    style={{
+                        background: '#b91c1c', color: '#fff', border: 'none', borderRadius: '8px',
+                        padding: '8px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '6px'
+                    }}
+                >
+                    ✕ إغلاق ورجوع
+                </button>
+            </div>
+
+            {/* مساحة العمل */}
+            <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '12px', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', maxWidth: '1150px', width: '100%', backgroundColor: '#fff', border: '2px solid #DCA27B', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                    {mathText && (
+                        <div style={{ textAlign: 'center', direction: 'ltr', padding: '6px 12px', background: '#FAFAFA', borderRadius: '8px', border: '1px solid #e6dec5' }}>
+                            <BlockMath math={mathText} />
+                        </div>
+                    )}
+
+                    <div style={{ position: 'relative', width: '100%', minHeight: '460px', height: '56vh', backgroundColor: '#ffffff', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e6dec5' }}>
+
+                        {questionImage && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '14px',
+                                left: '14px',
+                                width: '340px',
+                                maxHeight: '310px',
+                                zIndex: 1,
+                                pointerEvents: 'none',
+                                background: '#fff',
+                                padding: '8px',
+                                borderRadius: '8px',
+                                border: '2px solid #DCA27B',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                            }}>
+                                <img
+                                    src={questionImage}
+                                    alt="Question graph visual"
+                                    style={{ width: '100%', height: 'auto', maxHeight: '290px', objectFit: 'contain', display: 'block' }}
+                                />
+                            </div>
+                        )}
+
+                        <canvas
+                            ref={canvasRef}
+                            width={1200}
+                            height={700}
+                            onMouseDown={startDrawing}
+                            onMouseMove={draw}
+                            onMouseUp={stopDrawing}
+                            onMouseLeave={stopDrawing}
+                            onTouchStart={startDrawing}
+                            onTouchMove={draw}
+                            onTouchEnd={stopDrawing}
+                            style={{
+                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                                cursor: 'crosshair', touchAction: 'none', backgroundColor: 'transparent',
+                                zIndex: 2
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ textAlign: 'center', fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>
+                        💡 الأقلام والمساحة جاهزة، والذكاء الاصطناعي مرتبط بالفكرة الحالية داخل السبورة. رسوماتك محفوظة لـ 7 دقائق.
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ModulePage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-
-    // حالات الذكاء الاصطناعي (مفعلة فقط للزر العائم)
-    const [isAiAllowed] = useState<boolean>(true);
 
     const allChaptersMap: Record<Exclude<ChapterKey, 'additional-questions'>, ChapterData> = {
         '1.5': chapter1_5Data,
@@ -35,8 +364,8 @@ export default function ModulePage() {
     };
 
     const validChapters = Object.keys(allChaptersMap) as ChapterKey[];
-
     const chapterParam = searchParams.get('chapter') as ChapterKey | null;
+    const tabParam = searchParams.get('tab');
     const ideaParam = searchParams.get('idea');
 
     const initialChapter: ChapterKey = (chapterParam && (validChapters.includes(chapterParam) || chapterParam === 'additional-questions')) ? chapterParam : '1.5';
@@ -67,7 +396,42 @@ export default function ModulePage() {
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const [isFadingOut, setIsFadingOut] = useState(false);
 
+    const [isCanvasModalOpen, setIsCanvasModalOpen] = useState(false);
+    const [currentModalImage, setCurrentModalImage] = useState<string | undefined>(undefined);
+    const [currentModalMath, setCurrentModalMath] = useState<string | undefined>(undefined);
+    const [currentModalStorageKey, setCurrentModalStorageKey] = useState<string>('default_canvas');
+
     const isChapterView = chapterParam !== null && (validChapters.includes(chapterParam as ChapterKey) || chapterParam === 'additional-questions');
+
+    const chatStorageKey = `global_tutor_chat_${activeChapter}_${activeIdeaId}`;
+    const chatTimestampKey = `global_tutor_time_${activeChapter}_${activeIdeaId}`;
+
+    const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'tutor'; text: string }>>(() => {
+        if (typeof window !== 'undefined') {
+            const savedTime = sessionStorage.getItem(chatTimestampKey);
+            const savedChat = sessionStorage.getItem(chatStorageKey);
+            if (savedTime && savedChat) {
+                const elapsed = Date.now() - parseInt(savedTime, 10);
+                if (elapsed < 7 * 60 * 1000) {
+                    try {
+                        return JSON.parse(savedChat);
+                    } catch (e) {
+                        return [];
+                    }
+                }
+            }
+        }
+        return [];
+    });
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            if (chatMessages.length > 0) {
+                sessionStorage.setItem(chatStorageKey, JSON.stringify(chatMessages));
+                sessionStorage.setItem(chatTimestampKey, Date.now().toString());
+            }
+        }
+    }, [chatMessages, chatStorageKey, chatTimestampKey]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -77,11 +441,12 @@ export default function ModulePage() {
         }
     }, []);
 
-    // 🚀 التحديث الأهم: مزامنة الشابتر والفكرة النشطة بدقة مع المتغيرات ورابط الـ URL مباشرة
     useEffect(() => {
         if (chapterParam && (validChapters.includes(chapterParam as ChapterKey) || chapterParam === 'additional-questions')) {
             setActiveChapter(chapterParam);
-            if (chapterParam !== 'additional-questions') {
+            if (chapterParam === 'additional-questions' && tabParam) {
+                setSelectedAdditionalChapterTab(tabParam);
+            } else if (chapterParam !== 'additional-questions') {
                 const targetChapterData = allChaptersMap[chapterParam as Exclude<ChapterKey, 'additional-questions'>];
                 if (targetChapterData) {
                     const ideasForChapter = targetChapterData.ideas;
@@ -93,7 +458,6 @@ export default function ModulePage() {
                 }
             }
         } else {
-            // إذا لم يكن هناك شابتر محدد في الـ URL، نضبطه على الافتراضي أو نحتفظ به
             setActiveChapter('1.5');
         }
         setSelectedOption(null);
@@ -102,7 +466,7 @@ export default function ModulePage() {
         setActiveSubPartIndex(0);
         setSubPartSelectedOptions({});
         setSubPartAttempted({});
-    }, [chapterParam, ideaParam]);
+    }, [chapterParam, ideaParam, tabParam]);
 
     const totalIdeasCount = Object.values(allChaptersMap).reduce((acc, ch) => acc + ch.ideas.length, 0);
     const completedIdeasCount = Object.keys(allChaptersMap).reduce((acc, chKey) => {
@@ -139,27 +503,41 @@ export default function ModulePage() {
 
     const currentIdeaObj = currentChapterData?.ideas.find(i => i.id === activeIdeaId) || currentChapterData?.ideas[0];
 
+    const activeIdeaMetaObj = isAdditionalView
+        ? { id: 'additional', name: 'الأسئلة الإضافية الشاملة للمقرر' }
+        : currentIdeaObj && currentChapterData
+            ? {
+                id: currentIdeaObj.id,
+                name: `شابتر ${currentChapterData.chapterNumber} (${currentChapterData.chapterTitle}) - فكرة ${currentIdeaObj.ideaNumber}: ${currentIdeaObj.ideaName}`
+            }
+            : undefined;
+
+    // دالة مساعدة عامة لتسجيل اكتمال الفكرة وإظهار التوست
+    const markIdeaAsCompleted = () => {
+        const currentKey = `${activeChapter}-${activeIdeaId}`;
+        setIsFadingOut(false);
+        setShowSuccessToast(true);
+
+        setTimeout(() => { setIsFadingOut(true); }, 2000);
+        setTimeout(() => { setShowSuccessToast(false); setIsFadingOut(false); }, 2500);
+
+        let updatedList = [...completedItems];
+        if (!updatedList.includes(currentKey)) {
+            updatedList.push(currentKey);
+            setCompletedItems(updatedList);
+            localStorage.setItem('module_1_completed_items', JSON.stringify(updatedList));
+        }
+    };
+
     function handleQuizVerify() {
         if (!currentIdeaObj || !currentIdeaObj.practiceQuestion) return;
         setErrorMsg('');
         setHasAttempted(true);
 
-        const currentKey = `${activeChapter}-${activeIdeaId}`;
         const isCorrect = selectedOption === currentIdeaObj.practiceQuestion.correctAnswer;
 
         if (isCorrect) {
-            setIsFadingOut(false);
-            setShowSuccessToast(true);
-
-            setTimeout(() => { setIsFadingOut(true); }, 2000);
-            setTimeout(() => { setShowSuccessToast(false); setIsFadingOut(false); }, 2500);
-
-            let updatedList = [...completedItems];
-            if (!updatedList.includes(currentKey)) {
-                updatedList.push(currentKey);
-                setCompletedItems(updatedList);
-                localStorage.setItem('module_1_completed_items', JSON.stringify(updatedList));
-            }
+            markIdeaAsCompleted();
         } else {
             setErrorMsg('❌ إجابة خاطئة، حاول مرة أخرى!');
         }
@@ -167,6 +545,19 @@ export default function ModulePage() {
 
     function handleSubPartVerify(partIndex: number) {
         setSubPartAttempted(prev => ({ ...prev, [partIndex]: true }));
+
+        if (!currentIdeaObj || !currentIdeaObj.practiceQuestion || !currentIdeaObj.practiceQuestion.subQuestions) return;
+        const subQuestionsList = currentIdeaObj.practiceQuestion.subQuestions;
+
+        // التحقق مما إذا كانت جميع الأجزاء قد تم حلها وبشكل صحيح
+        const allCorrect = subQuestionsList.every((sub, sIdx) => {
+            const userChoice = subPartSelectedOptions[sIdx];
+            return userChoice === sub.correctAnswer;
+        });
+
+        if (allCorrect) {
+            markIdeaAsCompleted();
+        }
     }
 
     function handleAdditionalVerify(index: number) {
@@ -229,11 +620,21 @@ export default function ModulePage() {
         <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '80px', position: 'relative' }}>
             <Navbar isLoggedIn={true} />
 
-            {/* مكون المعلم الذكي - الزر العائم مع إرسال السياق الحالي للشابتر والفكرة */}
-            {isAiAllowed && (
+            <FullScreenCanvasModal
+                isOpen={isCanvasModalOpen}
+                onClose={() => setIsCanvasModalOpen(false)}
+                questionImage={currentModalImage}
+                mathText={currentModalMath}
+                modalStorageKey={currentModalStorageKey}
+                activeChapter={activeChapter}
+                activeIdeaMeta={activeIdeaMetaObj}
+            />
+
+            {isChapterView && (
                 <GlobalTutor
+                    key={`${activeChapter}-${activeIdeaId}`}
                     currentChapter={activeChapter}
-                    currentIdea={currentIdeaObj ? { id: currentIdeaObj.id, name: currentIdeaObj.ideaName } : undefined}
+                    currentIdea={activeIdeaMetaObj}
                 />
             )}
 
@@ -290,7 +691,6 @@ export default function ModulePage() {
                     </div>
                 </div>
 
-                {/* قائمة الشباتر الرئيسية */}
                 {!isChapterView && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                         {(Object.keys(allChaptersMap) as ChapterKey[]).map((chKey) => {
@@ -345,7 +745,6 @@ export default function ModulePage() {
                     </div>
                 )}
 
-                {/* صفحة الأسئلة الإضافية الشاملة */}
                 {isAdditionalView && (
                     <>
                         <div style={{ marginBottom: '16px' }}>
@@ -449,22 +848,6 @@ export default function ModulePage() {
                                                 سؤال {index + 1}: {q.questionText}
                                             </div>
 
-                                            {q.graphImage && (
-                                                <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                                                    <img
-                                                        src={q.graphImage}
-                                                        alt="Graph for additional question"
-                                                        style={{ maxWidth: '240px', height: 'auto', borderRadius: '8px', border: '1px solid #ccc', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {q.mathExpression && (
-                                                <div style={{ marginBottom: '12px', direction: 'ltr', display: 'inline-block' }}>
-                                                    <BlockMath math={q.mathExpression} />
-                                                </div>
-                                            )}
-
                                             {q.subQuestions && q.subQuestions.length > 0 ? (
                                                 <div>
                                                     <div style={{ margin: '15px 0 12px 0', display: 'flex', gap: '8px', flexWrap: 'wrap', borderBottom: '2px solid #e6dec5', paddingBottom: '10px' }}>
@@ -511,6 +894,26 @@ export default function ModulePage() {
                                                                     )}
                                                                 </div>
 
+                                                                <div style={{ marginBottom: '12px' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setCurrentModalImage(currentSub.graphImage || q.graphImage);
+                                                                            setCurrentModalMath(currentSub.mathExpression || q.mathExpression);
+                                                                            setCurrentModalStorageKey(`add_sub_${index}_${activeSubIdx}`);
+                                                                            setIsCanvasModalOpen(true);
+                                                                        }}
+                                                                        style={{
+                                                                            background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
+                                                                            padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
+                                                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                                        }}
+                                                                    >
+                                                                        ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
+                                                                    </button>
+                                                                </div>
+
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
                                                                     {currentSub.options.map((opt) => (
                                                                         <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: subUserChoice === opt ? '#FEECD0' : '#FFF9E2', border: '1px solid #e6dec5', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
@@ -554,6 +957,32 @@ export default function ModulePage() {
                                                 </div>
                                             ) : (
                                                 <>
+                                                    {q.mathExpression && (
+                                                        <div style={{ marginBottom: '12px', direction: 'ltr', display: 'inline-block' }}>
+                                                            <BlockMath math={q.mathExpression} />
+                                                        </div>
+                                                    )}
+
+                                                    <div style={{ marginBottom: '12px' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setCurrentModalImage(q.graphImage);
+                                                                setCurrentModalMath(q.mathExpression);
+                                                                setCurrentModalStorageKey(`add_q_${index}`);
+                                                                setIsCanvasModalOpen(true);
+                                                            }}
+                                                            style={{
+                                                                background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
+                                                                padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
+                                                                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                            }}
+                                                        >
+                                                            ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
+                                                        </button>
+                                                    </div>
+
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
                                                         {q.options?.map((opt) => (
                                                             <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: userChoice === opt ? '#FEECD0' : '#fff', border: '1px solid #e6dec5', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
@@ -593,6 +1022,7 @@ export default function ModulePage() {
                                                     )}
                                                 </>
                                             )}
+
                                         </div>
                                     );
                                 })
@@ -601,7 +1031,6 @@ export default function ModulePage() {
                     </>
                 )}
 
-                {/* عرض محتوى الشابتر والأفكار */}
                 {isChapterView && !isAdditionalView && currentChapterData && (
                     <>
                         <div style={{ marginBottom: '16px' }}>
@@ -617,7 +1046,6 @@ export default function ModulePage() {
                             </button>
                         </div>
 
-                        {/* شبكة الأفكار */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px', marginBottom: '20px' }}>
                             {currentChapterData.ideas.map((idea) => {
                                 const isIdeaActive = idea.id === activeIdeaId;
@@ -643,7 +1071,6 @@ export default function ModulePage() {
                             })}
                         </div>
 
-                        {/* تفاصيل الفكرة النشطة */}
                         {currentIdeaObj && (
                             <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
@@ -652,7 +1079,6 @@ export default function ModulePage() {
                                     </h2>
                                 </div>
 
-                                {/* الشرح النظري */}
                                 <div style={{ marginBottom: '24px' }}>
                                     <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>💡 الشرح النظري الممهد والمبسط:</h3>
                                     <div style={{ display: 'grid', gap: '12px' }}>
@@ -665,7 +1091,6 @@ export default function ModulePage() {
                                     </div>
                                 </div>
 
-                                {/* فيديو الشرح */}
                                 {currentIdeaObj.videoUrl && (
                                     <div style={{ marginBottom: '24px' }}>
                                         <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>🎥 فيديو الشرح:</h3>
@@ -681,7 +1106,6 @@ export default function ModulePage() {
                                     </div>
                                 )}
 
-                                {/* السؤال التطبيقي للفكرة */}
                                 <div style={{ background: '#FAFAFA', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px' }}>
                                     <h3 style={{ fontSize: '1rem', color: '#8c5521', marginBottom: '12px' }}>✍️ السؤال التطبيقي:</h3>
 
@@ -691,28 +1115,13 @@ export default function ModulePage() {
                                                 {currentIdeaObj.practiceQuestion.questionText}
                                             </div>
 
-                                            {currentIdeaObj.practiceQuestion.graphImage && (
-                                                <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                                                    <img
-                                                        src={currentIdeaObj.practiceQuestion.graphImage}
-                                                        alt="Graph for question"
-                                                        style={{ maxWidth: '240px', height: 'auto', borderRadius: '8px', border: '1px solid #ccc', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {currentIdeaObj.practiceQuestion.mathExpression && (
-                                                <div style={{ marginBottom: '14px', direction: 'ltr', display: 'inline-block' }}>
-                                                    <BlockMath math={currentIdeaObj.practiceQuestion.mathExpression} />
-                                                </div>
-                                            )}
-
                                             {currentIdeaObj.practiceQuestion.subQuestions && currentIdeaObj.practiceQuestion.subQuestions.length > 0 ? (
                                                 <div>
                                                     <div style={{ margin: '15px 0 12px 0', display: 'flex', gap: '8px', flexWrap: 'wrap', borderBottom: '2px solid #e6dec5', paddingBottom: '10px' }}>
                                                         {currentIdeaObj.practiceQuestion.subQuestions.map((subQ, sIdx) => {
                                                             const isSubActive = activeSubPartIndex === sIdx;
                                                             const isSubTried = subPartAttempted[sIdx] || false;
+                                                            const isSubCorrect = subPartSelectedOptions[sIdx] === subQ.correctAnswer;
 
                                                             return (
                                                                 <button
@@ -726,7 +1135,7 @@ export default function ModulePage() {
                                                                         fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s'
                                                                     }}
                                                                 >
-                                                                    الجزئية ({sIdx + 1}) {isSubTried ? '✅' : ''}
+                                                                    الجزئية ({sIdx + 1}) {isSubTried && isSubCorrect ? '✅' : isSubTried ? '❌' : '⚪'}
                                                                 </button>
                                                             );
                                                         })}
@@ -749,6 +1158,26 @@ export default function ModulePage() {
                                                                             <BlockMath math={currentSub.mathExpression} />
                                                                         </span>
                                                                     )}
+                                                                </div>
+
+                                                                <div style={{ marginBottom: '12px' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            setCurrentModalImage(currentSub.graphImage || currentIdeaObj.practiceQuestion?.graphImage);
+                                                                            setCurrentModalMath(currentSub.mathExpression || currentIdeaObj.practiceQuestion?.mathExpression);
+                                                                            setCurrentModalStorageKey(`idea_${activeChapter}_${activeIdeaId}_sub_${activeSubPartIndex}`);
+                                                                            setIsCanvasModalOpen(true);
+                                                                        }}
+                                                                        style={{
+                                                                            background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
+                                                                            padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
+                                                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                                        }}
+                                                                    >
+                                                                        ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
+                                                                    </button>
                                                                 </div>
 
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
@@ -777,7 +1206,7 @@ export default function ModulePage() {
                                                                     <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: isSubCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isSubCorrect ? '#bbf7d0' : '#fca5a5'}`, fontSize: '13px' }}>
                                                                         {isSubCorrect ? (
                                                                             <div>
-                                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ إجابة صحيحة!</div>
+                                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ إجابة صحيحة في هذه الجزئية!</div>
                                                                                 {renderStructuredExplanation(currentSub.questionExplanation)}
                                                                             </div>
                                                                         ) : (
@@ -794,6 +1223,32 @@ export default function ModulePage() {
                                                 </div>
                                             ) : (
                                                 <div>
+                                                    {currentIdeaObj.practiceQuestion.mathExpression && (
+                                                        <div style={{ marginBottom: '14px', direction: 'ltr', display: 'inline-block' }}>
+                                                            <BlockMath math={currentIdeaObj.practiceQuestion.mathExpression} />
+                                                        </div>
+                                                    )}
+
+                                                    <div style={{ marginBottom: '14px' }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setCurrentModalImage(currentIdeaObj.practiceQuestion?.graphImage);
+                                                                setCurrentModalMath(currentIdeaObj.practiceQuestion?.mathExpression);
+                                                                setCurrentModalStorageKey(`idea_${activeChapter}_${activeIdeaId}`);
+                                                                setIsCanvasModalOpen(true);
+                                                            }}
+                                                            style={{
+                                                                background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
+                                                                padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
+                                                                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                            }}
+                                                        >
+                                                            ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
+                                                        </button>
+                                                    </div>
+
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                                                         {currentIdeaObj.practiceQuestion.options.map((opt) => (
                                                             <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: selectedOption === opt ? '#FEECD0' : '#FFF9E2', border: '1px solid #e6dec5', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '10px' }}>
@@ -833,12 +1288,44 @@ export default function ModulePage() {
                                                     )}
                                                 </div>
                                             )}
+
                                         </div>
                                     ) : (
                                         <div style={{ color: '#8c5521', fontSize: '13px', padding: '10px 0' }}>
                                             لا توجد أسئلة تدريبية مضافة لهذه الفكرة حالياً.
                                         </div>
                                     )}
+                                </div>
+
+                                {/* مستطيل الانتقال للأسئلة الإضافية الخاصة بهذا الشابتر مع تمرير التاب الخاص به */}
+                                <div style={{ marginTop: '24px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            router.push(`/workspace/101/1?chapter=additional-questions&tab=${encodeURIComponent(activeChapter)}`);
+                                        }}
+                                        style={{
+                                            width: '100%', background: '#FEECD0', border: '1px solid #DCA27B', borderRadius: '12px',
+                                            padding: '16px 20px', cursor: 'pointer', textAlign: 'right', display: 'flex',
+                                            justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                            transition: 'background 0.2s'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ fontSize: '20px' }}>➕</span>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#8c5521' }}>
+                                                    أسئلة إضافية للشابتر {currentChapterData.chapterNumber}
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#2C3531', marginTop: '2px' }}>
+                                                    انتقل مباشرة لتدريبات هذا الشابتر واختبر فهمك
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ fontWeight: 'bold', color: '#8c5521', fontSize: '14px' }}>
+                                            عرض الأسئلة ←
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
                         )}

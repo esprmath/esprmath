@@ -9,6 +9,7 @@ export interface PracticeQuestion {
     questionText: string;
     mathExpression?: string;
     graphImage?: string;
+    customQuestionImage?: string;
     options: string[];
     correctAnswer: string;
     questionExplanation?: string;

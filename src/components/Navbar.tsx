@@ -294,7 +294,9 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             return
         }
 
-        router.push(`/workspace/${data[0].course_id}`)
+        // تحويل الـ ID إلى حروف صغيرة لضمان توافقه مع اسم المجلد في المسار
+        const courseId = data[0].course_id.toLowerCase()
+        router.push(`/workspace/${courseId}`)
     }
 
     const getDaysRemaining = () => {

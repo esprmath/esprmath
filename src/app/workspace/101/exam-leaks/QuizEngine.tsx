@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import GlobalTutor from '@/components/GlobalTutor'
 import { supabase } from '@/lib/supabase'
+import { BlockMath, InlineMath } from 'react-katex'
+import 'katex/dist/katex.min.css'
 
 export type QuizDataQuestion = {
     id: number
@@ -51,6 +53,7 @@ type QuizEngineProps = {
     title: string
     questions: QuizDataQuestion[]
     chapters: string[]
+    allowedIdeas?: string[]
     coursePath: string
     savedMistakesKey: string
 
@@ -73,6 +76,39 @@ function isQuizReady(
 
 function ideaKey(question: QuizDataQuestion) {
     return `${question.chapter}-${question.ideaId}`
+}
+
+// دالة سحب أسئلة مخصصة بناءً على أفكار محددة
+function buildSelectedIdeasPool(
+    questions: any[],
+    targetIdeas?: string[]
+) {
+    const byIdea = new Map<string, any[]>()
+
+    for (const question of questions) {
+        const key = ideaKey(question)
+
+        if (targetIdeas && targetIdeas.length > 0 && !targetIdeas.includes(key)) {
+            continue
+        }
+
+        byIdea.set(
+            key,
+            [
+                ...(byIdea.get(key) ?? []),
+                question
+            ]
+        )
+    }
+
+    return Array.from(byIdea.values()).map(
+        (group) =>
+            group[
+                Math.floor(
+                    Math.random() * group.length
+                )
+                ]
+    )
 }
 
 function buildRandomReview(
@@ -102,33 +138,6 @@ function buildRandomReview(
     )
 }
 
-function shuffleQuestions(
-    questions: ReadyQuestion[]
-) {
-    const copy = [...questions]
-
-    for (
-        let index = copy.length - 1;
-        index > 0;
-        index--
-    ) {
-        const randomIndex =
-            Math.floor(
-                Math.random() * (index + 1)
-            )
-
-        ;[
-            copy[index],
-            copy[randomIndex]
-        ] = [
-            copy[randomIndex],
-            copy[index]
-        ]
-    }
-
-    return copy
-}
-
 const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #e6dec5',
@@ -148,57 +157,47 @@ const primaryButton: React.CSSProperties = {
     cursor: 'pointer'
 }
 
-
+// دالة عرض المعادلات الرياضية باستخدام KaTeX
 function renderMathContent(mathKey: string) {
     if (!mathKey) return null
 
-    const wrap = (content: React.ReactNode) => (
+    return (
         <div
             style={{
                 direction: 'ltr',
                 textAlign: 'center',
                 padding: '12px',
-                fontSize: '14px',
-                overflowX: 'auto'
+                overflowX: 'auto',
+                color: '#2C3531'
             }}
         >
-            {content}
+            <BlockMath math={mathKey} />
         </div>
     )
+}
 
-    const formulas: Record<string, React.ReactNode> = {
-        m15q20: <><div style={{fontSize:'20px'}}>
-            lim <sub>x→−3</sub>
-            [
-            <span style={{display:'inline-block', textAlign:'center', verticalAlign:'middle'}}>
-        <span style={{display:'block', borderBottom:'1px solid #222', padding:'0 8px'}}>
-            x² − 3x
-        </span>
-        <span style={{display:'block', padding:'0 8px'}}>
-            x² − 9
-        </span>
-    </span>
-            )
-            ]
-        </div></>,
-        m15q27: <>lim x→5⁺ (x+1)/(x−5)</>,
-        m15q31: <>lim x→(−2)⁺ (x−1)/(x²(x+2))</>,
-        m15q33: <>lim x→(π/2)⁺ (sec x)/x</>,
-        m15q38: <>Find the vertical asymptotes using limits</>,
-        m16ex2a: <>Evaluate the following limits and justify each step</>,
-        m16ex2b: <>Evaluate the following limits and justify each step</>,
-        m21ex1: <>y = x² , P(1,1)</>,
-        m21ex2: <>y = 3/x , P(3,1)</>,
-        m34ex3: <>Evaluate the following limit</>
+// دالة عرض الخيارات مع دعم KaTeX
+function renderOptionContent(opt: string) {
+    if (opt.includes('\\')) {
+        const match = opt.match(/^([A-D]\))\s*(.*)$/);
+        if (match) {
+            return (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', direction: 'ltr' }}>
+                    <span>{match[1]}</span>
+                    <InlineMath math={match[2]} />
+                </span>
+            );
+        }
+        return <span style={{ direction: 'ltr', display: 'inline-block' }}><InlineMath math={opt} /></span>;
     }
-
-    return wrap(formulas[mathKey] ?? mathKey)
+    return opt;
 }
 
 export default function QuizEngine({
                                        title,
                                        questions,
                                        chapters,
+                                       allowedIdeas,
                                        coursePath,
                                        savedMistakesKey,
                                        reviewVideoUrl,
@@ -232,29 +231,16 @@ export default function QuizEngine({
             [allowedQuestions]
         )
 
-    const leakPool =
-        useMemo<ReadyQuestion[]>(
-            () =>
-                allowedQuestions.filter(
-                    (
-                        question
-                    ): question is ReadyQuestion =>
-                        isQuizReady(
-                            question
-                        ) &&
-                        question.source ===
-                        'leak' &&
-                        (
-                            !leakExamId ||
-                            question.examId ===
-                            leakExamId
-                        )
-                ),
-            [
-                allowedQuestions,
-                leakExamId
-            ]
-        )
+    // وعاء التسريبات والأفكار المحددة بناءً على allowedIdeas
+    const leakPool = useMemo(
+        () => {
+            const allReady = questions.filter(
+                (q) => chapters.includes(q.chapter) && isQuizReady(q)
+            )
+            return buildSelectedIdeasPool(allReady, allowedIdeas)
+        },
+        [questions, chapters, allowedIdeas]
+    )
 
     const [
         currentSection,
@@ -506,16 +492,8 @@ export default function QuizEngine({
     }
 
     function startLeaks() {
-        setActiveQuestions(
-            shuffleQuestions(
-                leakPool
-            )
-        )
-
-        setCurrentSection(
-            'leaks'
-        )
-
+        setActiveQuestions(leakPool)
+        setCurrentSection('leaks')
         resetAttempt()
     }
 
@@ -1240,7 +1218,7 @@ export default function QuizEngine({
                         <h2>
                             {currentSection ===
                             'leaks'
-                                ? '🔥 انتهيت من تدريب التسريبات!'
+                                ? '🔥 انتهيت من تدريب التسريبات والأفكار المحددة!'
                                 : '🎉 انتهيت من المراجعة!'}
                         </h2>
 
@@ -1444,60 +1422,6 @@ export default function QuizEngine({
                                     جديدة
                                     ➔
                                 </button>
-
-                                <div
-                                    style={{
-                                        marginTop:
-                                            '5px'
-                                    }}
-                                >
-                                    <button
-                                        onClick={() =>
-                                            openVideo(
-                                                reviewVideoUrl,
-                                                'شرح مراجعة الاختبار'
-                                            )
-                                        }
-                                        style={{
-                                            background:
-                                                'transparent',
-                                            color:
-                                                '#8c5521',
-                                            border:
-                                                'none',
-                                            fontWeight:
-                                                'bold',
-                                            cursor:
-                                                'pointer'
-                                        }}
-                                    >
-                                        مشاهدة
-                                        شرح
-                                        المراجعة{' '}
-                                        {activeVideo?.title ===
-                                        'شرح مراجعة الاختبار'
-                                            ? '▼'
-                                            : '▶'}
-                                    </button>
-
-                                    {activeVideo?.title ===
-                                        'شرح مراجعة الاختبار' && (
-                                            <div
-                                                style={{
-                                                    fontSize:
-                                                        '11px',
-                                                    color:
-                                                        '#8c5521',
-                                                    fontWeight:
-                                                        'bold'
-                                                }}
-                                            >
-                                                ↓ المقطع
-                                                مفتوح
-                                                بالأسفل
-                                            </div>
-                                        )}
-                                </div>
                             </section>
 
                             <section
@@ -1513,15 +1437,11 @@ export default function QuizEngine({
                                 }}
                             >
                                 <h3>
-                                    🔥 تسريبات
-                                    الاختبارات
-                                    السابقة
+                                    🔥 تسريبات الأفكار المحددة
                                 </h3>
 
                                 <p>
-                                    تسريبات
-                                    الاختبار
-                                    الحالي فقط.
+                                    سؤال عشوائي من الأفكار المحددة للنظام.
                                 </p>
 
                                 <button
@@ -1547,12 +1467,8 @@ export default function QuizEngine({
                                     ➔
                                 </button>
 
-                                <div
-                                    style={{
-                                        marginTop:
-                                            '5px'
-                                    }}
-                                >
+                                {/* 💡 تمت إضافة زر مشاهدة شرح التسريبات هنا بشكل رسمي */}
+                                <div style={{ marginTop: '10px' }}>
                                     <button
                                         onClick={() =>
                                             openVideo(
@@ -1570,35 +1486,16 @@ export default function QuizEngine({
                                             fontWeight:
                                                 'bold',
                                             cursor:
-                                                'pointer'
+                                                'pointer',
+                                            padding: 0
                                         }}
                                     >
-                                        مشاهدة
-                                        شرح
-                                        التسريبات{' '}
+                                        مشاهدة شرح التسريبات{' '}
                                         {activeVideo?.title ===
                                         'شرح تسريبات الاختبار'
                                             ? '▼'
                                             : '▶'}
                                     </button>
-
-                                    {activeVideo?.title ===
-                                        'شرح تسريبات الاختبار' && (
-                                            <div
-                                                style={{
-                                                    fontSize:
-                                                        '11px',
-                                                    color:
-                                                        '#8c3f21',
-                                                    fontWeight:
-                                                        'bold'
-                                                }}
-                                            >
-                                                ↓ المقطع
-                                                مفتوح
-                                                بالأسفل
-                                            </div>
-                                        )}
                                 </div>
                             </section>
 
@@ -1631,6 +1528,7 @@ export default function QuizEngine({
                                     : ''}
                             </button>
 
+                            {/* 💡 تمت إضافة عرض مشغل الفيديو المنبثق بالأسفل عند الضغط عليه */}
                             {activeVideo && (
                                 <div
                                     style={{
@@ -1766,10 +1664,7 @@ export default function QuizEngine({
                         }}
                     >
                         <p>
-                            لا توجد
-                            أسئلة جاهزة
-                            لهذا القسم
-                            حالياً.
+                            لا توجد أسئلة مضافة للأفكار المحددة حالياً. تأكد من إضافتها في ملف الصفحة.
                         </p>
 
                         <button
@@ -1962,9 +1857,7 @@ export default function QuizEngine({
                                             '1px solid #e6dec5'
                                     }}
                                 >
-                                    {
-                                        option
-                                    }
+                                    {renderOptionContent(option)}
                                 </button>
                             )
                         )}
