@@ -118,16 +118,17 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
             ideaName: "Infinite Limits",
             ideaAnchorId: "idea-3"
         },
-        questionText: "Evaluate the one-sided infinite limit:",
-        mathExpression: "\\lim_{x \\to 0^+} \\ln(x)",
+        // تم تغيير السؤال الرابع (السابق كان لوغاريتم) إلى سؤال أبسط بكثير
+        questionText: "Find the one-sided infinite limit:",
+        mathExpression: "\\lim_{x \\to 1^+} \\frac{2}{x - 1}",
         options: [
             "A) 0",
             "B) 1",
             "C) \\infty",
             "D) -\\infty"
         ],
-        correctAnswer: "D) -\\infty",
-        questionExplanation: "عندما تقترب x من الصفر من جهة اليمين (قيم موجبة قريبة جداً من الصفر مثل 0.001)، فإن قيمة اللوغاريتم الطبيعي تتجه نحو السالب مالانهاية."
+        correctAnswer: "C) \\infty",
+        questionExplanation: "بالتعويض بـ x تقترب من 1 من اليمين (مثل 1.1)، يصبح المقام موجباً وصغيراً جداً (0.1)، وقسمة عدد موجب على كمية موجبة صغيرة يعطي موجب مالانهاية."
     },
     {
         meta: {
@@ -156,16 +157,17 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
             ideaName: "Finding Vertical Asymptotes Using Limits",
             ideaAnchorId: "idea-4"
         },
-        questionText: "Determine the vertical asymptote for the logarithmic function:",
-        mathExpression: "f(x) = \\ln(x - 3)",
+        // تم تغيير السؤال السادس (السابق لوغاريتم) إلى سؤال دالة كسرية أبسط وأسهل للفهم
+        questionText: "Find the vertical asymptote of the rational function:",
+        mathExpression: "f(x) = \\frac{5}{x - 4}",
         options: [
             "A) x = 0",
-            "B) x = 3",
-            "C) x = -3",
+            "B) x = 4",
+            "C) x = -4",
             "D) No vertical asymptote"
         ],
-        correctAnswer: "B) x = 3",
-        questionExplanation: "الخط المحاذي الرأسي للدالة اللوغاريتمية يحدث عندما يقترب ما داخل اللوغاريتم من الصفر، أي عندما x - 3 = 0 ومنها x = 3."
+        correctAnswer: "B) x = 4",
+        questionExplanation: "الخط المحاذي الرأسي يوجد عند أصفار المقام، وبمساواة (x - 4 = 0) نجد أن الخط المحاذي هو x = 4."
     },
 
     // ================= شابتر 1.6 (الأسئلة السابقة) =================
@@ -401,7 +403,6 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
     },
 
     // ================= شابتر 1.8 (الشابتر الرابع - الاتصال) =================
-    // أسئلة الفكرة الأولى (4.1): Conditions of Continuity at a Point
     {
         meta: {
             moduleNumber: "1",
@@ -440,8 +441,6 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
         correctAnswer: "A) Continuous, g(0) = 2",
         questionExplanation: "بالتعويض المباشر: g(0) = √(0 + 9) - 1 = 3 - 1 = 2، والنهاية تطابق هذه القيمة تماماً."
     },
-
-    // أسئلة الفكرة الثانية (4.2): Classifying Types of Discontinuity
     {
         meta: {
             moduleNumber: "1",
@@ -480,8 +479,6 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
         correctAnswer: "C) Infinite discontinuity",
         questionExplanation: "عند الاقتراب من الصفر تتجه قيم الدالة نحو مالانهاية، مما ينتج عنه خط محاذي رأسي وعدم اتصال لانهائي."
     },
-
-    // أسئلة الفكرة الثالثة (4.3): Algebraic Properties of Continuous Functions and Intervals of Continuity
     {
         meta: {
             moduleNumber: "1",
@@ -520,8 +517,6 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
         correctAnswer: "B) All real numbers except x = 3 and x = -3",
         questionExplanation: "الدالة الكسرية متصلة على كل مجالها، والمجال يستثني الأصفار التي تجعل المقام مساوياً للصفر (x^2 - 9 = 0) أي عند x = 3 و x = -3."
     },
-
-    // أسئلة الفكرة الرابعة (4.4): Continuity of Composite Radical and Rational Functions
     {
         meta: {
             moduleNumber: "1",
@@ -561,164 +556,184 @@ export const moreQuesData: ConnectedPracticeQuestion[] = [
         questionExplanation: "الشرط الأول للجذر: x \\ge 0. والشرط الثاني للمقام: x \\neq 4. وبدمج الشرطين نتحصل على الفترة الممتدة من الصفر (مغلقة) إلى 4 (مفتوحة) مضافاً إليها الفترة من 4 إلى ما لانهاية."
     },
 
-    // ================= شابتر 3.4 (آخر شابتر) =================
-    // أسئلة الفكرة الأولى (3.4 - فكرة 1: Derivatives of Trigonometric Functions)
+    // ================= شابتر 3.4 (الفكرة 5.1 - الثلاث أسئلة) =================
     {
         meta: {
             moduleNumber: "1",
             chapterNumber: "3.4",
             ideaNumber: "5.1",
-            ideaName: "Derivatives of Trigonometric Functions",
+            ideaName: "Fundamental Concepts of Limits at Infinity for Reciprocal and Trigonometric Functions",
             ideaAnchorId: "idea-1"
         },
-        questionText: "Find the derivative of the function:",
-        mathExpression: "f(x) = x^2 \\sin(x)",
+        questionText: "Find the limit:",
+        mathExpression: "\\lim_{x \\to \\infty} \\frac{1}{x}",
         options: [
-            "A) 2x \\sin(x) + x^2 \\cos(x)",
-            "B) 2x \\cos(x)",
-            "C) x^2 \\cos(x) - 2x \\sin(x)",
-            "D) 2x \\sin(x) - x^2 \\cos(x)"
+            "A) \\infty",
+            "B) 1",
+            "C) 0",
+            "D) DNE"
         ],
-        correctAnswer: "A) 2x \\sin(x) + x^2 \\cos(x)",
-        questionExplanation: "نستخدم قاعدة الضرب (Product Rule): المشتقة الأولى في الثانية + الأولى في مشتقة الثانية. مشتقه (x^2) هي 2x ومشتقة (sin x) هي cos x، إذن الناتج: 2x sin(x) + x^2 cos(x)."
+        correctAnswer: "C) 0",
+        questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. عندما تقترب x من ما لا نهاية (\\infty)، فإن المقام x يكبر بلا حدود بينما البسط ثابت (1).\n2. قسمة عدد ثابت على كمية ضخمة جداً تقترب من مالانهاية يساوي صفراً.\n3. إذن الناتج النهائي يساوي 0."
     },
     {
         meta: {
             moduleNumber: "1",
             chapterNumber: "3.4",
             ideaNumber: "5.1",
-            ideaName: "Derivatives of Trigonometric Functions",
+            ideaName: "Fundamental Concepts of Limits at Infinity for Reciprocal and Trigonometric Functions",
             ideaAnchorId: "idea-1"
         },
-        questionText: "Evaluate the derivative of the trigonometric function at x = 0:",
-        mathExpression: "y = \\cos(x) - x \\sin(x), \\quad \\text{at } x = 0",
+        questionText: "Find the limit:",
+        mathExpression: "\\lim_{x \\to -\\infty} \\frac{5}{x^3}",
+        options: [
+            "A) \\infty",
+            "B) 5",
+            "C) 0",
+            "D) -\\infty"
+        ],
+        correctAnswer: "C) 0",
+        questionExplanation: "طريقة الحل:\n1. عندما x تؤول إلى سالب مالانهاية (-∞)، فإن المقام x^3 يظل يؤول إلى مالانهاية بالسالب.\n2. ثابت مقسوماً على كمية تكبر بلا حدود يؤول ناتجه إلى الصفر (0)."
+    },
+    {
+        meta: {
+            moduleNumber: "1",
+            chapterNumber: "3.4",
+            ideaNumber: "5.1",
+            ideaName: "Fundamental Concepts of Limits at Infinity for Reciprocal and Trigonometric Functions",
+            ideaAnchorId: "idea-1"
+        },
+        questionText: "Find the limit or show that it does not exist:",
+        mathExpression: "\\lim_{x \\to \\infty} \\sin(x)",
         options: [
             "A) 0",
             "B) 1",
             "C) -1",
-            "D) \\pi"
+            "D) DNE"
+        ],
+        correctAnswer: "D) DNE",
+        questionExplanation: "طريقة الحل:\n1. الدالة المثلثية sin(x) تتذبذب باستمرار بين القيمتين -1 و 1 كلما كبرت x ولا تستقر أبداً عند قيمة محددة.\n2. لذلك فإن النهاية غير موجودة (Does Not Exist / DNE)."
+    },
+
+    // ================= شابتر 3.4 (الفكرة 5.2 - السؤالين) =================
+    {
+        meta: {
+            moduleNumber: "1",
+            chapterNumber: "3.4",
+            ideaNumber: "5.2",
+            ideaName: "Limits of Rational and Radical Functions at Infinity and Identifying Horizontal Asymptotes",
+            ideaAnchorId: "idea-2"
+        },
+        questionText: "Evaluate the following limit:",
+        mathExpression: "\\lim_{x \\to \\infty} \\frac{4x^2 + 2x - 5}{8x^2 - 3x + 1}",
+        options: [
+            "A) \\frac{1}{2}",
+            "B) \\frac{1}{4}",
+            "C) 2",
+            "D) 0"
+        ],
+        correctAnswer: "A) \\frac{1}{2}",
+        questionExplanation: "طريقة الحل:\n1. أعلى قوة في المقام هي x^2.\n2. بقسمة حدود البسط والمقام على x^2 وأخذ النهاية عندما x → ∞، تؤول جميع الحدود الكسرية إلى الصفر.\n3. يتبقى معامل أعلى درجة في البسط (4) مقسوماً على معامل أعلى درجة في المقام (8)، ليصبح الناتج 4/8 = 1/2."
+    },
+    {
+        meta: {
+            moduleNumber: "1",
+            chapterNumber: "3.4",
+            ideaNumber: "5.2",
+            ideaName: "Limits of Rational and Radical Functions at Infinity and Identifying Horizontal Asymptotes",
+            ideaAnchorId: "idea-2"
+        },
+        questionText: "Find the horizontal asymptote(s) of the function f(x) as x approaches infinity (x → ∞):",
+        mathExpression: "f(x) = \\frac{\\sqrt{9x^2 + 4}}{5x - 2}",
+        options: [
+            "A) y = \\frac{3}{5}",
+            "B) y = \\frac{9}{5}",
+            "C) y = 0",
+            "D) No horizontal asymptote"
+        ],
+        correctAnswer: "A) y = \\frac{3}{5}",
+        questionExplanation: "طريقة الحل:\n1. أعلى قوة لـ x في المقام هي x من الدرجة الأولى.\n2. نقسم البسط والمقام على x، مع إدخال x داخل الجذر التربيعي كـ (x^2):\n   - البسط يصبح: √(9 + 4/x^2)\n   - المقام يصبح: 5 - 2/x\n3. عند تطبيق النهاية عندما x → ∞، تؤول الكسور إلى الصفر، ليتبقى في البسط √9 = 3 وفي المقام 5، فيكون الخط المحاذي الأفقي هو y = 3/5."
+    },
+
+    // ================= شابتر 3.4 (الفكرة 5.3 - السؤالين) =================
+    {
+        meta: {
+            moduleNumber: "1",
+            chapterNumber: "3.4",
+            ideaNumber: "5.3",
+            ideaName: "The Conjugate Technique at Infinity for Infinity - Infinity Forms",
+            ideaAnchorId: "idea-3"
+        },
+        questionText: "Compute the limit using the conjugate technique:",
+        mathExpression: "\\lim_{x \\to \\infty} \\left(\\sqrt{x^2 + 25} - x\\right)",
+        options: [
+            "A) 0",
+            "B) 5",
+            "C) 25",
+            "D) \\infty"
         ],
         correctAnswer: "A) 0",
-        questionExplanation: "مشتقة y هي: y' = -\\sin(x) - [1 \\cdot \\sin(x) + x \\cdot \\cos(x)] = -\\sin(x) - \\sin(x) - x \\cos(x) = -2\\sin(x) - x\\cos(x). بالتعويض بـ x = 0 ينتج: -2(0) - (0)(1) = 0."
-    },
-
-    // أسئلة الفكرة الثانية (3.4 - فكرة 2: Higher Order Derivatives of Trigonometric Functions)
-    {
-        meta: {
-            moduleNumber: "1",
-            chapterNumber: "3.4",
-            ideaNumber: "5.2",
-            ideaName: "Higher Order Derivatives of Trigonometric Functions",
-            ideaAnchorId: "idea-2"
-        },
-        questionText: "Find the second derivative of the function:",
-        mathExpression: "f(x) = \\sin(x)",
-        options: [
-            "A) \\cos(x)",
-            "B) -\\sin(x)",
-            "C) -\\cos(x)",
-            "D) \\sin(x)"
-        ],
-        correctAnswer: "B) -\\sin(x)",
-        questionExplanation: "المشتقة الأولى لـ sin(x) هي cos(x)، والمشتقة الثانية (مشتقة cos(x)) هي -sin(x)."
-    },
-    {
-        meta: {
-            moduleNumber: "1",
-            chapterNumber: "3.4",
-            ideaNumber: "5.2",
-            ideaName: "Higher Order Derivatives of Trigonometric Functions",
-            ideaAnchorId: "idea-2"
-        },
-        questionText: "Find the fourth derivative (f^{(4)}(x)) of the function:",
-        mathExpression: "f(x) = \\cos(x)",
-        options: [
-            "A) \\sin(x)",
-            "B) -\\sin(x)",
-            "C) \\cos(x)",
-            "D) -\\cos(x)"
-        ],
-        correctAnswer: "C) \\cos(x)",
-        questionExplanation: "المشتقة الأولى: -sin(x). المشتقة الثانية: -cos(x). المشتقة الثالثة: sin(x). المشتقة الرابعة: cos(x) (حيث تتكرر المشتقات الدائرية كل 4 مرات)."
-    },
-
-    // أسئلة الفكرة الثالثة (3.4 - فكرة 3: Finding Tangent Lines Involving Trigonometric Functions)
-    {
-        meta: {
-            moduleNumber: "1",
-            chapterNumber: "3.4",
-            ideaNumber: "5.3",
-            ideaName: "Finding Tangent Lines Involving Trigonometric Functions",
-            ideaAnchorId: "idea-3"
-        },
-        questionText: "Find the equation of the tangent line to the curve y = \\tan(x) at the origin (0, 0):",
-        mathExpression: "y = \\tan(x), \\quad \\text{at } (0, 0)",
-        options: [
-            "A) y = x",
-            "B) y = -x",
-            "C) y = 0",
-            "D) y = 2x"
-        ],
-        correctAnswer: "A) y = x",
-        questionExplanation: "مشتقة y هي sec^2(x). ميل المماس عند x = 0 هو sec^2(0) = (1/cos(0))^2 = 1. بمعادلة الميل والنقطة: y - 0 = 1(x - 0) أي y = x."
+        questionExplanation: "طريقة الحل:\n1. نضرب ونقسم في المرافق (√(x^2 + 25) + x).\n2. البسط يصبح: (x^2 + 25) - x^2 = 25.\n3. المقام يصبح: √(x^2 + 25) + x والتي تؤول إلى ما لانهاية.\n4. ثابت على ما لانهاية يساوي 0."
     },
     {
         meta: {
             moduleNumber: "1",
             chapterNumber: "3.4",
             ideaNumber: "5.3",
-            ideaName: "Finding Tangent Lines Involving Trigonometric Functions",
+            ideaName: "The Conjugate Technique at Infinity for Infinity - Infinity Forms",
             ideaAnchorId: "idea-3"
         },
-        questionText: "Find the slope of the tangent line to the curve y = 2\\cos(x) at x = \\pi / 3:",
-        mathExpression: "y = 2\\cos(x), \\quad \\text{at } x = \\frac{\\pi}{3}",
+        questionText: "Evaluate the limit:",
+        mathExpression: "\\lim_{x \\to \\infty} \\left(\\sqrt{x^2 + 9} - x\\right)",
         options: [
-            "A) -\\sqrt{3}",
-            "B) \\sqrt{3}",
-            "C) -1",
-            "D) 1"
-        ],
-        correctAnswer: "A) -\\sqrt{3}",
-        questionExplanation: "المشتقة هي y' = -2\\sin(x). بالتعويض بـ x = \\pi/3 (أي 60 درجة): الناتج يصبح -2\\sin(\\pi/3) = -2(\\sqrt{3}/2) = -\\sqrt{3}."
-    },
-
-    // أسئلة الفكرة الرابعة (3.4 - فكرة 4: Evaluating Special Trigonometric Limits)
-    {
-        meta: {
-            moduleNumber: "1",
-            chapterNumber: "3.4",
-            ideaNumber: "5.4",
-            ideaName: "Evaluating Special Trigonometric Limits",
-            ideaAnchorId: "idea-4"
-        },
-        questionText: "Evaluate the special trigonometric limit:",
-        mathExpression: "\\lim_{x \\to 0} \\frac{\\sin(3x)}{x}",
-        options: [
-            "A) 1",
+            "A) 0",
             "B) 3",
-            "C) 0",
-            "D) \\frac{1}{3}"
+            "C) 9",
+            "D) DNE"
         ],
-        correctAnswer: "B) 3",
-        questionExplanation: "باستخدام النهاية الشهيرة lim (x→0) [sin(kx)/x] = k، إذن عندما تكون k = 3 يصبح الناتج مباشرةً يساوي 3."
+        correctAnswer: "A) 0",
+        questionExplanation: "طريقة الحل:\n1. بالضرب في المرافق ينتج في البسط 9 وفي المقام جذر ومقدار يؤول إلى مالانهاية.\n2. الناتج النهائي يساوي 0."
+    },
+
+    // ================= شابتر 3.4 (الفكرة 5.4 - السؤالين الأبسط بدلاً من 21 و 22) =================
+    {
+        meta: {
+            moduleNumber: "1",
+            chapterNumber: "3.4",
+            ideaNumber: "5.4",
+            ideaName: "Infinite Limits at Infinity",
+            ideaAnchorId: "idea-4"
+        },
+        // تم تغيير السؤال 21 المعقد إلى سؤال مباشر وسهل
+        questionText: "Find the limit:",
+        mathExpression: "\\lim_{x \\to \\infty} \\frac{x^2 + 1}{x - 2}",
+        options: [
+            "A) 0",
+            "B) 1",
+            "C) \\infty",
+            "D) -\\infty"
+        ],
+        correctAnswer: "C) \\infty",
+        questionExplanation: "طريقة الحل:\n1. درجة البسط (2) أكبر من درجة المقام (1)، لذا فإن النهاية لا تؤول إلى عدد ثابت.\n2. بقسمة البسط والمقام على أعلى قوة في المقام (x)، يؤول الناتج النهائي إلى ما لانهاية موجبة (\\infty)."
     },
     {
         meta: {
             moduleNumber: "1",
             chapterNumber: "3.4",
             ideaNumber: "5.4",
-            ideaName: "Evaluating Special Trigonometric Limits",
+            ideaName: "Infinite Limits at Infinity",
             ideaAnchorId: "idea-4"
         },
-        questionText: "Evaluate the limit using trigonometric identities and special limits:",
-        mathExpression: "\\lim_{x \\to 0} \\frac{\\tan(4x)}{2x}",
+        // تم تغيير السؤال 22 المعقد إلى سؤال مباشر وسهل
+        questionText: "Find the limit:",
+        mathExpression: "\\lim_{x \\to \\infty} \\frac{5x^3 - 2}{x^2 + 1}",
         options: [
-            "A) 2",
-            "B) 4",
-            "C) 1",
-            "D) \\frac{1}{2}"
+            "A) 0",
+            "B) 5",
+            "C) \\infty",
+            "D) -\\infty"
         ],
-        correctAnswer: "A) 2",
-        questionExplanation: "يمكن كتابة المقدار بالشكل: [sin(4x) / (2x * cos(4x))]. باستخدام النهاية الشهيرة لنهاية sin(kx)/x ومعاملاتها: (4 / 2) * (1 / cos(0)) = 2 * 1 = 2."
+        correctAnswer: "C) \\infty",
+        questionExplanation: "طريقة الحل:\n1. بما أن درجة البسط (3) أكبر من درجة المقام (2)، فإن النهاية تتجه نحو مالانهاية.\n2. بقسمة الحدود على x^2 والتعويض بـ x تقترب من ما لانهاية، ينتج لدينا موجب مالانهاية (\\infty)."
     }
 ];

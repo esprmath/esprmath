@@ -21,16 +21,16 @@ export const chapter3_4Data: ChapterData = {
             ],
             videoUrl: "https://www.youtube.com/embed/o8Kyshw5qfE",
             practiceQuestion: {
-                questionText: "Find the limit or show that it does not exist:",
-                mathExpression: "\\lim_{x \\to \\infty} \\left(5 - \\frac{3}{x^2}\\right)",
+                questionText: "Find the limit:",
+                mathExpression: "\\lim_{x \\to \\infty} \\frac{7}{x^4}",
                 options: [
-                    "A) 0",
-                    "B) 5",
-                    "C) \\infty",
+                    "A) \\infty",
+                    "B) 7",
+                    "C) 0",
                     "D) DNE"
                 ],
-                correctAnswer: "B) 5",
-                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. نقوم بتوزيع النهاية على حدود المقدار لتصبح: lim (5) - lim (3 / x^2).\n2. الثابت 5 تبقى قيمته كما هي 5.\n3. الحد (3 / x^2) عند تعويض x بـ \\infty يؤول مقامه إلى مالانهاية فيصبح ناتج القسمة مساوياً للصفر (0).\n4. نحسب الناتج النهائي: 5 - 0 = 5."
+                correctAnswer: "C) 0",
+                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. عندما تقترب x من ما لا نهاية (\\infty)، فإن المقام x^4 يكبر بلا حدود بينما البسط ثابت (7).\n2. قسمة عدد ثابت على كمية ضخمة جداً تكبر بلا حدود يؤول ناتجه إلى الصفر (0).\n3. إذن الناتج النهائي يساوي 0."
             }
         },
         {
@@ -49,16 +49,16 @@ export const chapter3_4Data: ChapterData = {
             ],
             videoUrl: "https://www.youtube.com/embed/LvZsZUEhjkA",
             practiceQuestion: {
-                questionText: "Find the horizontal asymptote(s) of the function f(x) as x approaches infinity (x → ∞):",
-                mathExpression: "f(x) = \\frac{\\sqrt{5x^2 + 1}}{2x - 3}",
+                questionText: "Evaluate the following limit:",
+                mathExpression: "\\lim_{x \\to \\infty} \\frac{2x^2 - x + 3}{4x^2 + 5x - 1}",
                 options: [
-                    "A) y = \\frac{\\sqrt{5}}{2}",
-                    "B) y = \\frac{5}{2}",
-                    "C) y = 0",
-                    "D) No horizontal asymptote"
+                    "A) \\frac{1}{2}",
+                    "B) \\frac{2}{5}",
+                    "C) \\frac{3}{4}",
+                    "D) 0"
                 ],
-                correctAnswer: "A) y = \\frac{\\sqrt{5}}{2}",
-                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. نحدد أعلى قوة لـ x في المقام وهي x من الدرجة الأولى.\n2. نقسم حدود البسط والمقام على x، مع ملاحظة أنه عند إدخال x تحت الجذر التربيعي في البسط فإنها تدخل كـ (x^2):\n   - البسط يصبح: √( (5x^2 + 1) / x^2 ) = √(5 + 1/x^2)\n   - المقام يصبح: (2x - 3) / x = 2 - 3/x\n3. عند تطبيق النهاية عندما x → ∞، فإن جميع الحدود التي تحتوي على x في المقام (مثل 1/x^2 و 3/x) تؤول إلى الصفر (0).\n4. يتبقى لدينا في البسط √5 وفي المقام 2، ليكون الخط المحاذي الأفقي هو y = √5 / 2."
+                correctAnswer: "A) \\frac{1}{2}",
+                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. نحدد أعلى قوة لـ x في المقام وهي x^2.\n2. نقسم جميع حدود البسط والمقام على x^2:\n   - البسط يصبح: \\frac{2x^2}{x^2} - \\frac{x}{x^2} + \\frac{3}{x^2} = 2 - \\frac{1}{x} + \\frac{3}{x^2}\n   - المقام يصبح: \\frac{4x^2}{x^2} + \\frac{5x}{x^2} - \\frac{1}{x^2} = 4 + \\frac{5}{x} - \\frac{1}{x^2}\n3. عند تطبيق النهاية عندما x → ∞، فإن جميع الحدود التي تحتوي على x في المقام تؤول إلى الصفر (0).\n4. يتبقى لدينا في البسط 2 وفي المقام 4، ليكون الناتج النهائي: \\frac{2}{4} = \\frac{1}{2}."
             }
         },
         {
@@ -78,15 +78,15 @@ export const chapter3_4Data: ChapterData = {
             videoUrl: "https://www.youtube.com/embed/ij79sNXpL_8",
             practiceQuestion: {
                 questionText: "Compute the limit using the conjugate technique:",
-                mathExpression: "\\lim_{x \\to \\infty} \\left(\\sqrt{x^2 + 4x} - x\\right)",
+                mathExpression: "\\lim_{x \\to \\infty} \\left(\\sqrt{x^2 + 16} - x\\right)",
                 options: [
                     "A) 0",
-                    "B) 2",
-                    "C) 4",
+                    "B) 4",
+                    "C) 16",
                     "D) \\infty"
                 ],
-                correctAnswer: "B) 2",
-                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. التعويض المباشر يعطي صيغة غير معينة (∞ - ∞).\n2. نضرب ونقسم في مرافق المقدار وهو (√(x^2 + 4x) + x).\n3. باستخدام متطابقة الفرق بين مربعين، يصبح البسط: (x^2 + 4x) - x^2 = 4x، بينما يبقى المقام كما هو: (√(x^2 + 4x) + x).\n4. نقسم كل حد في البسط والمقام على x (مع إدخال x في جذر المقام كـ x^2):\n   - البسط يصبح: 4\n   - المقام يصبح: √(1 + 4/x) + 1\n5. عند أخذ النهاية عندما x → ∞، يؤول الكسر 4/x إلى الصفر، ليصبح الناتج: 4 / (√1 + 1) = 4 / (1 + 1) = 4 / 2 = 2."
+                correctAnswer: "A) 0",
+                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. التعويض المباشر يعطي صيغة غير معينة (∞ - ∞).\n2. نضرب ونقسم في مرافق المقدار وهو (√(x^2 + 16) + x).\n3. باستخدام متطابقة الفرق بين مربعين، يصبح البسط: (x^2 + 16) - x^2 = 16، بينما يبقى المقام كما هو: (√(x^2 + 16) + x).\n4. عند أخذ النهاية عندما x → ∞، يصبح البسط ثابتاً والمقام يؤول إلى مالانهاية، ليكون الناتج النهائي يساوي 0."
             }
         },
         {
@@ -96,7 +96,7 @@ export const chapter3_4Data: ChapterData = {
             theoreticalSteps: [
                 {
                     stepTitle: "Step 1: مفهوم النهايات اللانهائية عند ما لا نهاية",
-                    stepDescription: "عند حساب النهاية لدالة كسرية عندما x → \\infty أو x → -\\infty، إذا كانت درجة البسط أكبر من درجة المقام، فإن ناتج النهاية لا يتقارب إلى عدد ثابت بل يؤول إلى ما لا نهاية (\\infty أو -\\infty) اعتماداً على إشارات المعاملات والتعويض."
+                    stepDescription: "عند حساب النهاية لدالة كسرية عندما x → \\infty أو -\\infty، إذا كانت درجة البسط أكبر من درجة المقام، فإن ناتج النهاية لا يتقارب إلى عدد ثابت بل يؤول إلى ما لا نهاية (\\infty أو -\\infty) اعتماداً على إشارات المعاملات والتعويض."
                 },
                 {
                     stepTitle: "Step 2: طريقة الحل بالقسمة على أعلى قوة في المقام",
@@ -106,15 +106,15 @@ export const chapter3_4Data: ChapterData = {
             videoUrl: "https://www.youtube.com/embed/Ao18r_hisrg",
             practiceQuestion: {
                 questionText: "Find the infinite limit at infinity:",
-                mathExpression: "\\lim_{x \\to \\infty} \\frac{3x^3 - x}{x^2 + 2}",
+                mathExpression: "\\lim_{x \\to \\infty} \\frac{2x^2 + x}{1 - x}",
                 options: [
                     "A) 0",
-                    "B) 3",
+                    "B) -2",
                     "C) \\infty",
                     "D) -\\infty"
                 ],
-                correctAnswer: "C) \\infty",
-                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. نلاحظ أن درجة البسط (3) أكبر من درجة المقام (2)، مما يعني أن النهاية لن تؤول إلى عدد ثابت.\n2. نقسم البسط والمقام على أعلى قوة لـ x في المقام وهي (x^2):\n   - البسط: (3x^3 - x) / x^2 = 3x - 1/x\n   - المقام: (x^2 + 2) / x^2 = 1 + 2/x^2\n3. عند تعويض x بـ \\infty:\n   - الحد 3x في البسط يتجه نحو مالانهاية الموجبة (∞)، والكسر 1/x يؤول إلى الصفر.\n   - المقام يؤول إلى القيمة: 1 + 0 = 1.\n4. بقسمة الإشارات والقيم: (∞ / 1) يكون الناتج النهائي هو مالانهاية الموجبة (\\infty)."
+                correctAnswer: "D) -\\infty",
+                questionExplanation: "طريقة الحل التفصيلية للسؤال:\n1. نلاحظ أن درجة البسط (2) أكبر من درجة المقام (1)، إذن النهاية تؤول إلى ما لانهاية.\n2. نقسم البسط والمقام على أعلى قوة في المقام وهي x:\n   - البسط يصبح: 2x + 1\n   - المقام يصبح: \\frac{1}{x} - 1\n3. عند تعويض x بـ \\infty:\n   - البسط يؤول إلى اتجاه الموجب مالانهاية مع المعامل الموجب.\n   - المقام يؤول إلى -1.\n4. بقسمة الإشارات: الموجب على السالب يعطي سالب مالانهاية (-\\infty)."
             }
         }
     ]

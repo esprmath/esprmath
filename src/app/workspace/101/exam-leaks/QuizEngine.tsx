@@ -18,7 +18,7 @@ export type QuizDataQuestion = {
     questionName: string
     question: string
     math: string
-    ideaLink: string
+    ideaLink?: string
     answer: string
 
     options?: string[]
@@ -76,6 +76,22 @@ function isQuizReady(
 
 function ideaKey(question: QuizDataQuestion) {
     return `${question.chapter}-${question.ideaId}`
+}
+
+// دالة توليد الرابط بحيث يبدأ بالصيغة المطلوبة ويتغير حسب الشابتر والفكرة لكل سؤال
+function getGeneratedIdeaLink(coursePath: string, question: ReadyQuestion) {
+    const parts = coursePath.split('/').filter(Boolean)
+    const courseId = parts[1] || '101'
+    const moduleId = question.moduleId || parts[2] || '1'
+
+    let ideaParam = question.ideaId
+    if (!ideaParam.startsWith('idea-')) {
+        ideaParam = ideaParam.includes('.')
+            ? `idea-${ideaParam.replace('.', '-')}`
+            : `idea-${ideaParam}`
+    }
+
+    return `/workspace/${courseId}/${moduleId}?chapter=${question.chapter}&idea=${ideaParam}`
 }
 
 // دالة سحب أسئلة مخصصة بناءً على أفكار محددة
@@ -657,6 +673,8 @@ export default function QuizEngine({
     }
 
     if (viewingErrorItem) {
+        const targetIdeaLink = viewingErrorItem.ideaLink || getGeneratedIdeaLink(coursePath, viewingErrorItem)
+
         return (
             <main
                 style={{
@@ -830,10 +848,10 @@ export default function QuizEngine({
                                 ← رجوع
                             </button>
 
-                            <Link
-                                href={
-                                    viewingErrorItem.ideaLink
-                                }
+                            <button
+                                onClick={() => {
+                                    window.location.href = targetIdeaLink
+                                }}
                                 style={{
                                     background:
                                         '#CDD4B1',
@@ -843,15 +861,15 @@ export default function QuizEngine({
                                         '10px 14px',
                                     borderRadius:
                                         '8px',
-                                    textDecoration:
-                                        'none',
+                                    border: 'none',
                                     fontWeight:
-                                        'bold'
+                                        'bold',
+                                    cursor: 'pointer'
                                 }}
                             >
                                 الرجوع
                                 للفكرة ➔
-                            </Link>
+                            </button>
 
                             <button
                                 onClick={() =>
@@ -1020,161 +1038,164 @@ export default function QuizEngine({
                                 {savedMistakes.map(
                                     (
                                         item
-                                    ) => (
-                                        <div
-                                            key={`${ideaKey(
-                                                item
-                                            )}-${item.id}`}
-                                            style={{
-                                                background:
-                                                    '#FFF4DF',
-                                                borderRadius:
-                                                    '10px',
-                                                padding:
-                                                    '11px 14px',
-                                                display:
-                                                    'flex',
-                                                justifyContent:
-                                                    'space-between',
-                                                alignItems:
-                                                    'center',
-                                                gap: '14px',
-                                                flexWrap:
-                                                    'wrap'
-                                            }}
-                                        >
+                                    ) => {
+                                        const itemIdeaLink = item.ideaLink || getGeneratedIdeaLink(coursePath, item)
+                                        return (
                                             <div
+                                                key={`${ideaKey(
+                                                    item
+                                                )}-${item.id}`}
                                                 style={{
-                                                    flex:
-                                                        1,
-                                                    minWidth:
-                                                        '260px'
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        fontSize:
-                                                            '11px',
-                                                        color:
-                                                            '#8c5521',
-                                                        fontWeight:
-                                                            'bold'
-                                                    }}
-                                                >
-                                                    Chapter{' '}
-                                                    {
-                                                        item.chapter
-                                                    }{' '}
-                                                    |{' '}
-                                                    {
-                                                        item.ideaId
-                                                    }
-                                                </div>
-
-                                                <div
-                                                    style={{
-                                                        fontWeight:
-                                                            'bold',
-                                                        fontSize:
-                                                            '14px'
-                                                    }}
-                                                >
-                                                    {
-                                                        item.questionName
-                                                    }
-                                                </div>
-                                            </div>
-
-                                            <div
-                                                style={{
+                                                    background:
+                                                        '#FFF4DF',
+                                                    borderRadius:
+                                                        '10px',
+                                                    padding:
+                                                        '11px 14px',
                                                     display:
                                                         'flex',
-                                                    gap:
-                                                        '6px',
+                                                    justifyContent:
+                                                        'space-between',
+                                                    alignItems:
+                                                        'center',
+                                                    gap: '14px',
                                                     flexWrap:
                                                         'wrap'
                                                 }}
                                             >
-                                                <button
-                                                    onClick={() => {
-                                                        setViewingErrorItem(
-                                                            item
-                                                        )
-                                                        setShowMistakeTutor(
-                                                            false
-                                                        )
-                                                    }}
+                                                <div
                                                     style={{
-                                                        ...primaryButton,
-                                                        padding:
-                                                            '8px 11px',
-                                                        fontSize:
-                                                            '12px'
+                                                        flex:
+                                                            1,
+                                                        minWidth:
+                                                            '260px'
                                                     }}
                                                 >
-                                                    💡
-                                                    مراجعة
-                                                    الحل
-                                                </button>
+                                                    <div
+                                                        style={{
+                                                            fontSize:
+                                                                '11px',
+                                                            color:
+                                                                '#8c5521',
+                                                            fontWeight:
+                                                                'bold'
+                                                        }}
+                                                    >
+                                                        Chapter{' '}
+                                                        {
+                                                            item.chapter
+                                                        }{' '}
+                                                        |{' '}
+                                                        {
+                                                            item.ideaId
+                                                        }
+                                                    </div>
 
-                                                <Link
-                                                    href={
-                                                        item.ideaLink
-                                                    }
-                                                    style={{
-                                                        background:
-                                                            '#CDD4B1',
-                                                        color:
-                                                            '#2C3531',
-                                                        padding:
-                                                            '8px 11px',
-                                                        borderRadius:
-                                                            '7px',
-                                                        textDecoration:
-                                                            'none',
-                                                        fontWeight:
-                                                            'bold',
-                                                        fontSize:
-                                                            '12px'
-                                                    }}
-                                                >
-                                                    الرجوع
-                                                    للفكرة
-                                                    ➔
-                                                </Link>
+                                                    <div
+                                                        style={{
+                                                            fontWeight:
+                                                                'bold',
+                                                            fontSize:
+                                                                '14px'
+                                                        }}
+                                                    >
+                                                        {
+                                                            item.questionName
+                                                        }
+                                                    </div>
+                                                </div>
 
-                                                <button
-                                                    onClick={() =>
-                                                        removeSavedMistake(
-                                                            item
-                                                        )
-                                                    }
+                                                <div
                                                     style={{
-                                                        background:
-                                                            '#fff',
-                                                        color:
-                                                            '#166534',
-                                                        border:
-                                                            '1px solid #86efac',
-                                                        padding:
-                                                            '8px 11px',
-                                                        borderRadius:
-                                                            '7px',
-                                                        fontWeight:
-                                                            'bold',
-                                                        fontSize:
-                                                            '12px',
-                                                        cursor:
-                                                            'pointer'
+                                                        display:
+                                                            'flex',
+                                                        gap:
+                                                            '6px',
+                                                        flexWrap:
+                                                            'wrap'
                                                     }}
                                                 >
-                                                    أتقنت
-                                                    الفكرة
-                                                    ✅
-                                                </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setViewingErrorItem(
+                                                                item
+                                                            )
+                                                            setShowMistakeTutor(
+                                                                false
+                                                            )
+                                                        }}
+                                                        style={{
+                                                            ...primaryButton,
+                                                            padding:
+                                                                '8px 11px',
+                                                            fontSize:
+                                                                '12px'
+                                                        }}
+                                                    >
+                                                        💡
+                                                        مراجعة
+                                                        الحل
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            window.location.href = itemIdeaLink
+                                                        }}
+                                                        style={{
+                                                            background:
+                                                                '#CDD4B1',
+                                                            color:
+                                                                '#2C3531',
+                                                            padding:
+                                                                '8px 11px',
+                                                            borderRadius:
+                                                                '7px',
+                                                            border: 'none',
+                                                            fontWeight:
+                                                                'bold',
+                                                            fontSize:
+                                                                '12px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        الرجوع
+                                                        للفكرة
+                                                        ➔
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() =>
+                                                            removeSavedMistake(
+                                                                item
+                                                            )
+                                                        }
+                                                        style={{
+                                                            background:
+                                                                '#fff',
+                                                            color:
+                                                                '#166534',
+                                                            border:
+                                                                '1px solid #86efac',
+                                                            padding:
+                                                                '8px 11px',
+                                                            borderRadius:
+                                                                '7px',
+                                                            fontWeight:
+                                                                'bold',
+                                                            fontSize:
+                                                                '12px',
+                                                            cursor:
+                                                                'pointer'
+                                                        }}
+                                                    >
+                                                        أتقنت
+                                                        الفكرة
+                                                        ✅
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )
+                                        )
+                                    }
                                 )}
                             </div>
                         )}
@@ -1467,7 +1488,6 @@ export default function QuizEngine({
                                     ➔
                                 </button>
 
-                                {/* 💡 تمت إضافة زر مشاهدة شرح التسريبات هنا بشكل رسمي */}
                                 <div style={{ marginTop: '10px' }}>
                                     <button
                                         onClick={() =>
@@ -1528,7 +1548,6 @@ export default function QuizEngine({
                                     : ''}
                             </button>
 
-                            {/* 💡 تمت إضافة عرض مشغل الفيديو المنبثق بالأسفل عند الضغط عليه */}
                             {activeVideo && (
                                 <div
                                     style={{

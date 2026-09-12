@@ -294,7 +294,6 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             return
         }
 
-        // تحويل الـ ID إلى حروف صغيرة لضمان توافقه مع اسم المجلد في المسار
         const courseId = data[0].course_id.toLowerCase()
         router.push(`/workspace/${courseId}`)
     }
@@ -365,9 +364,33 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {/* زر مؤشر حرق الأعصاب يظهر فقط للزوار (غير المسجلين) */}
+                    {!isLoggedIn && (
+                        <Link
+                            href="/burnout-meter"
+                            style={{
+                                padding: '0.5rem 0.9rem',
+                                backgroundColor: '#FEECD0',
+                                color: '#8B5E3C',
+                                border: '1px solid #6B5744',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <span>🔥</span>
+                            <span>مؤشر حرق الأعصاب</span>
+                        </Link>
+                    )}
+
                     {isLoggedIn ? (
                         <>
-                            {/* زر موعد الاختبار يظهر فقط إذا كان داخل الكورس وليس في الرئيسية */}
                             {!isHomePage && courseApprovalStatus && (
                                 <>
                                     {isExamPromptMinimized ? (
@@ -431,7 +454,6 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 </>
                             )}
 
-                            {/* زر كورسك الحالي يظهر فقط في الصفحة الرئيسية */}
                             {isHomePage && (
                                 <button
                                     onClick={handleProtectedCourseClick}
@@ -672,7 +694,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 </div>
             )}
 
-            {/* مودال التقويم لتحديد موعد الاختبار (الشهر الحالي والقادم فقط مع منع اختيار الأيام الماضية) */}
+            {/* مودال التقويم لتحديد موعد الاختبار */}
             {showCalendarModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
                     <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '20px', borderRadius: '16px', width: '90%', maxWidth: '340px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center' }}>
