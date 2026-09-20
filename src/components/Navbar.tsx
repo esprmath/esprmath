@@ -274,30 +274,6 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
         }
     }
 
-    const handleProtectedCourseClick = async (e: React.MouseEvent) => {
-        e.preventDefault()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            router.push('/login')
-            return
-        }
-
-        const { data, error } = await supabase
-            .from('user_courses')
-            .select('course_id')
-            .eq('user_id', user.id)
-            .eq('is_approved', true)
-
-        if (error || !data || data.length === 0) {
-            setAlertMessage('🚫 لا تمتلك أي كورس مفعل. يرجى طلب الانضمام من الصفحة الرئيسية.')
-            setShowAlertModal(true)
-            return
-        }
-
-        const courseId = data[0].course_id.toLowerCase()
-        router.push(`/workspace/${courseId}`)
-    }
-
     const getDaysRemaining = () => {
         if (!examDate) return null
         const today = new Date()
@@ -364,30 +340,28 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {/* زر مؤشر حرق الأعصاب يظهر فقط للزوار (غير المسجلين) */}
-                    {!isLoggedIn && (
-                        <Link
-                            href="/burnout-meter"
-                            style={{
-                                padding: '0.5rem 0.9rem',
-                                backgroundColor: '#FEECD0',
-                                color: '#8B5E3C',
-                                border: '1px solid #6B5744',
-                                borderRadius: '8px',
-                                fontWeight: 'bold',
-                                fontSize: '0.85rem',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            <span>🔥</span>
-                            <span>مؤشر حرق الأعصاب</span>
-                        </Link>
-                    )}
+                    {/* زر "الضمير الغائب" يظهر دائماً في الشريط العلوي */}
+                    <Link
+                        href="/absence"
+                        style={{
+                            padding: '0.5rem 0.9rem',
+                            backgroundColor: '#FEECD0',
+                            color: '#8B5E3C',
+                            border: '1px solid #6B5744',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            fontSize: '0.85rem',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <span>👤</span>
+                        <span>الضمير الغائب</span>
+                    </Link>
 
                     {isLoggedIn ? (
                         <>
@@ -452,25 +426,6 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                         </button>
                                     )}
                                 </>
-                            )}
-
-                            {isHomePage && (
-                                <button
-                                    onClick={handleProtectedCourseClick}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        backgroundColor: '#ffffff',
-                                        color: '#2C3531',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        fontSize: '0.875rem',
-                                        border: '1px solid #6B5744',
-                                        cursor: 'pointer',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                    }}
-                                >
-                                    📚 كورسك الحالي
-                                </button>
                             )}
 
                             <div style={{ position: 'relative' }} ref={menuRef}>

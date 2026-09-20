@@ -1,3 +1,7 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
-module.exports = nextConfig
+const nextConfig = {
+    // إعداداتك العادية هنا إن وجدت
+    turbopack: {},
+};
+
+export default nextConfig;
