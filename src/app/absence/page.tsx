@@ -267,6 +267,15 @@ export default function AbsencePage() {
         e.stopPropagation()
     }
 
+    // مسار التحليل يتطلب جلسة الطالب
+    const aiHeaders = async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        return {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        }
+    }
+
     const executeAnalysis = async () => {
         if (!pendingFile) return
 
@@ -277,12 +286,19 @@ export default function AbsencePage() {
             try {
                 const base64Image = reader.result as string
 
+                // حدود الرفع في الخادم حوالي 4 ميجا
+                if (base64Image.length > 4_000_000) {
+                    setNotificationMessage('❌ حجم الصورة كبير، خذ لقطة أصغر للجدول وحاول مرة ثانية.')
+                    setIsAnalyzing(false)
+                    return
+                }
+
                 const currentMajorObj = availableMajors.find(m => m.id === selectedMajorId) || availableMajors[0]
                 const allCoursesFlat = currentMajorObj ? currentMajorObj.semesters.flatMap(s => s.courses) : []
 
                 const res = await fetch('/api/analyze-timetable', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: await aiHeaders(),
                     body: JSON.stringify({
                         imageBase64: base64Image,
                         type: 'parse_timetable',
@@ -313,7 +329,7 @@ export default function AbsencePage() {
                     await saveDataToSupabase(selectedMajorId || 'CS', mergedCodes, courseAbsences, coursePlannedAbsences, absentSlots, newSlots, updatedLateStatus)
                     setNotificationMessage('✨ تم تحليل الجدول وترتيب المواد والأوقات بدقة وتفعيل نظام الغياب!')
                 } else {
-                    setNotificationMessage('❌ لم نتمكن من تحليل الجدول، تأكد من وضوح الصورة.')
+                    setNotificationMessage(`❌ ${result.error || 'لم نتمكن من تحليل الجدول، تأكد من وضوح الصورة.'}`)
                 }
             } catch (err) {
                 console.error(err)
@@ -442,7 +458,7 @@ export default function AbsencePage() {
             try {
                 const res = await fetch('/api/analyze-timetable', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: await aiHeaders(),
                     body: JSON.stringify({
                         type: 'analyze_absence',
                         courseCode,

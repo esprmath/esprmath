@@ -1,10 +1,13 @@
 
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { getRequestUser } from '@/lib/serverAuth'
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-})
+// الحدود لكل طالب في الساعة، وحجم الصورة بعد تحويلها إلى نص
+const MAX_PARSES_PER_HOUR = 10
+const MAX_ABSENCE_MESSAGES_PER_HOUR = 60
+const MAX_IMAGE_CHARS = 4_000_000
+const MODEL = 'gpt-5.6-luna'
 
 /*
 |--------------------------------------------------------------------------
@@ -107,6 +110,11 @@ function extractPeriodCodes(value: unknown): string[] {
 
 export async function POST(req: Request) {
     try {
+        const auth = await getRequestUser(req)
+        if (!auth) {
+            return NextResponse.json({ success: false, error: 'سجّل دخولك أولًا حتى تستخدم التحليل الذكي.' }, { status: 401 })
+        }
+
         const {
             imageBase64,
             type,
@@ -115,6 +123,37 @@ export async function POST(req: Request) {
             maxAbsence,
             availableCourses,
         } = await req.json()
+
+        if (type !== 'parse_timetable' && type !== 'analyze_absence') {
+            return NextResponse.json({ success: false, error: 'Invalid type' }, { status: 400 })
+        }
+
+        if (typeof imageBase64 === 'string' && imageBase64.length > MAX_IMAGE_CHARS) {
+            return NextResponse.json({ success: false, error: 'حجم الصورة كبير، جرّب صورة أصغر.' }, { status: 413 })
+        }
+
+        // حد الاستخدام: كل نوع له سجل مستقل في ai_logs
+        const logName = `${MODEL}:${type}`
+        const limit = type === 'parse_timetable' ? MAX_PARSES_PER_HOUR : MAX_ABSENCE_MESSAGES_PER_HOUR
+        const { count } = await auth.supabase
+            .from('ai_logs')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', auth.user.id)
+            .eq('model_name', logName)
+            .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+        if ((count ?? 0) >= limit) {
+            return NextResponse.json({ success: false, error: 'وصلت للحد المسموح في هذه الساعة، جرّب بعد قليل.' }, { status: 429 })
+        }
+
+        const { error: logError } = await auth.supabase.from('ai_logs').insert([{
+            user_id: auth.user.id,
+            student_name: auth.user.user_metadata?.full_name || auth.user.user_metadata?.name || 'طالب',
+            model_name: logName,
+            cost: 0,
+        }])
+        if (logError) console.error('[timetable] فشل تسجيل الاستخدام:', logError.message)
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
         /*
         |--------------------------------------------------------------------------
@@ -470,7 +509,7 @@ CS201
             */
 
             const response = await (openai as any).responses.create({
-                model: 'gpt-5.6-luna',
+                model: MODEL,
 
                 reasoning: {
                     effort: 'medium',
@@ -736,7 +775,7 @@ CS201
 لا تضف أي شرح.`
 
             const response = await (openai as any).responses.create({
-                model: 'gpt-5.6-luna',
+                model: MODEL,
 
                 input: prompt,
 
@@ -772,9 +811,7 @@ CS201
         return NextResponse.json(
             {
                 success: false,
-                error:
-                    error?.message ||
-                    'حدث خطأ أثناء تحليل الجدول',
+                error: 'حدث خطأ أثناء تحليل الجدول، حاول مرة ثانية.',
             },
             { status: 500 }
         )

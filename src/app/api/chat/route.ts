@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { buildSystemPrompt, cleanMessages, clip } from '@/lib/tutorPrompt'
+import { getRequestUser } from '@/lib/serverAuth'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,20 +27,9 @@ export async function POST(req: Request) {
         }
 
         // 1) التحقق من الطالب من الخادم
-        const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-        if (!token) return reply('سجّل دخولك أولًا حتى تستخدم فيكتور.', 401)
-
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                global: { headers: { Authorization: `Bearer ${token}` } },
-                auth: { persistSession: false, autoRefreshToken: false },
-            }
-        )
-
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-        if (authError || !user) return reply('انتهت جلستك، سجّل دخولك مرة ثانية.', 401)
+        const auth = await getRequestUser(req)
+        if (!auth) return reply('سجّل دخولك أولًا حتى تستخدم فيكتور.', 401)
+        const { supabase, user } = auth
 
         // المفتاح العام في لوحة التحكم يوقف فيكتور عن الجميع
         const { data: globalSwitch } = await supabase
@@ -72,6 +61,7 @@ export async function POST(req: Request) {
             .from('ai_logs')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
+            .eq('model_name', MODEL)
             .gte('created_at', oneHourAgo)
         if ((count ?? 0) >= MAX_MESSAGES_PER_HOUR) {
             return reply('وصلت للحد المسموح من الرسائل في هذه الساعة، جرّب بعد قليل.', 429)

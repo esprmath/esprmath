@@ -107,7 +107,7 @@ export default function AdminDashboard() {
             studentsRpc.error ? supabase.from('student_profiles_view').select('*') : Promise.resolve(studentsRpc),
             supabase.from('courses').select('id, title, description, is_active, requires_approval').order('id'),
             supabase.from('quiz_settings').select('id, course_id, quiz_id, title, is_open, opens_at, closes_at'),
-            supabase.from('ai_logs').select('user_id, student_name, cost, created_at').gte('created_at', since).order('created_at', { ascending: false }).limit(5000),
+            supabase.from('ai_logs').select('user_id, student_name, cost, created_at').eq('model_name', 'gpt-4o-mini').gte('created_at', since).order('created_at', { ascending: false }).limit(5000),
             supabase.from('system_settings').select('value').eq('key', 'ai_global_switch').maybeSingle(),
             supabase.from('course_modules').select('*').order('module_number'),
         ]);
