@@ -1,58 +1,125 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
+import { buildSystemPrompt, cleanMessages, clip } from '@/lib/tutorPrompt'
 
 export const dynamic = 'force-dynamic'
 
+const MODEL = 'gpt-4o-mini'
+// تسعيرة gpt-4o-mini التقريبية بالدولار لكل token
+const INPUT_COST = 0.00000015
+const OUTPUT_COST = 0.0000006
+
+const MAX_REPLY_TOKENS = 800
+const MAX_CONTEXT_CHARS = 4000
+const MAX_MESSAGES_PER_HOUR = 40
+// الموديول الأول تجربة مجانية، فالطالب بدون تسجيل في الكورس يقدر يستخدم فيكتور فيه
+const FREE_TRIAL_COURSE = '101'
+
+const reply = (text: string, status: number) => NextResponse.json({ reply: text }, { status })
+
 export async function POST(req: Request) {
     try {
-        const apiKey = process.env.OPENAI_API_KEY || ''
-
+        const apiKey = process.env.OPENAI_API_KEY
         if (!apiKey) {
-            return NextResponse.json(
-                { reply: 'مفتاح الـ API غير متاح في ملف البيئة' },
-                { status: 500 }
-            )
+            console.error('[chat] OPENAI_API_KEY غير موجود')
+            return reply('خدمة فيكتور غير متاحة حاليًا، حاول لاحقًا.', 500)
+        }
+
+        // 1) التحقق من الطالب من الخادم
+        const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+        if (!token) return reply('سجّل دخولك أولًا حتى تستخدم فيكتور.', 401)
+
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                global: { headers: { Authorization: `Bearer ${token}` } },
+                auth: { persistSession: false, autoRefreshToken: false },
+            }
+        )
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+        if (authError || !user) return reply('انتهت جلستك، سجّل دخولك مرة ثانية.', 401)
+
+        // المفتاح العام في لوحة التحكم يوقف فيكتور عن الجميع
+        const { data: globalSwitch } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'ai_global_switch')
+            .maybeSingle()
+        if (globalSwitch?.value === false) return reply('فيكتور متوقف مؤقتًا، جرّب بعد قليل.', 503)
+
+        const body = await req.json()
+        const courseId = clip(String(body?.courseId ?? FREE_TRIAL_COURSE), 20)
+
+        // 2) صلاحية فيكتور من نفس الإعداد الذي يتحكم فيه المشرف
+        const { data: enrollment } = await supabase
+            .from('user_courses')
+            .select('is_ai_allowed')
+            .eq('user_id', user.id)
+            .eq('course_id', courseId)
+            .maybeSingle()
+
+        const isAllowed = enrollment
+            ? enrollment.is_ai_allowed !== false
+            : courseId === FREE_TRIAL_COURSE
+        if (!isAllowed) return reply('ميزة فيكتور غير مفعلة في حسابك حاليًا.', 403)
+
+        // 3) حد الاستخدام لكل طالب حتى لا تخرج التكلفة عن السيطرة
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        const { count } = await supabase
+            .from('ai_logs')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .gte('created_at', oneHourAgo)
+        if ((count ?? 0) >= MAX_MESSAGES_PER_HOUR) {
+            return reply('وصلت للحد المسموح من الرسائل في هذه الساعة، جرّب بعد قليل.', 429)
+        }
+
+        // 4) تجهيز الطلب
+        const messages = cleanMessages(body?.messages)
+        if (messages[messages.length - 1]?.role !== 'user') {
+            return reply('اكتب سؤالك أولًا.', 400)
         }
 
         const openai = new OpenAI({ apiKey })
-
-        // تم إضافة courseId هنا لاستخراجه من الطلب
-        const { messages, courseId, currentModule, currentChapter, currentQuestion } = await req.json()
-
-        const systemInstruction = `
-أنت معلم مساعد ذكي لمقرر الرياضيات (${courseId ? 'Math ' + courseId : 'المقرر الحالي'}) في منصة EsprMath.
-سياق الطالب الحالي:
-- الموديول: ${currentModule || 1}
-- الشابتر: ${currentChapter || 'غير محدد'}
-- الفكرة أو السؤال المعروض أمامه: "${currentQuestion || 'لا يوجد سؤال محدد'}".
-
-⚠️ قواعد صارمة جداً:
-1. كن مباشراً ومختصراً جداً. امنع تماماً الشروحات الطويلة أو "التفلسف" النظري أو سرد مقدمات ترحيبية متكررة.
-2. أجب على قدر سؤال الطالب أو وجهه لحل السؤال المعروض أمامه باختصار شديد وبخطوات واضحة.
-3. لا تستخدم رموز LaTeX المعقدة مثل \\( أو \\[ أو \\begin{pmatrix}.
-4. اكتب المعادلات في أسطر منفصلة وبسيطة.
-`
-
-        const finalMessages = [
-            { role: 'system', content: systemInstruction },
-            ...(messages || [])
-        ]
-
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: finalMessages,
+            model: MODEL,
             temperature: 0.2,
+            max_tokens: MAX_REPLY_TOKENS,
+            messages: [
+                {
+                    role: 'system',
+                    content: buildSystemPrompt({
+                        courseId,
+                        module: clip(String(body?.currentModule ?? ''), 20),
+                        chapter: clip(body?.currentChapter, 50),
+                        idea: clip(body?.currentIdea, 300),
+                        ideaNotes: clip(body?.ideaNotes, MAX_CONTEXT_CHARS),
+                        question: clip(body?.currentQuestion, MAX_CONTEXT_CHARS),
+                    }),
+                },
+                ...messages,
+            ],
         })
 
-        const reply = completion.choices[0]?.message?.content || 'لم يتم استلام إجابة.'
+        const answer = completion.choices[0]?.message?.content || 'لم يصلني رد، حاول مرة ثانية.'
 
-        return NextResponse.json({ reply })
+        // 5) تسجيل التكلفة باسم الطالب الحقيقي من الجلسة، وفشل التسجيل لا يوقف الرد
+        const usage = completion.usage
+        const cost = (usage?.prompt_tokens ?? 0) * INPUT_COST + (usage?.completion_tokens ?? 0) * OUTPUT_COST
+        const { error: logError } = await supabase.from('ai_logs').insert([{
+            user_id: user.id,
+            student_name: user.user_metadata?.full_name || user.user_metadata?.name || 'طالب',
+            model_name: MODEL,
+            cost,
+        }])
+        if (logError) console.error('[chat] فشل تسجيل التكلفة:', logError.message)
 
+        return NextResponse.json({ reply: answer })
     } catch (error: any) {
-        console.error('❌ حدث خطأ في سيرفر OpenAI:', error?.message || error)
-        return NextResponse.json(
-            { reply: `خطأ في سيرفر الذكاء الاصطناعي: ${error?.message || 'مشكلة في الاتصال'}` },
-            { status: 500 }
-        )
+        console.error('[chat] خطأ:', error?.message || error)
+        return reply('حدث خطأ في الاتصال بفيكتور، حاول مرة ثانية.', 500)
     }
 }

@@ -1,5 +1,8 @@
 // types/math.ts
 
+// ✅ 1. استيراد النوع الجديد من النظام الذي بنيناه
+import type { QuestionItem } from '@/lib/questions/types';
+
 export interface TheoreticalStep {
     stepTitle: string;
     stepDescription: string;
@@ -13,7 +16,7 @@ export interface PracticeQuestion {
     options: string[];
     correctAnswer: string;
     questionExplanation?: string;
-    subQuestions?: PracticeQuestion[]; // 👈 أضفنا هذا السطر هنا ليدعم الأسئلة الفرعية المركبة
+    subQuestions?: PracticeQuestion[]; 
 }
 
 export interface Idea {
@@ -25,6 +28,10 @@ export interface Idea {
     practiceQuestion?: PracticeQuestion;
     subQuestions?: PracticeQuestion[];
     additionalQuestions?: PracticeQuestion[];
+    
+    // ✅ 2. الإضافة الوحيدة: خاصية اختيارية للنظام الجديد
+    // إذا وُجدت، سنستخدم النظام الجديد. إذا لم توجد، سيعمل النظام القديم كما هو.
+    questions?: QuestionItem[]; 
 }
 
 export interface ChapterData {

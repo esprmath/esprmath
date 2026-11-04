@@ -1,0 +1,770 @@
+/* صفحة الأسئلة الإضافية: ملف تدريب بتبويبات شباتر وورقة رياضيات.
+   السكرول للصفحة كاملة، وأزرار التحقق ثابتة أسفل الشاشة في الشاشات الكبيرة. */
+
+.shell {
+    padding-bottom: 14px;
+}
+
+/* ===== الشريط العلوي ===== */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.heading {
+    min-width: 0;
+}
+
+.eyebrow {
+    font-size: 11px;
+    font-weight: 800;
+    color: #b0764a;
+    letter-spacing: 0.2px;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #2c3531;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.topActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.ghostBtn {
+    background: transparent;
+    border: 1px solid #dcc9a8;
+    color: #8c5521;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+
+.ghostBtn:hover {
+    background: #feecd0;
+}
+
+/* ===== تبويبات الشباتر ===== */
+.tabs {
+    display: flex;
+    gap: 4px;
+    /* التبويبات تبدأ بعد شريط الأفكار حتى يتصل التبويب النشط بورقة السؤال البيضاء */
+    padding-inline-start: 84px;
+    padding-inline-end: 14px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: -1px;
+}
+
+.tab {
+    flex: 0 1 132px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 8px;
+    background: #f6e6c8;
+    border: 1px solid #e6d5b4;
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    color: #8c5521;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.15s;
+    transform: translateY(3px);
+}
+
+.tab:hover {
+    background: #feecd0;
+    transform: translateY(1px);
+}
+
+.tabActive,
+.tabActive:hover {
+    background: #ffffff;
+    border-color: #e0cfae;
+    color: #2c3531;
+    transform: none;
+    box-shadow: inset 0 3px 0 #8c5521;
+}
+
+.tabCount {
+    font-size: 10px;
+    font-weight: 800;
+    background: rgba(140, 85, 33, 0.14);
+    color: #8c5521;
+    border-radius: 999px;
+    padding: 1px 6px;
+}
+
+/* ===== الورقة الأساسية ===== */
+.sheet {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    background: #ffffff;
+    border: 1px solid #e0cfae;
+    border-radius: 18px;
+    /* clip وليس hidden حتى يبقى العناصر الثابتة (sticky) مرتبطة بسكرول الصفحة */
+    overflow: clip;
+    box-shadow: 0 10px 28px rgba(92, 62, 31, 0.1);
+}
+
+/* ===== شريط أرقام الأسئلة ===== */
+.rail {
+    background: #fbf3e0;
+    border-inline-end: 1px dashed #dcc9a8;
+}
+
+.railInner {
+    position: sticky;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+}
+
+.railLabel {
+    font-size: 10px;
+    font-weight: 800;
+    color: #b0764a;
+}
+
+.qDot {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1.5px solid #dcc9a8;
+    background: #ffffff;
+    color: #8c5521;
+    font-weight: 900;
+    font-size: 13px;
+    direction: ltr;
+    cursor: pointer;
+    transition: transform 0.15s, background-color 0.15s;
+}
+
+.qDot:hover {
+    transform: scale(1.07);
+}
+
+.qDotActive {
+    background: #8c5521;
+    border-color: #8c5521;
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(140, 85, 33, 0.35);
+}
+
+.qDotDone {
+    background: #dfe6c6;
+    border-color: #8b9a63;
+    color: #46552a;
+}
+
+.qDotProgress {
+    border-color: #dca27b;
+    border-style: dashed;
+}
+
+.qDotWrong {
+    background: #fbe4dc;
+    border-color: #d98b73;
+    color: #9c3f24;
+}
+
+.qDotActive.qDotDone,
+.qDotActive.qDotProgress,
+.qDotActive.qDotWrong {
+    background: #8c5521;
+    border-color: #8c5521;
+    border-style: solid;
+    color: #ffffff;
+}
+
+/* ===== مساحة السؤال ===== */
+.stage {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.stageHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px;
+    border-bottom: 1px solid #efe4cc;
+}
+
+.ideaInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ideaNumber {
+    flex-shrink: 0;
+    background: #2c3531;
+    color: #fff9e2;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    direction: ltr;
+}
+
+.ideaName {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #5f5a4c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: ltr;
+}
+
+.headActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.linkBtn {
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: #8c5521;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* الورقة المربعة */
+.paper {
+    flex: 1;
+    padding: clamp(10px, 1.8vh, 18px) 20px clamp(12px, 2vh, 22px);
+    background-color: #fffdf6;
+    background-image:
+        linear-gradient(rgba(176, 118, 74, 0.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(176, 118, 74, 0.09) 1px, transparent 1px);
+    background-size: 26px 26px;
+}
+
+.questionText {
+    font-size: clamp(15px, 1.15vw, 18px);
+    font-weight: 800;
+    color: #2c3531;
+    line-height: 1.5;
+    margin-bottom: clamp(8px, 1.4vh, 14px);
+}
+
+.parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: clamp(8px, 1.4vh, 14px);
+}
+
+.partBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #ffffff;
+    border: 1px solid #dcc9a8;
+    border-radius: 999px;
+    color: #5f5a4c;
+    font-weight: 800;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.partBtnActive {
+    background: #2c3531;
+    border-color: #2c3531;
+    color: #fff9e2;
+}
+
+.partBtnDone {
+    border-color: #8b9a63;
+    color: #46552a;
+    background: #eef2dd;
+}
+
+.partBtnWrong {
+    border-color: #d98b73;
+    color: #9c3f24;
+    background: #fbe4dc;
+}
+
+.partBtnActive.partBtnDone,
+.partBtnActive.partBtnWrong {
+    background: #2c3531;
+    border-color: #2c3531;
+    color: #fff9e2;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.workspaceWithGraph {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.graphCard {
+    position: sticky;
+    top: 12px;
+    background: #ffffff;
+    border: 1px solid #e6d5b4;
+    border-radius: 14px;
+    padding: 8px;
+    box-shadow: 0 3px 10px rgba(92, 62, 31, 0.07);
+}
+
+.graphCard img {
+    display: block;
+    width: 100%;
+    /* حجم الرسم يتبع ارتفاع الشاشة حتى يظهر مع الخيارات */
+    max-height: clamp(210px, 38vh, 420px);
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.partText {
+    font-size: clamp(14px, 1.05vw, 16px);
+    font-weight: 700;
+    color: #2c3531;
+    line-height: 1.5;
+    margin-bottom: 6px;
+}
+
+.mathCard {
+    direction: ltr;
+    background: #ffffff;
+    border: 1px solid #e6d5b4;
+    border-radius: 12px;
+    padding: 2px 12px;
+    margin-bottom: clamp(8px, 1.3vh, 12px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    font-size: clamp(14px, 1.1vw, 17px);
+}
+
+.mathCard :global(.katex-display) {
+    margin: 0.45em 0;
+}
+
+/* ===== الخيارات ===== */
+.options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    min-height: 46px;
+    background: #ffffff;
+    border: 1.5px solid #e6d5b4;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: clamp(13.5px, 1.05vw, 16px);
+    font-weight: 700;
+    color: #2c3531;
+    transition: border-color 0.15s, transform 0.15s, background-color 0.15s;
+}
+
+.option:hover {
+    border-color: #dca27b;
+    transform: translateY(-1px);
+}
+
+.option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.option:has(input:focus-visible) {
+    outline: 2px solid #8c5521;
+    outline-offset: 2px;
+}
+
+.optionLetter {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #fbf3e0;
+    color: #8c5521;
+    font-weight: 900;
+    font-size: 13px;
+    direction: ltr;
+}
+
+.optionBody {
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 3px 0;
+}
+
+.optionSelected {
+    background: #feecd0;
+    border-color: #8c5521;
+}
+
+.optionSelected .optionLetter {
+    background: #8c5521;
+    color: #ffffff;
+}
+
+.optionCorrect {
+    background: #eef2dd;
+    border-color: #8b9a63;
+}
+
+.optionCorrect .optionLetter {
+    background: #66783d;
+    color: #ffffff;
+}
+
+.optionWrong {
+    background: #fbe4dc;
+    border-color: #d98b73;
+}
+
+.optionWrong .optionLetter {
+    background: #b9543a;
+    color: #ffffff;
+}
+
+/* ===== نتيجة الإجابة ===== */
+.feedback {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid;
+    background: #ffffff;
+}
+
+.feedbackCorrect {
+    border-color: #8b9a63;
+    background: #f4f7e8;
+}
+
+.feedbackWrong {
+    border-color: #d98b73;
+    background: #fdf0eb;
+}
+
+.feedbackTitle {
+    font-weight: 900;
+    font-size: 14px;
+}
+
+.feedbackCorrect .feedbackTitle {
+    color: #46552a;
+}
+
+.feedbackWrong .feedbackTitle {
+    color: #9c3f24;
+}
+
+.steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.step {
+    background: #ffffff;
+    border: 1px solid #e6d5b4;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2c3531;
+}
+
+.stepMath {
+    direction: ltr;
+    text-align: center;
+    margin-top: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.stepMath :global(.katex-display) {
+    margin: 0.4em 0;
+}
+
+/* ===== الشريط السفلي الثابت ===== */
+.footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    /* مساحة زر المعلم الذكي العائم في الجهة اليسرى */
+    padding-inline-end: 250px;
+    border-top: 1px solid #efe4cc;
+    background: #ffffff;
+}
+
+/* الشاشات المتوسطة: الخيارات تحت بعض بجانب الرسم لأن المساحة ضيقة */
+@media (min-width: 768px) and (max-width: 1099px) {
+    .workspaceWithGraph .options {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.checkBtn {
+    background: #3f4f35;
+    color: #fff9e2;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 13.5px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+
+.checkBtn:hover:not(:disabled) {
+    background: #2f3d27;
+}
+
+.checkBtn:disabled {
+    background: #d8d4c4;
+    color: #807b69;
+    cursor: not-allowed;
+}
+
+.secondaryBtn {
+    background: #feecd0;
+    color: #8c5521;
+    border: 1px solid #e6d5b4;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+    background: #fbdfb4;
+}
+
+.secondaryBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.stepper {
+    display: flex;
+    gap: 6px;
+    margin-inline-start: auto;
+}
+
+.empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #8c5521;
+    font-weight: 800;
+    font-size: 15px;
+    padding: 20px;
+}
+
+/* ===== الجوال ===== */
+@media (max-width: 767px) {
+    .shell {
+        /* مساحة زر المعلم الذكي العائم تحت الورقة */
+        padding-bottom: 78px;
+    }
+
+    .topbar {
+        margin-bottom: 8px;
+    }
+
+    .eyebrow {
+        display: none;
+    }
+
+    .title {
+        font-size: 15px;
+    }
+
+    .ghostBtn {
+        padding: 5px 9px;
+        font-size: 11px;
+    }
+
+    .tabs {
+        padding: 0 6px;
+        gap: 3px;
+    }
+
+    .tab {
+        flex: 1 1 0;
+        padding: 7px 2px;
+        font-size: 12px;
+        gap: 3px;
+    }
+
+    /* على الجوال شريط الأفكار تحت التبويبات مباشرة، فالتبويب النشط يأخذ لونه */
+    .tabActive,
+    .tabActive:hover {
+        background: #fbf3e0;
+    }
+
+    .tabCount {
+        padding: 0 4px;
+    }
+
+    .sheet {
+        grid-template-columns: minmax(0, 1fr);
+        border-radius: 14px;
+    }
+
+    .rail {
+        border-inline-end: 0;
+        border-bottom: 1px dashed #dcc9a8;
+    }
+
+    .railInner {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .railLabel {
+        display: none;
+    }
+
+    .qDot {
+        width: 38px;
+        height: 38px;
+        font-size: 12.5px;
+    }
+
+    .stageHead {
+        padding: 7px 10px;
+    }
+
+    .ideaName {
+        font-size: 11px;
+    }
+
+    .linkBtn {
+        font-size: 11px;
+    }
+
+    .paper {
+        padding: 12px 12px 18px;
+    }
+
+    .questionText {
+        font-size: 14.5px;
+        margin-bottom: 10px;
+    }
+
+    .workspaceWithGraph {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* على الجوال الرسم يظهر أولًا ويتحرك مع السؤال */
+    .graphCard {
+        position: static;
+        order: -1;
+    }
+
+    .graphCard img {
+        max-height: 210px;
+    }
+
+    .options {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .option {
+        min-height: 44px;
+        padding: 8px 10px;
+    }
+
+    /* على الجوال الأزرار في مكانها بعد الخيارات حتى لا يغطيها زر المعلم الذكي */
+    .footer {
+        position: static;
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .checkBtn {
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 12.5px;
+    }
+
+    .secondaryBtn {
+        padding: 10px 9px;
+        font-size: 12px;
+    }
+
+    .solveLabel {
+        display: none;
+    }
+
+    .stepper {
+        margin-inline-start: 0;
+        gap: 4px;
+    }
+}

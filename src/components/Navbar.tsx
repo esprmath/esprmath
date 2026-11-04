@@ -315,276 +315,327 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
     return (
         <>
-            <nav style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '1rem 2rem',
-                backgroundColor: '#8B5E3C',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                borderBottom: '1px solid #6B5744',
-                marginBottom: '2rem',
-                position: 'relative',
-                zIndex: 1000,
-                fontFamily: 'sans-serif'
-            }}>
-                <div>
+            <style jsx>{`
+                .nav-container {
+                    --btn-height: 36px;
+                    --btn-font-size: 0.85rem;
+                    --btn-padding-x: 0.75rem;
+                    
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: nowrap;
+                    padding: 1rem 1.5rem;
+                    background-color: #8B5E3C;
+                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+                    border-bottom: 1px solid #6B5744;
+                    margin-bottom: 1.5rem;
+                    position: relative;
+                    z-index: 1000;
+                    font-family: sans-serif;
+                    box-sizing: border-box;
+                }
+                .nav-logo {
+                    flex-shrink: 0;
+                }
+                .nav-left-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    flex-shrink: 0;
+                }
+
+                @media (max-width: 768px) {
+                    .nav-container {
+                        padding: 0.5rem 0.75rem;
+                        --btn-height: 32px;
+                        --btn-font-size: 0.75rem;
+                        --btn-padding-x: 0.5rem;
+                    }
+                    .nav-left-group {
+                        gap: 8px;
+                    }
+                }
+            `}</style>
+
+            <nav className="nav-container">
+                {/* 1. الشعار أقصى اليمين */}
+                <div className="nav-logo">
                     <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.2' }}>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.2' }}>
                             EsprMath 📐
                         </span>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#FEECD0', letterSpacing: '2px', marginTop: '3px' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#FEECD0', letterSpacing: '1.5px', marginTop: '2px' }}>
                             YIC
                         </span>
                     </Link>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {/* زر "الضمير الغائب" يظهر دائماً في الشريط العلوي */}
-                    <Link
-                        href="/absence"
-                        style={{
-                            padding: '0.5rem 0.9rem',
-                            backgroundColor: '#FEECD0',
-                            color: '#8B5E3C',
-                            border: '1px solid #6B5744',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            fontSize: '0.85rem',
-                            textDecoration: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <span>👤</span>
-                        <span>الضمير الغائب</span>
-                    </Link>
-
-                    {isLoggedIn ? (
+                {/* 2. مجموعة اليسار: موعد الاختبار (بجانب الملف الشخصي مباشرة) + الضمير الغائب + الملف الشخصي */}
+                <div className="nav-left-group">
+                    {/* زر موعد الاختبار يأتي يمين الملف الشخصي مباشرة */}
+                    {isLoggedIn && !isHomePage && courseApprovalStatus && (
                         <>
-                            {!isHomePage && courseApprovalStatus && (
-                                <>
-                                    {isExamPromptMinimized ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleToggleMinimize(false)}
-                                            title="إظهار مؤشر موعد الاختبار"
-                                            style={{
-                                                width: '38px',
-                                                height: '38px',
-                                                borderRadius: '50%',
-                                                backgroundColor: examDate ? (isUrgent ? '#fee2e2' : '#ffffff') : '#ffffff',
-                                                border: '1px solid #6B5744',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '1.1rem',
-                                                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                                            }}
-                                        >
-                                            📝
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCalendarModal(true)}
-                                            style={{
-                                                padding: '0.5rem 0.8rem',
-                                                backgroundColor: examDate ? (isUrgent ? '#fee2e2' : '#ffffff') : '#ffffff',
-                                                color: examDate ? (isUrgent ? '#991b1b' : '#2C3531') : '#2C3531',
-                                                border: '1px solid #6B5744',
-                                                borderRadius: '8px',
-                                                fontWeight: 'bold',
-                                                fontSize: '0.8rem',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                                            }}
-                                        >
-                                            <span>{examDate ? (isUrgent ? '🚨' : '⏳') : '📌'}</span>
-                                            <span>
-                                                {examDate
-                                                    ? (daysLeft !== null && daysLeft >= 0
-                                                        ? (daysLeft === 0
-                                                            ? 'اختبارك اليوم 🎯'
-                                                            : daysLeft === 1
-                                                                ? 'باقي على اختبارك: يوم 🎯'
-                                                                : daysLeft === 2
-                                                                    ? 'باقي على اختبارك: يومين 🎯'
-                                                                    : daysLeft >= 3 && daysLeft <= 10
-                                                                        ? `باقي على اختبارك: ${daysLeft} ايام 🎯`
-                                                                        : `باقي على اختبارك: ${daysLeft} يوم 🎯`)
-                                                        : 'تم تحديد موعد الاختبار')
-                                                    : 'تحديد موعد الاختبار'}
-                                            </span>
-                                        </button>
-                                    )}
-                                </>
-                            )}
-
-                            <div style={{ position: 'relative' }} ref={menuRef}>
+                            {isExamPromptMinimized ? (
                                 <button
                                     type="button"
-                                    onClick={() => setShowMenu(!showMenu)}
+                                    onClick={() => handleToggleMinimize(false)}
+                                    title="إظهار مؤشر موعد الاختبار"
                                     style={{
+                                        height: 'var(--btn-height)',
+                                        padding: '0 var(--btn-padding-x)',
+                                        borderRadius: '8px',
+                                        backgroundColor: examDate ? (isUrgent ? '#fee2e2' : '#ffffff') : '#ffffff',
+                                        border: '1px solid #6B5744',
+                                        cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.5rem 0.8rem',
-                                        backgroundColor: '#ffffff',
-                                        color: '#2C3531',
-                                        border: '1px solid #6B5744',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontWeight: 'bold',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                        justifyContent: 'center',
+                                        fontSize: 'var(--btn-font-size)',
+                                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                                        flexShrink: 0,
+                                        boxSizing: 'border-box'
                                     }}
                                 >
-                                    👤 {userName || 'الملف الشخصي'} ▾
+                                    📝
                                 </button>
-
-                                {showMenu && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        left: 0,
-                                        top: '120%',
-                                        width: '290px',
-                                        backgroundColor: '#ffffff',
-                                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-                                        borderRadius: '12px',
-                                        padding: '1rem',
-                                        zIndex: 50,
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCalendarModal(true)}
+                                    style={{
+                                        height: 'var(--btn-height)',
+                                        padding: '0 var(--btn-padding-x)',
+                                        backgroundColor: examDate ? (isUrgent ? '#fee2e2' : '#ffffff') : '#ffffff',
+                                        color: examDate ? (isUrgent ? '#991b1b' : '#2C3531') : '#2C3531',
                                         border: '1px solid #6B5744',
-                                        textAlign: 'right'
-                                    }}>
-                                        <div style={{ marginBottom: '0.75rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem' }}>
-                                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B5744' }}>الحساب المسجل:</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 0' }}>
-                                                <div>
-                                                    <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 'bold', color: '#2C3531' }}>{userName}</p>
-                                                    <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#7C9E6B', fontWeight: 'bold' }}>
-                                                        ID: {studentId || 'غير محدد'}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowEditModal(true)}
-                                                    title="تعديل بيانات الملف الشخصي"
-                                                    style={{
-                                                        width: '28px',
-                                                        height: '28px',
-                                                        backgroundColor: '#ffffff',
-                                                        border: '2px solid #C4863A',
-                                                        borderRadius: '50%',
-                                                        cursor: 'pointer',
-                                                        padding: 0,
-                                                        display: 'flex',
-                                                        justifyContent: 'center',
-                                                        alignItems: 'center',
-                                                        flexShrink: 0
-                                                    }}
-                                                >
-                                                    <span style={{ fontSize: '11px', lineHeight: 1 }}>✏️</span>
-                                                </button>
-                                            </div>
-                                            <p style={{ margin: '4px 0 6px 0', fontSize: '0.75rem', color: '#6B5744' }}>{userEmail}</p>
-
-                                            <div style={{
-                                                marginTop: '8px',
-                                                padding: '6px 10px',
-                                                backgroundColor: '#f8fafc',
-                                                borderRadius: '6px',
-                                                border: '1px solid #e2e8f0',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}>
-                                                <span style={{ fontSize: '0.75rem', color: '#6B5744', fontWeight: 'bold' }}>حالة الكورس:</span>
-                                                <span style={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 'bold',
-                                                    padding: '2px 8px',
-                                                    borderRadius: '4px',
-                                                    backgroundColor: courseApprovalStatus ? '#e2f8ec' : '#fef3c7',
-                                                    color: courseApprovalStatus ? '#166534' : '#b45309'
-                                                }}>
-                                                    {courseApprovalStatus ? '✅ مفعل وموافق عليه' : '⏳ بانتظار الموافقة'}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => { setShowMenu(false); setShowPasswordModal(true); }}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.5rem',
-                                                marginBottom: '8px',
-                                                backgroundColor: '#FEECD0',
-                                                color: '#8B5E3C',
-                                                border: '1px solid #8B5E3C',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.85rem',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            🔑 تغيير كلمة المرور
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={handleLogout}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.5rem',
-                                                backgroundColor: '#b91c1c',
-                                                color: '#ffffff',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            تسجيل الخروج 🚪
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        fontSize: 'var(--btn-font-size)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                        whiteSpace: 'nowrap',
+                                        boxSizing: 'border-box'
+                                    }}
+                                >
+                                    <span>{examDate ? (isUrgent ? '🚨' : '⏳') : '📌'}</span>
+                                    <span>
+                                        {examDate
+                                            ? (daysLeft !== null && daysLeft >= 0
+                                                ? (daysLeft === 0
+                                                    ? 'اختبارك اليوم 🎯'
+                                                    : daysLeft === 1
+                                                        ? 'باقي: يوم 🎯'
+                                                        : daysLeft === 2
+                                                            ? 'باقي: يومين 🎯'
+                                                            : daysLeft >= 3 && daysLeft <= 10
+                                                                ? `باقي: ${daysLeft} أيام 🎯`
+                                                                : `باقي: ${daysLeft} يوم 🎯`)
+                                                : 'تم تحديد موعد الاختبار')
+                                            : 'تحديد موعد الاختبار'}
+                                    </span>
+                                </button>
+                            )}
                         </>
+                    )}
+
+                    {/* زر "الضمير الغائب" يظهر فقط في الصفحة الرئيسية */}
+                    {isHomePage && (
+                        <Link
+                            href="/absence"
+                            style={{
+                                height: 'var(--btn-height)',
+                                padding: '0 var(--btn-padding-x)',
+                                backgroundColor: '#FEECD0',
+                                color: '#8B5E3C',
+                                border: '1px solid #6B5744',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                fontSize: 'var(--btn-font-size)',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                whiteSpace: 'nowrap',
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            <span>👤</span>
+                            <span>الضمير الغائب</span>
+                        </Link>
+                    )}
+
+                    {isLoggedIn ? (
+                        <div style={{ position: 'relative' }} ref={menuRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowMenu(!showMenu)}
+                                style={{
+                                    height: 'var(--btn-height)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    padding: '0 var(--btn-padding-x)',
+                                    backgroundColor: '#ffffff',
+                                    color: '#2C3531',
+                                    border: '1px solid #6B5744',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    fontSize: 'var(--btn-font-size)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                    whiteSpace: 'nowrap',
+                                    boxSizing: 'border-box'
+                                }}
+                            >
+                                👤 {userName || 'الملف الشخصي'} ▾
+                            </button>
+
+                            {showMenu && (
+                                <div style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: '120%',
+                                    width: '280px',
+                                    backgroundColor: '#ffffff',
+                                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                                    borderRadius: '12px',
+                                    padding: '1rem',
+                                    zIndex: 50,
+                                    border: '1px solid #6B5744',
+                                    textAlign: 'right',
+                                    boxSizing: 'border-box'
+                                }}>
+                                    <div style={{ marginBottom: '0.75rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.75rem' }}>
+                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#6B5744' }}>الحساب المسجل:</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 0' }}>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 'bold', color: '#2C3531' }}>{userName}</p>
+                                                <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#7C9E6B', fontWeight: 'bold' }}>
+                                                    ID: {studentId || 'غير محدد'}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEditModal(true)}
+                                                title="تعديل بيانات الملف الشخصي"
+                                                style={{
+                                                    width: '28px',
+                                                    height: '28px',
+                                                    backgroundColor: '#ffffff',
+                                                    border: '2px solid #C4863A',
+                                                    borderRadius: '50%',
+                                                    cursor: 'pointer',
+                                                    padding: 0,
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    flexShrink: 0
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '11px', lineHeight: 1 }}>✏️</span>
+                                            </button>
+                                        </div>
+                                        <p style={{ margin: '4px 0 6px 0', fontSize: '0.75rem', color: '#6B5744', wordBreak: 'break-all' }}>{userEmail}</p>
+
+                                        <div style={{
+                                            marginTop: '8px',
+                                            padding: '6px 10px',
+                                            backgroundColor: '#f8fafc',
+                                            borderRadius: '6px',
+                                            border: '1px solid #e2e8f0',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}>
+                                            <span style={{ fontSize: '0.75rem', color: '#6B5744', fontWeight: 'bold' }}>حالة الكورس:</span>
+                                            <span style={{
+                                                fontSize: '0.75rem',
+                                                fontWeight: 'bold',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                backgroundColor: courseApprovalStatus ? '#e2f8ec' : '#fef3c7',
+                                                color: courseApprovalStatus ? '#166534' : '#b45309'
+                                            }}>
+                                                {courseApprovalStatus ? '✅ مفعل' : '⏳ بانتظار الموافقة'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowMenu(false); setShowPasswordModal(true); }}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.5rem',
+                                            marginBottom: '8px',
+                                            backgroundColor: '#FEECD0',
+                                            color: '#8B5E3C',
+                                            border: '1px solid #8B5E3C',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 'bold',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    >
+                                        🔑 تغيير كلمة المرور
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleLogout}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.5rem',
+                                            backgroundColor: '#b91c1c',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 'bold',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    >
+                                        تسجيل الخروج 🚪
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         <div style={{ position: 'relative' }} ref={authDropdownRef} onMouseEnter={() => setShowAuthDropdown(true)} onMouseLeave={() => setShowAuthDropdown(false)}>
                             <button
                                 type="button"
                                 onClick={() => setShowAuthDropdown(!showAuthDropdown)}
                                 style={{
-                                    padding: '0.5rem 1rem',
+                                    height: 'var(--btn-height)',
+                                    padding: '0 var(--btn-padding-x)',
                                     backgroundColor: '#ffffff',
                                     color: '#2C3531',
                                     border: '1px solid #6B5744',
                                     borderRadius: '8px',
                                     fontWeight: 'bold',
                                     cursor: 'pointer',
-                                    fontSize: '0.9rem',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    fontSize: 'var(--btn-font-size)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                    whiteSpace: 'nowrap',
+                                    boxSizing: 'border-box'
                                 }}
                             >
                                 تسجيل الدخول ▾
                             </button>
                             {showAuthDropdown && (
                                 <div style={{ position: 'absolute', left: 0, top: '100%', paddingTop: '8px', width: '160px', zIndex: 50 }}>
-                                    <div style={{ backgroundColor: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', borderRadius: '12px', padding: '0.5rem', border: '1px solid #6B5744', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <div style={{ backgroundColor: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', borderRadius: '12px', padding: '0.5rem', border: '1px solid #6B5744', display: 'flex', flexDirection: 'column', gap: '4px', boxSizing: 'border-box' }}>
                                         <Link href="/login" onClick={() => setShowAuthDropdown(false)} style={{ textDecoration: 'none', color: '#2C3531', padding: '0.5rem', borderRadius: '8px', fontSize: '0.875rem' }}>
                                             🔑 تسجيل دخول
                                         </Link>
-                                        <Link href="/signup" onClick={() => setShowAuthDropdown(false)} style={{ textDecoration: 'none', color: '#ffffff', backgroundColor: '#7C9E6B', padding: '0.5rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 'bold' }}>
+                                        <Link href="/signup" onClick={() => setShowAuthDropdown(false)} style={{ textDecoration: 'none', color: '#ffffff', backgroundColor: '#7C9E6B', padding: '0.5rem', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 'bold', textAlign: 'center' }}>
                                             ✨ إنشاء حساب
                                         </Link>
                                     </div>
@@ -597,8 +648,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
             {/* مودال تعديل الملف الشخصي */}
             {showEditModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
-                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'right' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif', padding: '16px', boxSizing: 'border-box' }}>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'right', boxSizing: 'border-box' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h3 style={{ margin: 0, fontSize: '16px', color: '#2C3531' }}>✏️ تعديل بيانات الملف الشخصي</h3>
                             <button type="button" onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6B5744' }}>✕</button>
@@ -612,7 +663,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>معرف الطالب (Student ID):</label>
                                 <input type="text" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box' }} />
                             </div>
-                            <button type="submit" disabled={loadingName} style={{ width: '100%', padding: '10px', backgroundColor: '#7C9E6B', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>
+                            <button type="submit" disabled={loadingName} style={{ width: '100%', padding: '10px', backgroundColor: '#7C9E6B', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px', boxSizing: 'border-box' }}>
                                 {loadingName ? 'جاري الحفظ...' : 'حفظ التعديلات'}
                             </button>
                         </form>
@@ -622,8 +673,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
             {/* مودال تغيير كلمة المرور */}
             {showPasswordModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
-                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'right' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif', padding: '16px', boxSizing: 'border-box' }}>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '380px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'right', boxSizing: 'border-box' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h3 style={{ margin: 0, fontSize: '16px', color: '#2C3531' }}>🔑 تغيير كلمة المرور</h3>
                             <button type="button" onClick={() => setShowPasswordModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6B5744' }}>✕</button>
@@ -641,7 +692,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>تأكيد كلمة المرور الجديدة:</label>
                                 <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', direction: 'ltr', textAlign: 'right' }} />
                             </div>
-                            <button type="submit" disabled={loadingPassword} style={{ width: '100%', padding: '10px', backgroundColor: '#8B5E3C', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>
+                            <button type="submit" disabled={loadingPassword} style={{ width: '100%', padding: '10px', backgroundColor: '#8B5E3C', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px', boxSizing: 'border-box' }}>
                                 {loadingPassword ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
                             </button>
                         </form>
@@ -651,8 +702,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
             {/* مودال التقويم لتحديد موعد الاختبار */}
             {showCalendarModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif' }}>
-                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '20px', borderRadius: '16px', width: '90%', maxWidth: '340px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2500, fontFamily: 'sans-serif', padding: '16px', boxSizing: 'border-box' }}>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '20px', borderRadius: '16px', width: '100%', maxWidth: '340px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center', boxSizing: 'border-box' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                             <h3 style={{ margin: 0, fontSize: '15px', color: '#2C3531' }}>📅 تحديد موعد الاختبار</h3>
                             <button type="button" onClick={() => setShowCalendarModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#6B5744' }}>✕</button>
@@ -726,7 +777,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                     borderRadius: '8px',
                                     fontSize: '0.8rem',
                                     fontWeight: 'bold',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    boxSizing: 'border-box'
                                 }}
                             >
                                 تصغير المؤشر للشاشة 📉
@@ -738,8 +790,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
             {/* مودال التنبيهات العامة */}
             {showAlertModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, fontFamily: 'sans-serif' }}>
-                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '320px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000, fontFamily: 'sans-serif', padding: '16px', boxSizing: 'border-box' }}>
+                    <div style={{ backgroundColor: '#ffffff', border: '1px solid #6B5744', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '320px', boxShadow: '0 15px 30px rgba(0,0,0,0.15)', color: '#2C3531', textAlign: 'center', boxSizing: 'border-box' }}>
                         <p style={{ margin: '0 0 20px 0', fontSize: '0.95rem', fontWeight: 'bold', lineHeight: '1.5' }}>{alertMessage}</p>
                         <button
                             type="button"
@@ -752,7 +804,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 border: 'none',
                                 borderRadius: '8px',
                                 fontWeight: 'bold',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                boxSizing: 'border-box'
                             }}
                         >
                             حسناً

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import { isAdminEmail } from '@/lib/admin'
 import GuideTip from '@/components/GuideTip'
 
 interface Course {
@@ -16,33 +17,31 @@ interface Course {
     requires_approval: boolean
 }
 
+const PRIMARY = '#8c5521'
+
 export default function HomePage() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [userName, setUserName] = useState<string>('')
     const [userId, setUserId] = useState<string | null>(null)
     const [userEmail, setUserEmail] = useState<string | null>(null)
 
-    const [isAiAllowed, setIsAiAllowed] = useState(false)
     const [courses, setCourses] = useState<Course[]>([])
+    const [coursesLoading, setCoursesLoading] = useState(true)
     const [courseStatuses, setCourseStatuses] = useState<Record<string, string>>({})
     const [showAlertModal, setShowAlertModal] = useState(false)
     const [alertMessage, setAlertMessage] = useState('')
 
-    const ADMIN_EMAIL = 'sofe@gmail.com'
+    const isAdmin = isAdminEmail(userEmail)
 
     const fetchCourses = async (currentEmail?: string | null) => {
         const { data, error } = await supabase
             .from('courses')
             .select('*')
             .order('id')
+        setCoursesLoading(false)
 
         if (!error && data) {
-            const visibleCourses = data.filter(course => {
-                if (currentEmail === ADMIN_EMAIL) {
-                    return true
-                }
-                return course.is_active === true
-            })
+            const visibleCourses = data.filter(course => isAdminEmail(currentEmail) || course.is_active === true)
 
             setCourses(visibleCourses)
             const initialStatuses: Record<string, string> = {}
@@ -50,18 +49,6 @@ export default function HomePage() {
                 initialStatuses[course.id] = 'none'
             })
             setCourseStatuses(initialStatuses)
-        }
-    }
-
-    const fetchUserProfile = async (currentUserId: string) => {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('is_ai_allowed')
-            .eq('id', currentUserId)
-            .single()
-
-        if (!error && data) {
-            setIsAiAllowed(data.is_ai_allowed)
         }
     }
 
@@ -94,7 +81,6 @@ export default function HomePage() {
                 setUserId(session.user.id)
                 const fullName = session.user.user_metadata?.full_name
                 setUserName(fullName || '')
-                fetchUserProfile(session.user.id)
             }
             fetchCourses(email)
         })
@@ -107,13 +93,11 @@ export default function HomePage() {
                 setUserId(session.user.id)
                 const fullName = session.user.user_metadata?.full_name
                 setUserName(fullName || '')
-                fetchUserProfile(session.user.id)
                 fetchCourses(email)
             } else {
                 setUserId(null)
                 setUserName('')
                 setUserEmail(null)
-                setIsAiAllowed(false)
                 fetchCourses(null)
             }
         })
@@ -196,9 +180,17 @@ export default function HomePage() {
             return
         }
 
+        // الاسم والإيميل يظهران للمشرف في لوحة التحكم
+        const { data: { session } } = await supabase.auth.getSession()
         const { error } = await supabase
             .from('user_courses')
-            .insert([{ user_id: userId, course_id: courseId, is_approved: false }])
+            .insert([{
+                user_id: userId,
+                course_id: courseId,
+                is_approved: false,
+                full_name: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '',
+                email: session?.user?.email || ''
+            }])
 
         if (error) {
             setAlertMessage('حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى.')
@@ -234,7 +226,7 @@ export default function HomePage() {
         }
     }
 
-    const renderCourseActions = (course: Course, buttonColor: string) => {
+    const renderCourseActions = (course: Course) => {
         const courseId = course.id
 
         if (!isLoggedIn) {
@@ -243,7 +235,7 @@ export default function HomePage() {
                     <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
                         <button
                             style={{
-                                background: buttonColor,
+                                background: PRIMARY,
                                 color: '#ffffff',
                                 border: 'none',
                                 padding: '12px 15px',
@@ -268,7 +260,7 @@ export default function HomePage() {
                         type="button"
                         onClick={() => handleDirectCourseAccess(courseId)}
                         style={{
-                            background: '#2F5233',
+                            background: PRIMARY,
                             color: '#ffffff',
                             border: 'none',
                             padding: '11px 20px',
@@ -291,7 +283,7 @@ export default function HomePage() {
                 <Link href={`/workspace/${courseId}`} style={{ textDecoration: 'none' }}>
                     <button
                         style={{
-                            background: status === 'approved' ? '#2F5233' : buttonColor,
+                            background: PRIMARY,
                             color: '#ffffff',
                             border: 'none',
                             padding: '11px 20px',
@@ -301,7 +293,7 @@ export default function HomePage() {
                             width: '100%'
                         }}
                     >
-                        {status === 'approved' ? 'دخول الكورس الكامل 🚀' : 'دخول التجربة (Module 1 Free) ✨'}
+                        {status === 'approved' ? 'دخول الكورس 🚀' : 'جرّب الموديول الأول مجانًا ✨'}
                     </button>
                 </Link>
 
@@ -309,9 +301,9 @@ export default function HomePage() {
                     <button
                         onClick={() => handleRequestCourse(courseId)}
                         style={{
-                            background: '#3A4D39',
-                            color: '#ffffff',
-                            border: 'none',
+                            background: '#ffffff',
+                            color: PRIMARY,
+                            border: `1px solid ${PRIMARY}`,
                             padding: '9px 20px',
                             borderRadius: '8px',
                             fontWeight: 'bold',
@@ -371,8 +363,18 @@ export default function HomePage() {
         <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
             <Navbar isLoggedIn={isLoggedIn} />
 
-            <header className="hero-container" style={{ textAlign: 'center', padding: '40px 20px', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+            {/* قسم الترحيب: مرفوع للأعلى، بالنص تماماً، وبحجم أكبر */}
+            <header className="hero-container" style={{ textAlign: 'center', margin: '28px 0 0', padding: '10px 20px 15px 20px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {/* زر لوحة التحكم للمشرف فقط */}
+                {isAdmin && (
+                    <div style={{ marginBottom: '10px' }}>
+                        <Link href="/admin" style={{ display: 'inline-block', background: '#ffffff', color: PRIMARY, border: '1px solid #dccfb2', padding: '6px 14px', borderRadius: '999px', fontWeight: 'bold', fontSize: '0.85rem', textDecoration: 'none' }}>
+                            ⚙️ لوحة التحكم
+                        </Link>
+                    </div>
+                )}
+
+                <div style={{ position: 'absolute', top: '2px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
                     <GuideTip
                         id="home-welcome-general"
                         text="أهلاً بك في منصة EsprMath! 🚀 منصتك الذكية لتبسيط وتسهيل مقررات الرياضيات الجامعية."
@@ -381,28 +383,32 @@ export default function HomePage() {
                 </div>
 
                 {isLoggedIn && (
-                    <h2 style={{ fontSize: '1.25rem', color: '#DCA27B', fontWeight: 'bold', marginBottom: '15px', marginTop: '20px' }}>
-                        مرحباً {userName || 'طالبنا العزيز'} 👋 {isAiAllowed && <span style={{ fontSize: '0.85rem', background: '#2F5233', color: '#fff', padding: '2px 8px', borderRadius: '4px', marginLeft: '5px' }}>🤖 ميزة الـ AI مفعلة</span>}
+                    <h2 style={{ fontSize: '1.2rem', color: PRIMARY, fontWeight: 'bold', marginBottom: '6px', marginTop: '4px', textAlign: 'center' }}>
+                        مرحباً {userName || 'طالبنا العزيز'} 👋
                     </h2>
                 )}
 
-                <h1 className="hero-title" style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#2C3531', marginBottom: '10px', marginTop: isLoggedIn ? '0' : '20px' }}>
+                <h1 className="hero-title" style={{ fontSize: '2.2rem', fontWeight: 'bold', color: '#2C3531', marginBottom: '6px', marginTop: isLoggedIn ? '0' : '4px', textAlign: 'center' }}>
                     {isLoggedIn ? 'رحلتك للـ A+ 🚀' : 'تبي الـ A+ ؟'}
                 </h1>
-                <p className="hero-subtitle" style={{ fontSize: '1.1rem', color: '#4A5550' }}>
+                <p className="hero-subtitle" style={{ fontSize: '1.05rem', color: '#4A5550', margin: 0, textAlign: 'center', maxWidth: '600px' }}>
                     هنا اضمن لك تفهم كل سؤال يمر عليك بدون ما تضيع بالمصادر
                 </p>
             </header>
 
-            {/* قسم كورسات الطالب الديناميكي */}
-            <section className="courses-section" style={{ maxWidth: '950px', margin: '0 auto 40px auto', padding: '0 20px' }}>
+            {/* قسم الكورسات: بمكان ثابت ومنفصل مع مسافة فاصلة أوسع */}
+            <section className="courses-section" style={{ maxWidth: '1100px', margin: '22px auto 30px auto', padding: '0 20px', width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', margin: 0 }}>
                         📚 كورساتك المتاحة
                     </h3>
                 </div>
 
-                <div style={{ display: 'grid', gap: '20px' }}>
+                {coursesLoading && (
+                    <p style={{ textAlign: 'center', color: '#4A5550', fontWeight: 'bold', padding: '30px 0' }}>جاري تحميل الكورسات... ⏳</p>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px' }}>
                     {courses.map((course) => {
                         return (
                             <div
@@ -412,9 +418,8 @@ export default function HomePage() {
                                     background: '#ffffff',
                                     border: '1px solid #e6dec5',
                                     borderRadius: '16px',
-                                    padding: '24px',
+                                    padding: '20px',
                                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)',
-                                    minHeight: '270px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'space-between'
@@ -427,13 +432,13 @@ export default function HomePage() {
                                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                             {!course.is_active && (
                                                 <span style={{ background: '#FEECD0', color: '#8c5521', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                مخفي عن الطلاب 🔒
-                              </span>
+                                                    مخفي عن الطلاب 🔒
+                                                </span>
                                             )}
 
                                             <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                            Math{course.id}
-                          </span>
+                                                Math{course.id}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -443,7 +448,7 @@ export default function HomePage() {
                                 </div>
 
                                 <div>
-                                    {renderCourseActions(course, '#DCA27B')}
+                                    {renderCourseActions(course)}
                                 </div>
                             </div>
                         )
@@ -452,7 +457,7 @@ export default function HomePage() {
             </section>
 
             {/* قسم قريباً في المنصة */}
-            <section style={{ maxWidth: '950px', margin: '0 auto 40px auto', padding: '0 20px' }}>
+            <section style={{ maxWidth: '1100px', margin: '0 auto 40px auto', padding: '0 20px', width: '100%' }}>
                 <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
                     <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '8px' }}>
                         🚀 قريباً في EsprMath
@@ -469,7 +474,7 @@ export default function HomePage() {
                         <div style={{ fontSize: '36px', marginBottom: '12px' }}>📬</div>
                         <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>حالة الطلب</h3>
                         <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#4A5550', lineHeight: '1.5' }}>{alertMessage}</p>
-                        <button type="button" onClick={() => setShowAlertModal(false)} style={{ width: '100%', padding: '10px 16px', backgroundColor: '#DCA27B', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        <button type="button" onClick={() => setShowAlertModal(false)} style={{ width: '100%', padding: '10px 16px', backgroundColor: PRIMARY, color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                             حسناً، فهمت 👍
                         </button>
                     </div>

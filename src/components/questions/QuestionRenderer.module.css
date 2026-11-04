@@ -1,0 +1,230 @@
+/* src/components/questions/QuestionRenderer.module.css */
+
+.questionCard {
+  background: #ffffff;
+  border: 1px solid #e6dec5;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  margin-bottom: 20px;
+}
+
+.questionHeader {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e6dec5;
+  padding-bottom: 12px;
+}
+
+.questionTitle {
+  font-size: 1.05rem;
+  color: #2c3531;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* ✅ عرض الصورة بشكل صحيح ومضمون */
+.graphContainer {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e6dec5;
+  background: #ffffff;
+}
+
+.graphImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+/* ✅ الخيارات عمودية - كل خيار في سطر */
+.optionsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #fff9e2;
+  border: 1px solid #e6dec5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.optionLabel:hover {
+  background: #feecd0;
+}
+
+.optionLabel.selected {
+  background: #feecd0;
+  border-color: #8c5521;
+  border-width: 2px;
+}
+
+.optionText {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+  font-size: 0.95rem;
+  color: #2c3531;
+}
+
+/* الشاشات الواسعة: الخيارات 2×2 حتى يظهر السؤال كاملًا بسكرول أقل */
+@media (min-width: 1024px) {
+  .singleQuestion .optionsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.actionArea {
+  border-top: 1px solid #e6dec5;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkBtn {
+  background: #8c5521;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+
+.checkBtn:hover:not(:disabled) {
+  background: #7a4a1d;
+}
+
+.checkBtn:disabled {
+  background: #d1c4b0;
+  cursor: not-allowed;
+}
+
+/* ✅ زر السبورة الجديد */
+.canvasBtn {
+  margin-top: 8px;
+  background: #FEECD0;
+  color: #8c5521;
+  border: 1px solid #DCA27B;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s;
+  align-self: flex-start;
+}
+
+.canvasBtn:hover {
+  background: #fde0b8;
+}
+
+.feedback {
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.correctFeedback {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+}
+
+.incorrectFeedback {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.feedbackTitle {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.stepsHeader {
+  font-weight: bold;
+  color: #16a34a;
+  font-size: 0.9rem;
+}
+
+.stepItem {
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #2c3531;
+}
+
+/* ✅ أنماط المجموعة (QuestionGroup) - بجانب بعض الآن */
+.groupParts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* بجانب بعض على الشاشات الكبيرة */
+  gap: 16px;
+}
+
+.partContainer {
+  background: #fafafa;
+  border: 1px solid #e6dec5;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+.partContainer.partCorrect {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.partContainer.partIncorrect {
+  border-color: #991b1b;
+  background: #fee2e2;
+}
+
+.partTitle {
+  font-weight: bold;
+  color: #2c3531;
+  font-size: 0.95rem;
+}
+
+.partFeedback {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}

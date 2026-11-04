@@ -1,0 +1,314 @@
+/* صفحة الحل: شريط أدوات + السؤال + لوح رسم مربع بنفس ورقة الأسئلة */
+
+.page {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    background: #fff9e2;
+}
+
+/* ===== شريط الأدوات ===== */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px;
+    background: #8c5521;
+    color: #fff9e2;
+    flex-shrink: 0;
+}
+
+.heading {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.subtitle {
+    font-size: 11px;
+    font-weight: 500;
+    color: #fbdfb4;
+}
+
+.tools {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 249, 226, 0.14);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.toolBtn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: transparent;
+    border: 0;
+    border-radius: 9px;
+    color: #fff9e2;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+
+.toolBtn:hover:not(:disabled) {
+    background: rgba(255, 249, 226, 0.18);
+}
+
+.toolBtn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.toolBtnActive,
+.toolBtnActive:hover:not(:disabled) {
+    background: #fff9e2;
+    color: #8c5521;
+}
+
+.toolIcon {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.swatch {
+    width: 28px;
+    height: 28px;
+    margin: 0 2px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.swatch:hover {
+    transform: scale(1.1);
+}
+
+.swatchActive {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px #8c5521, 0 0 0 4px #fff9e2;
+}
+
+.sizeDot {
+    display: block;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.closeBtn {
+    flex-shrink: 0;
+    background: #fff9e2;
+    color: #8c5521;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.closeBtn:hover {
+    background: #feecd0;
+}
+
+/* ===== مساحة العمل ===== */
+.workspace {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 10px 16px 14px;
+}
+
+.question {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1px solid #e0cfae;
+    border-radius: 12px;
+    padding: 2px 16px;
+    max-height: 24vh;
+    overflow: auto;
+    color: #2c3531;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.question :global(.katex-display) {
+    margin: 0.4em 0;
+}
+
+.questionLabel {
+    flex-shrink: 0;
+    color: #b0764a;
+    font-size: 12px;
+}
+
+.questionMath {
+    direction: ltr;
+    min-width: 0;
+}
+
+/* اللوح: المربعات في خلفية مستقلة حتى لا تمسحها المساحة */
+.board {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid #e0cfae;
+    border-radius: 16px;
+    background-color: #fffdf6;
+    background-image:
+        linear-gradient(rgba(176, 118, 74, 0.13) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(176, 118, 74, 0.13) 1px, transparent 1px);
+    background-size: 26px 26px;
+    box-shadow: 0 10px 28px rgba(92, 62, 31, 0.1);
+}
+
+.canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    touch-action: none;
+    cursor: crosshair;
+}
+
+.canvasErasing {
+    cursor: cell;
+}
+
+/* الرسم البياني تحت طبقة الرسم، فيقدر الطالب يكتب فوقه */
+.graph {
+    position: absolute;
+    top: 12px;
+    inset-inline-start: 12px;
+    width: clamp(240px, 26vw, 400px);
+    z-index: 1;
+    padding: 6px;
+    background: #ffffff;
+    border: 1px solid #e6d5b4;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(92, 62, 31, 0.1);
+    pointer-events: none;
+}
+
+.graph img {
+    display: block;
+    width: 100%;
+    max-height: 50vh;
+    object-fit: contain;
+}
+
+/* ===== الجوال ===== */
+@media (max-width: 767px) {
+    .toolbar {
+        flex-wrap: wrap;
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .subtitle {
+        display: none;
+    }
+
+    .title {
+        font-size: 14px;
+    }
+
+    /* الأدوات في سطر مستقل تحت العنوان وزر الرجوع */
+    .tools {
+        order: 3;
+        width: 100%;
+        gap: 4px;
+    }
+
+    .group {
+        gap: 2px;
+        padding: 2px;
+    }
+
+    .toolBtn {
+        min-width: 31px;
+        height: 31px;
+        padding: 0 5px;
+        font-size: 11px;
+    }
+
+    .toolIcon {
+        font-size: 15px;
+    }
+
+    .swatch {
+        width: 22px;
+        height: 22px;
+        margin: 0 1px;
+    }
+
+    .closeBtn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .workspace {
+        padding: 6px 8px 8px;
+        gap: 6px;
+    }
+
+    .question {
+        padding: 0 10px;
+        font-size: 13px;
+    }
+
+    .questionLabel,
+    .clearLabel {
+        display: none;
+    }
+
+    .graph {
+        width: 42vw;
+        top: 6px;
+        inset-inline-start: 6px;
+    }
+
+    .board {
+        border-radius: 12px;
+    }
+}

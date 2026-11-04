@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import GlobalTutor from '@/components/GlobalTutor'
 import { supabase } from '@/lib/supabase'
+import { recordIdeaResult } from '@/lib/questions/mastery'
 import { BlockMath, InlineMath } from 'react-katex'
 import 'katex/dist/katex.min.css'
 
@@ -22,8 +23,13 @@ export type QuizDataQuestion = {
     answer: string
 
     options?: string[]
+    mathOptionIds?: string[]
     correctAnswer?: string
     solutionText?: string
+    steps?: { text: string; math?: string }[]
+
+    // لربط الحل بإتقان الفكرة (أسئلة القوالب فقط)
+    mastery?: { ideaKey: string; questionId: string }
 
     source?: 'review' | 'leak'
 
@@ -51,7 +57,8 @@ type ActiveSection =
 
 type QuizEngineProps = {
     title: string
-    questions: QuizDataQuestion[]
+    // تُستدعى عند بدء كل مراجعة أو تدريب، فتتولد أسئلة جديدة كل مرة
+    getQuestions: () => QuizDataQuestion[]
     chapters: string[]
     allowedIdeas?: string[]
     coursePath: string
@@ -193,7 +200,16 @@ function renderMathContent(mathKey: string) {
 }
 
 // دالة عرض الخيارات مع دعم KaTeX
-function renderOptionContent(opt: string) {
+function renderOptionContent(opt: string, mathOptionIds?: string[]) {
+    const letterMatch = opt.match(/^([A-D])\)\s*(.*)$/);
+    if (letterMatch && mathOptionIds?.includes(letterMatch[1])) {
+        return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', direction: 'ltr' }}>
+                <span>{letterMatch[1]})</span>
+                <InlineMath math={letterMatch[2]} />
+            </span>
+        );
+    }
     if (opt.includes('\\')) {
         const match = opt.match(/^([A-D]\))\s*(.*)$/);
         if (match) {
@@ -211,7 +227,7 @@ function renderOptionContent(opt: string) {
 
 export default function QuizEngine({
                                        title,
-                                       questions,
+                                       getQuestions,
                                        chapters,
                                        allowedIdeas,
                                        coursePath,
@@ -220,43 +236,12 @@ export default function QuizEngine({
                                        leaksVideoUrl,
                                        leakExamId
                                    }: QuizEngineProps) {
-    const allowedQuestions = useMemo(
-        () =>
-            questions.filter(
-                (question) =>
-                    chapters.includes(
-                        question.chapter
-                    )
-            ),
-        [questions, chapters]
-    )
-
-    const reviewPool =
-        useMemo<ReadyQuestion[]>(
-            () =>
-                allowedQuestions.filter(
-                    (
-                        question
-                    ): question is ReadyQuestion =>
-                        isQuizReady(
-                            question
-                        ) &&
-                        question.source !==
-                        'leak'
-                ),
-            [allowedQuestions]
+    // أسئلة جاهزة ومولّدة من جديد عند بدء كل جولة
+    const generateReadyQuestions = () =>
+        getQuestions().filter(
+            (question): question is ReadyQuestion =>
+                chapters.includes(question.chapter) && isQuizReady(question)
         )
-
-    // وعاء التسريبات والأفكار المحددة بناءً على allowedIdeas
-    const leakPool = useMemo(
-        () => {
-            const allReady = questions.filter(
-                (q) => chapters.includes(q.chapter) && isQuizReady(q)
-            )
-            return buildSelectedIdeasPool(allReady, allowedIdeas)
-        },
-        [questions, chapters, allowedIdeas]
-    )
 
     const [
         currentSection,
@@ -496,7 +481,9 @@ export default function QuizEngine({
     function startReview() {
         setActiveQuestions(
             buildRandomReview(
-                reviewPool
+                generateReadyQuestions().filter(
+                    (question) => question.source !== 'leak'
+                )
             )
         )
 
@@ -508,7 +495,8 @@ export default function QuizEngine({
     }
 
     function startLeaks() {
-        setActiveQuestions(leakPool)
+        // التسريبات: سؤال من كل فكرة محددة في allowedIdeas
+        setActiveQuestions(buildSelectedIdeasPool(generateReadyQuestions(), allowedIdeas))
         setCurrentSection('leaks')
         resetAttempt()
     }
@@ -538,6 +526,14 @@ export default function QuizEngine({
 
         setIsCorrect(correct)
         setIsSubmitted(true)
+
+        if (currentQuestion.mastery) {
+            recordIdeaResult(
+                currentQuestion.mastery.ideaKey,
+                currentQuestion.mastery.questionId,
+                correct
+            )
+        }
 
         if (!correct) {
             setWrongItems(
@@ -729,6 +725,8 @@ export default function QuizEngine({
                             }
                         </p>
 
+                        {viewingErrorItem.math && renderMathContent(viewingErrorItem.math)}
+
                         <div
                             style={{
                                 background:
@@ -744,8 +742,21 @@ export default function QuizEngine({
                             <strong>
                                 شرح الحل:
                             </strong>{' '}
-                            {viewingErrorItem.solutionText ||
-                                viewingErrorItem.answer}
+                            {viewingErrorItem.steps ? (
+                                viewingErrorItem.steps.map((step, stepIdx) => (
+                                    <div key={stepIdx} style={{ marginTop: '8px' }}>
+                                        <div>{step.text}</div>
+                                        {step.math && (
+                                            <div style={{ direction: 'ltr', textAlign: 'center', overflowX: 'auto', overflowY: 'hidden' }}>
+                                                <BlockMath math={step.math} />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                viewingErrorItem.solutionText ||
+                                viewingErrorItem.answer
+                            )}
                         </div>
 
                         <div
@@ -1425,18 +1436,7 @@ export default function QuizEngine({
                                     onClick={
                                         startReview
                                     }
-                                    disabled={
-                                        reviewPool.length ===
-                                        0
-                                    }
-                                    style={{
-                                        ...primaryButton,
-                                        opacity:
-                                            reviewPool.length ===
-                                            0
-                                                ? 0.5
-                                                : 1
-                                    }}
+                                    style={primaryButton}
                                 >
                                     ابدأ
                                     مراجعة
@@ -1469,18 +1469,7 @@ export default function QuizEngine({
                                     onClick={
                                         startLeaks
                                     }
-                                    disabled={
-                                        leakPool.length ===
-                                        0
-                                    }
-                                    style={{
-                                        ...primaryButton,
-                                        opacity:
-                                            leakPool.length ===
-                                            0
-                                                ? 0.5
-                                                : 1
-                                    }}
+                                    style={primaryButton}
                                 >
                                     ابدأ
                                     تدريب
@@ -1876,7 +1865,7 @@ export default function QuizEngine({
                                             '1px solid #e6dec5'
                                     }}
                                 >
-                                    {renderOptionContent(option)}
+                                    {renderOptionContent(option, currentQuestion.mathOptionIds)}
                                 </button>
                             )
                         )}

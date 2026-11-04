@@ -1,359 +1,67 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import GuideTip from '@/components/GuideTip';
 import GlobalTutor from '@/components/GlobalTutor';
+import FullScreenCanvasModal from '@/components/FullScreenCanvasModal';
+import AdditionalQuestionsView from '@/components/AdditionalQuestionsView';
 import { ChapterData } from '@/types/math';
 import { chapter1_5Data } from './1.5';
 import { chapter1_6Data } from './1.6';
 import { chapter2_1Data } from './2.1';
 import { chapter1_8Data } from './1.8';
 import { chapter3_4Data } from './3.4';
-
 import { moreQuesData } from './moreques';
+import { buildAdditionalQuestions } from '@/lib/questions/additional';
+import { MASTERY_TARGET, getIdeaStatus, loadIdeaProgress, recordIdeaResult, type IdeaProgressMap } from '@/lib/questions/mastery';
 import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import IdeaQuestions from '@/components/questions/IdeaQuestions';
+import { supabase } from '@/lib/supabase'; // ✅ استيراد سوبابيس للربط
+
+// ✅ 1. استيراد النظام الجديد
+import { useQuestionSet } from '@/components/questions/useQuestionSet';
+import QuestionRenderer from '@/components/questions/QuestionRenderer';
 
 type ChapterKey = '1.5' | '1.6' | '1.8' | '2.1' | '3.4' | 'additional-questions';
 
-// مكون تصميم شكل رأس القلم الخشبي
-function PencilIcon({ color, active }: { color: string; active: boolean }) {
-    return (
-        <div style={{
-            width: '26px', height: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center',
-            position: 'relative', filter: active ? 'drop-shadow(0 0 4px rgba(140, 85, 33, 0.6))' : 'none',
-            transform: active ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.2s'
-        }}>
-            {/* سن القلم الملون */}
-            <div style={{
-                width: 0, height: 0,
-                borderLeft: '7px solid transparent',
-                borderRight: '7px solid transparent',
-                borderBottom: `13px solid ${color}`
-            }} />
-            {/* الجزء الخشبي المقصوص */}
-            <div style={{
-                width: '14px', height: '8px', backgroundColor: '#e2b17c',
-                clipPath: 'polygon(0 0, 100% 0, 80% 100%, 20% 100%)',
-                marginTop: '-1px'
-            }} />
-            {/* جسم القلم السفلي */}
-            <div style={{
-                width: '16px', height: '7px', backgroundColor: color,
-                borderRadius: '0 0 3px 3px', marginTop: '1px'
-            }} />
-        </div>
-    );
-}
-
-// 🖥️ سبورة الحل الكاملة
-function FullScreenCanvasModal({
-                                   isOpen,
-                                   onClose,
-                                   questionImage,
-                                   mathText,
-                                   modalStorageKey,
-                                   activeChapter,
-                                   activeIdeaMeta
-                               }: {
-    isOpen: boolean;
-    onClose: () => void;
-    questionImage?: string;
-    mathText?: string;
-    modalStorageKey: string;
-    activeChapter: ChapterKey;
-    activeIdeaMeta?: { id: string; name: string };
-}) {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [brushColor, setBrushColor] = useState('#8c5521');
-    const [brushSize, setBrushSize] = useState(3);
-    const [isEraser, setIsEraser] = useState(false);
-
-    useEffect(() => {
-        if (isOpen && typeof window !== 'undefined') {
-            const savedTime = sessionStorage.getItem(`${modalStorageKey}_time`);
-            const savedCanvasData = sessionStorage.getItem(`${modalStorageKey}_canvas`);
-
-            if (savedTime && savedCanvasData) {
-                const elapsed = Date.now() - parseInt(savedTime, 10);
-                if (elapsed < 7 * 60 * 1000) {
-                    const canvas = canvasRef.current;
-                    if (canvas) {
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            const img = new Image();
-                            img.src = savedCanvasData;
-                            img.onload = () => {
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                ctx.drawImage(img, 0, 0);
-                            };
-                        }
-                    }
-                } else {
-                    sessionStorage.removeItem(`${modalStorageKey}_time`);
-                    sessionStorage.removeItem(`${modalStorageKey}_canvas`);
-                }
-            } else {
-                const canvas = canvasRef.current;
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    }
-                }
-            }
-        }
-    }, [isOpen, modalStorageKey]);
-
-    if (!isOpen) return null;
-
-    const saveCanvasState = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const dataURL = canvas.toDataURL();
-        sessionStorage.setItem(`${modalStorageKey}_canvas`, dataURL);
-        sessionStorage.setItem(`${modalStorageKey}_time`, Date.now().toString());
-    };
-
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        setIsDrawing(true);
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        const x = (clientX - rect.left) * scaleX;
-        const y = (clientY - rect.top) * scaleY;
-
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    };
-
-    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        const x = (clientX - rect.left) * scaleX;
-        const y = (clientY - rect.top) * scaleY;
-
-        ctx.strokeStyle = isEraser ? 'rgba(0,0,0,1)' : brushColor;
-        ctx.lineWidth = isEraser ? 20 : brushSize;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        if (isEraser) {
-            ctx.globalCompositeOperation = 'destination-out';
-        } else {
-            ctx.globalCompositeOperation = 'source-over';
-        }
-
-        ctx.lineTo(x, y);
-        ctx.stroke();
-    };
-
-    const stopDrawing = () => {
-        setIsDrawing(false);
-        saveCanvasState();
-    };
-
-    const clearCanvas = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        sessionStorage.removeItem(`${modalStorageKey}_canvas`);
-        sessionStorage.removeItem(`${modalStorageKey}_time`);
-    };
-
-    return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-            backgroundColor: '#FFF9E2', zIndex: 99999, display: 'flex', flexDirection: 'column',
-            overflow: 'hidden'
-        }}>
-            <GlobalTutor
-                key={`modal_tutor_${modalStorageKey}`}
-                currentChapter={activeChapter}
-                currentIdea={activeIdeaMeta}
-            />
-
-            {/* شريط التحكم العلوي */}
-            <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '10px 24px', backgroundColor: '#ffffff', borderBottom: '1px solid #e6dec5',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 'bold', color: '#8c5521', fontSize: '15px' }}>🎨 سبورة الحل:</span>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-
-                        {/* قلم بني */}
-                        <button
-                            type="button"
-                            title="قلم بني"
-                            onClick={() => { setBrushColor('#8c5521'); setIsEraser(false); }}
-                            style={{
-                                background: '#FFF9E2',
-                                border: !isEraser && brushColor === '#8c5521' ? '2px solid #8c5521' : '1px solid #d1c7a3',
-                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                        >
-                            <PencilIcon color="#8c5521" active={!isEraser && brushColor === '#8c5521'} />
-                        </button>
-
-                        {/* قلم أحمر */}
-                        <button
-                            type="button"
-                            title="قلم أحمر"
-                            onClick={() => { setBrushColor('#b91c1c'); setIsEraser(false); }}
-                            style={{
-                                background: '#FFF9E2',
-                                border: !isEraser && brushColor === '#b91c1c' ? '2px solid #b91c1c' : '1px solid #d1c7a3',
-                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                        >
-                            <PencilIcon color="#b91c1c" active={!isEraser && brushColor === '#b91c1c'} />
-                        </button>
-
-                        {/* قلم أسود */}
-                        <button
-                            type="button"
-                            title="قلم أسود"
-                            onClick={() => { setBrushColor('#000000'); setIsEraser(false); }}
-                            style={{
-                                background: '#FFF9E2',
-                                border: !isEraser && brushColor === '#000000' ? '2px solid #000000' : '1px solid #d1c7a3',
-                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                        >
-                            <PencilIcon color="#000000" active={!isEraser && brushColor === '#000000'} />
-                        </button>
-
-                        {/* المساحة */}
-                        <button
-                            type="button"
-                            title="المساحة"
-                            onClick={() => setIsEraser(true)}
-                            style={{
-                                background: isEraser ? '#FEECD0' : '#FFF9E2',
-                                border: isEraser ? '2px solid #8c5521' : '1px solid #d1c7a3',
-                                width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px',
-                                boxShadow: isEraser ? '0 0 6px rgba(140, 85, 33, 0.4)' : 'none'
-                            }}
-                        >
-                            🧹
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={clearCanvas}
-                            style={{ background: '#b91c1c', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
-                        >
-                            مسح الكل 🗑️
-                        </button>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={onClose}
-                    style={{
-                        background: '#b91c1c', color: '#fff', border: 'none', borderRadius: '8px',
-                        padding: '8px 18px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '6px'
-                    }}
-                >
-                    ✕ إغلاق ورجوع
-                </button>
-            </div>
-
-            {/* مساحة العمل */}
-            <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '12px', overflow: 'hidden' }}>
-                <div style={{ position: 'relative', maxWidth: '1150px', width: '100%', backgroundColor: '#fff', border: '2px solid #DCA27B', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-
-                    {mathText && (
-                        <div style={{ textAlign: 'center', direction: 'ltr', padding: '6px 12px', background: '#FAFAFA', borderRadius: '8px', border: '1px solid #e6dec5' }}>
-                            <BlockMath math={mathText} />
-                        </div>
-                    )}
-
-                    <div style={{ position: 'relative', width: '100%', minHeight: '460px', height: '56vh', backgroundColor: '#ffffff', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e6dec5' }}>
-
-                        {questionImage && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '14px',
-                                left: '14px',
-                                width: '340px',
-                                maxHeight: '310px',
-                                zIndex: 1,
-                                pointerEvents: 'none',
-                                background: '#fff',
-                                padding: '8px',
-                                borderRadius: '8px',
-                                border: '2px solid #DCA27B',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                            }}>
-                                <img
-                                    src={questionImage}
-                                    alt="Question graph visual"
-                                    style={{ width: '100%', height: 'auto', maxHeight: '290px', objectFit: 'contain', display: 'block' }}
-                                />
-                            </div>
-                        )}
-
-                        <canvas
-                            ref={canvasRef}
-                            width={1200}
-                            height={700}
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                            onTouchStart={startDrawing}
-                            onTouchMove={draw}
-                            onTouchEnd={stopDrawing}
-                            style={{
-                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                                cursor: 'crosshair', touchAction: 'none', backgroundColor: 'transparent',
-                                zIndex: 2
-                            }}
-                        />
-                    </div>
-
-                    <div style={{ textAlign: 'center', fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>
-                        💡 الأقلام والمساحة جاهزة، والذكاء الاصطناعي مرتبط بالفكرة الحالية داخل السبورة. رسوماتك محفوظة لـ 7 دقائق.
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
+const additionalQuestions = buildAdditionalQuestions(
+    [chapter1_5Data, chapter1_6Data, chapter2_1Data, chapter1_8Data, chapter3_4Data],
+    moreQuesData
+);
 
 export default function ModulePage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const params = useParams(); // ✅ للحصول على معرف الكورس من الـ URL
+    const routeCourseId = (params?.courseId as string) || '101';
+
+    // ✅ حالات المستخدم وصلاحيات الـ AI
+    const [isAiAllowed, setIsAiAllowed] = useState<boolean>(true);
+
+    // ما يعرضه فيكتور: السؤال الحالي في الشابتر، أو السؤال المفتوح في الأسئلة الإضافية
+    const [chapterTutorQuestion, setChapterTutorQuestion] = useState('');
+    const [additionalTutor, setAdditionalTutor] = useState<{ chapter: string; ideaName: string; question: string } | null>(null);
+
+    // صلاحية فيكتور: نفس الإعداد الذي يتحكم فيه المشرف، والخادم يتحقق منها أيضًا
+    useEffect(() => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (!session?.user) return;
+            const { data, error } = await supabase
+                .from('user_courses')
+                .select('is_ai_allowed')
+                .eq('user_id', session.user.id)
+                .eq('course_id', routeCourseId)
+                .maybeSingle();
+
+            if (!error && data) {
+                setIsAiAllowed(data.is_ai_allowed !== false);
+            }
+        });
+    }, [routeCourseId]);
 
     const allChaptersMap: Record<Exclude<ChapterKey, 'additional-questions'>, ChapterData> = {
         '1.5': chapter1_5Data,
@@ -376,7 +84,8 @@ export default function ModulePage() {
     const [activeIdeaId, setActiveIdeaId] = useState(currentChapterData ? currentChapterData.ideas[0].id : '');
 
     const [selectedAdditionalChapterTab, setSelectedAdditionalChapterTab] = useState<string>('all');
-    const [completedItems, setCompletedItems] = useState<string[]>([]);
+    const [ideaProgress, setIdeaProgress] = useState<IdeaProgressMap>({});
+    const [toastMessage, setToastMessage] = useState('');
 
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [hasAttempted, setHasAttempted] = useState(false);
@@ -403,43 +112,21 @@ export default function ModulePage() {
 
     const isChapterView = chapterParam !== null && (validChapters.includes(chapterParam as ChapterKey) || chapterParam === 'additional-questions');
 
-    const chatStorageKey = `global_tutor_chat_${activeChapter}_${activeIdeaId}`;
-    const chatTimestampKey = `global_tutor_time_${activeChapter}_${activeIdeaId}`;
-
-    const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'tutor'; text: string }>>(() => {
-        if (typeof window !== 'undefined') {
-            const savedTime = sessionStorage.getItem(chatTimestampKey);
-            const savedChat = sessionStorage.getItem(chatStorageKey);
-            if (savedTime && savedChat) {
-                const elapsed = Date.now() - parseInt(savedTime, 10);
-                if (elapsed < 7 * 60 * 1000) {
-                    try {
-                        return JSON.parse(savedChat);
-                    } catch (e) {
-                        return [];
-                    }
-                }
-            }
-        }
-        return [];
-    });
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            if (chatMessages.length > 0) {
-                sessionStorage.setItem(chatStorageKey, JSON.stringify(chatMessages));
-                sessionStorage.setItem(chatTimestampKey, Date.now().toString());
-            }
-        }
-    }, [chatMessages, chatStorageKey, chatTimestampKey]);
-
     useEffect(() => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('last_studied_module', '1');
-            const savedProgress = localStorage.getItem('module_1_completed_items');
-            if (savedProgress) setCompletedItems(JSON.parse(savedProgress));
+            setIdeaProgress(loadIdeaProgress());
         }
     }, []);
+
+    // نسبة إتقان الموديول تظهر في صفحة الكورس
+    useEffect(() => {
+        const allIdeas = Object.values(allChaptersMap).flatMap((chapter) =>
+            chapter.ideas.map((idea) => `${chapter.chapterNumber}-${idea.id}`)
+        );
+        const masteredCount = allIdeas.filter((key) => getIdeaStatus(ideaProgress[key]) === 'mastered').length;
+        localStorage.setItem('module_1_progress', String(Math.round((masteredCount / allIdeas.length) * 100)));
+    }, [ideaProgress]);
 
     useEffect(() => {
         if (chapterParam && (validChapters.includes(chapterParam as ChapterKey) || chapterParam === 'additional-questions')) {
@@ -468,20 +155,12 @@ export default function ModulePage() {
         setSubPartAttempted({});
     }, [chapterParam, ideaParam, tabParam]);
 
-    const totalIdeasCount = Object.values(allChaptersMap).reduce((acc, ch) => acc + ch.ideas.length, 0);
-    const completedIdeasCount = Object.keys(allChaptersMap).reduce((acc, chKey) => {
-        const chData = allChaptersMap[chKey as Exclude<ChapterKey, 'additional-questions'>];
-        const count = chData.ideas.filter(idea => completedItems.includes(`${chKey}-${idea.id}`)).length;
-        return acc + count;
-    }, 0);
-    const totalProgress = totalIdeasCount > 0 ? Math.round((completedIdeasCount / totalIdeasCount) * 100) : 0;
-
     function openChapter(chKey: ChapterKey) {
-        router.push(`/workspace/101/1?chapter=${encodeURIComponent(chKey)}`);
+        router.push(`/workspace/${routeCourseId}/1?chapter=${encodeURIComponent(chKey)}`);
     }
 
     function backToModule() {
-        router.push('/workspace/101/1');
+        router.push(`/workspace/${routeCourseId}/1`);
     }
 
     function handleChapterSwitch(chKey: ChapterKey, ideaId: string) {
@@ -494,74 +173,59 @@ export default function ModulePage() {
         setSubPartSelectedOptions({});
         setSubPartAttempted({});
 
-        router.push(`/workspace/101/1?chapter=${encodeURIComponent(chKey)}&idea=${encodeURIComponent(ideaId)}`);
+        router.push(`/workspace/${routeCourseId}/1?chapter=${encodeURIComponent(chKey)}&idea=${encodeURIComponent(ideaId)}`);
     }
 
     function jumpToIdeaFromAdditional(chapterKey: string, ideaAnchorId: string) {
-        router.push(`/workspace/101/1?chapter=${encodeURIComponent(chapterKey)}&idea=${encodeURIComponent(ideaAnchorId)}`);
+        router.push(`/workspace/${routeCourseId}/1?chapter=${encodeURIComponent(chapterKey)}&idea=${encodeURIComponent(ideaAnchorId)}`);
     }
 
     const currentIdeaObj = currentChapterData?.ideas.find(i => i.id === activeIdeaId) || currentChapterData?.ideas[0];
 
+    // التنقل بين أفكار الشابتر
+    const ideaPosition = currentChapterData && currentIdeaObj ? currentChapterData.ideas.indexOf(currentIdeaObj) : 0;
+    const previousIdea = currentChapterData?.ideas[ideaPosition - 1];
+    const nextIdea = currentChapterData?.ideas[ideaPosition + 1];
+
+    function goToIdea(ideaId: string) {
+        handleChapterSwitch(activeChapter, ideaId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     const activeIdeaMetaObj = isAdditionalView
-        ? { id: 'additional', name: 'الأسئلة الإضافية الشاملة للمقرر' }
-        : currentIdeaObj && currentChapterData
-            ? {
-                id: currentIdeaObj.id,
-                name: `شابتر ${currentChapterData.chapterNumber} (${currentChapterData.chapterTitle}) - فكرة ${currentIdeaObj.ideaNumber}: ${currentIdeaObj.ideaName}`
-            }
+        ? { id: 'additional', name: additionalTutor?.ideaName ?? 'الأسئلة الإضافية' }
+        : currentIdeaObj
+            ? { id: currentIdeaObj.id, name: `فكرة ${currentIdeaObj.ideaNumber}: ${currentIdeaObj.ideaName}` }
             : undefined;
 
-    // دالة مساعدة عامة لتسجيل اكتمال الفكرة وإظهار التوست
-    const markIdeaAsCompleted = () => {
-        const currentKey = `${activeChapter}-${activeIdeaId}`;
+    // بيانات فيكتور المشتركة بين الصفحة وورقة الحل. المحادثة واحدة لكل فكرة
+    const tutorChapter = isAdditionalView ? additionalTutor?.chapter ?? '' : activeChapter;
+    const tutorQuestion = isAdditionalView ? additionalTutor?.question ?? '' : chapterTutorQuestion;
+    const tutorChatKey = isAdditionalView ? 'additional-questions' : `${activeChapter}-${activeIdeaId}`;
+    // شرح الفكرة يصل لفيكتور داخل الشابتر فقط، ومعه يظهر زر "مختصر الفكرة"
+    const tutorIdeaNotes = isAdditionalView
+        ? ''
+        : (currentIdeaObj?.theoreticalSteps ?? []).map((step) => `${step.stepTitle}: ${step.stepDescription}`).join('\n');
+
+    // يسجل نتيجة سؤال للفكرة، ويعرض رسالة تشجيع عند الحل الصحيح
+    function handleQuestionResult(ideaKey: string, questionId: string, isCorrect: boolean) {
+        const wasMastered = getIdeaStatus(ideaProgress[ideaKey]) === 'mastered';
+        const updated = recordIdeaResult(ideaKey, questionId, isCorrect);
+        setIdeaProgress(updated);
+        if (!isCorrect) return;
+
+        const isMastered = getIdeaStatus(updated[ideaKey]) === 'mastered';
+        setToastMessage(
+            isMastered && !wasMastered
+                ? '🎉 كفو! أتقنت هذه الفكرة'
+                : isMastered
+                    ? '✅ إجابة صحيحة!'
+                    : '✅ صح! باقي سؤال مختلف وتتقن الفكرة'
+        );
         setIsFadingOut(false);
         setShowSuccessToast(true);
-
         setTimeout(() => { setIsFadingOut(true); }, 2000);
         setTimeout(() => { setShowSuccessToast(false); setIsFadingOut(false); }, 2500);
-
-        let updatedList = [...completedItems];
-        if (!updatedList.includes(currentKey)) {
-            updatedList.push(currentKey);
-            setCompletedItems(updatedList);
-            localStorage.setItem('module_1_completed_items', JSON.stringify(updatedList));
-        }
-    };
-
-    function handleQuizVerify() {
-        if (!currentIdeaObj || !currentIdeaObj.practiceQuestion) return;
-        setErrorMsg('');
-        setHasAttempted(true);
-
-        const isCorrect = selectedOption === currentIdeaObj.practiceQuestion.correctAnswer;
-
-        if (isCorrect) {
-            markIdeaAsCompleted();
-        } else {
-            setErrorMsg('❌ إجابة خاطئة، حاول مرة أخرى!');
-        }
-    }
-
-    function handleSubPartVerify(partIndex: number) {
-        setSubPartAttempted(prev => ({ ...prev, [partIndex]: true }));
-
-        if (!currentIdeaObj || !currentIdeaObj.practiceQuestion || !currentIdeaObj.practiceQuestion.subQuestions) return;
-        const subQuestionsList = currentIdeaObj.practiceQuestion.subQuestions;
-
-        // التحقق مما إذا كانت جميع الأجزاء قد تم حلها وبشكل صحيح
-        const allCorrect = subQuestionsList.every((sub, sIdx) => {
-            const userChoice = subPartSelectedOptions[sIdx];
-            return userChoice === sub.correctAnswer;
-        });
-
-        if (allCorrect) {
-            markIdeaAsCompleted();
-        }
-    }
-
-    function handleAdditionalVerify(index: number) {
-        setAdditionalAttempted(prev => ({ ...prev, [index]: true }));
     }
 
     function renderOptionContent(opt: string) {
@@ -611,728 +275,786 @@ export default function ModulePage() {
         );
     }
 
-    const filteredAdditionalQuestions = moreQuesData.filter((q) => {
-        if (selectedAdditionalChapterTab === 'all') return true;
-        return q.meta && q.meta.chapterNumber === selectedAdditionalChapterTab;
-    });
+    // ✅ 2. استدعاء الهوك للنظام الجديد
+    const stableKey = `${activeChapter}:${activeIdeaId}`;
+    const questionSet = useQuestionSet(
+        currentIdeaObj?.questions ?? [],
+        stableKey
+    );
 
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '80px', position: 'relative' }}>
-            <Navbar isLoggedIn={true} />
+        <>
+            <style jsx>{`
+                .chapters-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    gap: 16px;
+                    margin-bottom: 20px;
+                }
+                .chapter-card {
+                    width: 100%;
+                    background: #ffffff;
+                    border: 1px solid #e6dec5;
+                    border-radius: 14px;
+                    padding: 20px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+                    cursor: pointer;
+                    text-align: right;
+                    color: #2C3531;
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                .chapter-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+                }
+                .chapter-badge {
+                    display: inline-block;
+                    background: #f5efe6;
+                    color: #2C3531;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+                .chapter-title {
+                    font-weight: bold;
+                    font-size: 15px;
+                    margin-bottom: 8px;
+                }
+                .chapter-meta {
+                    color: #8c5521;
+                    font-size: 12px;
+                }
+                .chapter-progress {
+                    width: 100%;
+                    height: 6px;
+                    margin-top: 8px;
+                    background: #f5efe6;
+                    border-radius: 999px;
+                    overflow: hidden;
+                }
+                .chapter-progress-fill {
+                    display: block;
+                    height: 100%;
+                    background: #8b9a63;
+                    border-radius: 999px;
+                    transition: width 0.3s;
+                }
+                /* margin-top: auto يثبت الرابط أسفل البطاقة مهما طال العنوان */
+                .chapter-cta {
+                    margin-top: auto;
+                    padding-top: 14px;
+                    color: #b0764a;
+                    font-weight: bold;
+                    font-size: 13px;
+                }
 
-            <FullScreenCanvasModal
-                isOpen={isCanvasModalOpen}
-                onClose={() => setIsCanvasModalOpen(false)}
-                questionImage={currentModalImage}
-                mathText={currentModalMath}
-                modalStorageKey={currentModalStorageKey}
-                activeChapter={activeChapter}
-                activeIdeaMeta={activeIdeaMetaObj}
-            />
+                .page-heading {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    margin-bottom: 14px;
+                }
+                .page-title {
+                    font-size: clamp(16px, 1.6vw, 20px);
+                    font-weight: 900;
+                    color: #2C3531;
+                    margin: 0;
+                }
+                /* مكوّن Link لا يأخذ كلاس styled-jsx، فنستهدف الرابط عبر حاويته */
+                .back-link,
+                .page-heading :global(a),
+                .back-buttons :global(a) {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    background: #FEECD0;
+                    border: 1px solid #e6dec5;
+                    padding: 8px 14px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    color: #8c5521;
+                    font-size: 13px;
+                    cursor: pointer;
+                    text-decoration: none;
+                    white-space: nowrap;
+                }
+                .back-link:hover,
+                .page-heading :global(a:hover),
+                .back-buttons :global(a:hover) {
+                    background: #fbdfb4;
+                }
 
-            {isChapterView && (
-                <GlobalTutor
-                    key={`${activeChapter}-${activeIdeaId}`}
-                    currentChapter={activeChapter}
-                    currentIdea={activeIdeaMetaObj}
+                .idea-card {
+                    background: #ffffff;
+                    border: 1px solid #e6dec5;
+                    border-radius: 16px;
+                    padding: clamp(14px, 2vw, 24px);
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+                }
+                .idea-eyebrow {
+                    font-size: 12px;
+                    font-weight: bold;
+                    color: #b0764a;
+                    margin-bottom: 4px;
+                }
+                .idea-heading {
+                    color: #8c5521;
+                    margin: 0 0 16px;
+                    font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+                    line-height: 1.4;
+                }
+                .idea-layout {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 18px;
+                }
+                .video-frame {
+                    position: relative;
+                    width: 100%;
+                    aspect-ratio: 16 / 9;
+                    /* حجم الفيديو يتبع ارتفاع الشاشة حتى لا يدفع السؤال بعيدًا */
+                    max-width: max(426px, 85vh);
+                    margin: 0 auto;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    border: 1px solid #e6dec5;
+                    background: #000;
+                }
+                /* المعادلات الطويلة تتحرك داخل مكانها بدل أن توسّع الصفحة */
+                .question-section :global(.katex-display) {
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    padding: 2px 0;
+                }
+                .idea-pager {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 10px;
+                }
+                .pager-btn {
+                    flex: 0 1 48%;
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    background: #ffffff;
+                    border: 1px solid #e6dec5;
+                    border-radius: 10px;
+                    padding: 10px 14px;
+                    cursor: pointer;
+                    color: #2C3531;
+                    font-size: 13px;
+                    font-weight: bold;
+                    text-align: right;
+                    transition: background-color 0.2s;
+                }
+                .pager-btn:hover {
+                    background: #f5efe6;
+                }
+                .pager-next {
+                    margin-inline-start: auto;
+                    text-align: left;
+                }
+                .pager-label {
+                    font-size: 11px;
+                    color: #b0764a;
+                }
+                .pager-name {
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    direction: ltr;
+                }
+                .idea-mark {
+                    flex-shrink: 0;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 18px;
+                    height: 18px;
+                    margin-inline-start: 8px;
+                    border-radius: 50%;
+                    border: 1.5px solid currentColor;
+                    opacity: 0.4;
+                    font-size: 11px;
+                    line-height: 1;
+                }
+                .idea-mark-done {
+                    background: #66783d;
+                    border-color: #66783d;
+                    color: #ffffff;
+                    opacity: 1;
+                }
+                .idea-mark-practicing {
+                    background: #e9b949;
+                    border-color: #e9b949;
+                    opacity: 1;
+                }
+                .mastery-note {
+                    margin: -8px 0 16px;
+                    padding: 8px 12px;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    line-height: 1.5;
+                }
+                .mastery-new {
+                    background: #fbf3e0;
+                    color: #6b5a3a;
+                }
+                .mastery-practicing {
+                    background: #fdf1cd;
+                    color: #7a5a10;
+                }
+                .mastery-mastered {
+                    background: #eef2dd;
+                    color: #46552a;
+                }
+
+                .ideas-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                    gap: 8px;
+                    margin-bottom: 20px;
+                }
+                .idea-btn {
+                    padding: 12px 14px;
+                    border-radius: 12px;
+                    border: 1px solid #e6dec5;
+                    background: #ffffff;
+                    color: #2C3531;
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 13px;
+                    text-align: right;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    transition: all 0.2s;
+                }
+                .idea-btn:hover {
+                    background: #f5efe6;
+                }
+
+                @media (min-width: 768px) {
+                    .navigation-row {
+                        display: grid !important;
+                        grid-template-columns: 1fr 4fr !important;
+                        gap: 16px !important;
+                        align-items: start !important;
+                        margin-bottom: 16px !important;
+                    }
+
+                    .back-buttons {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        gap: 8px !important;
+                        width: 100% !important;
+                    }
+
+                    .ideas-container {
+                        display: grid !important;
+                        grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)) !important;
+                        gap: 8px !important;
+                        width: 100% !important;
+                    }
+
+                    .idea-layout {
+                        display: grid;
+                        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                        grid-template-areas:
+                            "theory video"
+                            "question question"
+                            "additional additional"
+                            "pager pager";
+                        gap: 20px;
+                    }
+                    .theory-section {
+                        grid-area: theory;
+                    }
+                    .theory-section h3 {
+                        font-size: 0.9rem !important;
+                        margin-bottom: 8px !important;
+                    }
+                    .theory-section > div {
+                        gap: 8px !important;
+                    }
+                    .theory-section > div > div {
+                        padding: 10px 12px !important;
+                        border-radius: 8px !important;
+                    }
+                    .theory-section > div > div > div:first-child {
+                        font-size: 0.9rem !important;
+                        margin-bottom: 4px !important;
+                    }
+                    .theory-section > div > div > div:last-child {
+                        font-size: 0.85rem !important;
+                        line-height: 1.5 !important;
+                    }
+                    .video-section {
+                        grid-area: video;
+                    }
+                    .question-section {
+                        grid-area: question;
+                    }
+                    .additional-link {
+                        grid-area: additional;
+                    }
+                    .idea-pager {
+                        grid-area: pager;
+                    }
+
+                    .question-content-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 20px !important;
+                        align-items: start !important;
+                    }
+                    .question-text-area {
+                        text-align: right !important;
+                    }
+                    .question-options-area {
+                        text-align: right !important;
+                    }
+                }
+
+                @media (max-width: 767px) {
+                    .navigation-row {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        gap: 12px !important;
+                        margin-bottom: 16px !important;
+                    }
+                    .back-buttons {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        gap: 8px !important;
+                        flex-wrap: wrap;
+                    }
+                    .ideas-container {
+                        display: grid !important;
+                        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)) !important;
+                        gap: 6px !important;
+                    }
+
+                    .chapters-grid {
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 10px !important;
+                    }
+                    .chapter-card {
+                        padding: 12px !important;
+                        border-radius: 10px !important;
+                        min-height: 110px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                    }
+                    .chapter-badge {
+                        font-size: 11px !important;
+                        padding: 3px 8px !important;
+                        margin-bottom: 6px !important;
+                    }
+                    .chapter-title {
+                        font-size: 12px !important;
+                        margin-bottom: 4px !important;
+                        line-height: 1.3 !important;
+                    }
+                    .chapter-meta {
+                        font-size: 10px !important;
+                    }
+                    .chapter-cta {
+                        display: none !important;
+                    }
+                    /* تأخذ العرض كاملًا فقط إذا بقيت وحدها في صفها */
+                    .additional-card:nth-child(odd) {
+                        grid-column: 1 / -1 !important;
+                        min-height: auto !important;
+                    }
+                    .idea-mark {
+                        display: none;
+                    }
+
+                    .ideas-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)) !important;
+                        gap: 6px !important;
+                    }
+                    .idea-btn {
+                        padding: 10px 4px !important;
+                        font-size: 14px !important;
+                        justify-content: center !important;
+                        min-height: 48px !important;
+                    }
+                    .idea-full-text {
+                        display: none !important;
+                    }
+                    .idea-btn::after {
+                        content: attr(data-idea-num);
+                        display: block;
+                        font-weight: bold;
+                    }
+
+                    .question-content-grid {
+                        display: grid !important;
+                        grid-template-columns: 1fr !important;
+                        gap: 12px !important;
+                    }
+                }
+            `}</style>
+
+            <div style={{
+                backgroundColor: '#FFF9E2',
+                minHeight: '100vh',
+                overflow: isChapterView && !isAdditionalView ? 'auto' : undefined,
+                color: '#2C3531',
+                fontFamily: 'sans-serif', 
+                margin: 0, 
+                padding: 0, 
+                paddingBottom: isChapterView && !isAdditionalView ? '80px' : 0,
+                position: 'relative' 
+            }}>
+                <Navbar isLoggedIn={true} />
+
+                <FullScreenCanvasModal
+                    isOpen={isCanvasModalOpen}
+                    onClose={() => setIsCanvasModalOpen(false)}
+                    questionImage={currentModalImage}
+                    mathText={currentModalMath}
+                    modalStorageKey={currentModalStorageKey}
+                    activeChapter={tutorChapter}
+                    activeIdeaMeta={activeIdeaMetaObj}
+                    courseId={routeCourseId}
+                    currentQuestion={tutorQuestion}
+                    isAiAllowed={isAiAllowed}
+                    chatKey={tutorChatKey}
+                    ideaNotes={tutorIdeaNotes}
                 />
-            )}
 
-            {!isChapterView && (
-                <GuideTip
-                    id="module1-chapters-list-intro"
-                    text="مرحباً بك في قائمة الشباتر! 📚 اختر الشابتر للدراسة أو انتقل إلى قسم 'الأسئلة الإضافية'."
-                />
-            )}
-
-            {isChapterView && !isAdditionalView && currentChapterData && (
-                <GuideTip
-                    id={`chapter-${activeChapter}-intro`}
-                    text={`أهلاً بك في شابتر ${currentChapterData.chapterTitle}! 💡 تصفح الأفكار وشاهد الشرح.`}
-                />
-            )}
-
-            {isAdditionalView && (
-                <GuideTip
-                    id="additional-questions-intro"
-                    text="أهلاً بك في صفحة الأسئلة الإضافية! ➕ تدرب على أسئلة إضافية مرتبطة بأفكار المقرر."
-                />
-            )}
-
-            {showSuccessToast && (
-                <div style={{
-                    position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
-                    backgroundColor: '#CDD4B1', color: '#2C3531', border: '1px solid #b8c29e',
-                    padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    zIndex: 9999, fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px',
-                    opacity: isFadingOut ? 0 : 1, transition: 'opacity 0.5s ease-in-out'
-                }}>
-                    <span>🎉 كفو! حليت صح وتم حفظ تقدمك</span>
-                </div>
-            )}
-
-            <div style={{ maxWidth: '1100px', margin: '20px auto', padding: '0 20px' }}>
-
-                <div style={{ marginBottom: '16px' }}>
-                    <Link href="/workspace/101" style={{ textDecoration: 'none', background: '#FEECD0', border: '1px solid #e6dec5', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', color: '#8c5521', fontSize: '13px' }}>
-                        ⬅️ Back to Workspace
-                    </Link>
-                </div>
-
-                <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#DCA27B' }}>
-                          📘 Module 1 (التقدم الإجمالي: {totalProgress}%)
-                        </span>
-                        <span style={{ fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>جميع الشباتر متاحة</span>
-                    </div>
-                    <div style={{ background: '#f0ebdc', borderRadius: '20px', height: '10px', overflow: 'hidden' }}>
-                        <div style={{ width: `${totalProgress}%`, background: '#CDD4B1', height: '100%', transition: 'width 0.3s' }} />
-                    </div>
-                </div>
+                {/* ورقة الحل لها شات خاص بنفس المحادثة، فنخفي هذا أثناء فتحها */}
+                {isChapterView && !isCanvasModalOpen && (
+                    <GlobalTutor
+                        key={tutorChatKey}
+                        courseId={routeCourseId}
+                        isAiAllowed={isAiAllowed}
+                        currentChapter={tutorChapter}
+                        currentIdea={activeIdeaMetaObj}
+                        currentQuestion={tutorQuestion}
+                        chatKey={tutorChatKey}
+                        ideaNotes={tutorIdeaNotes}
+                    />
+                )}
 
                 {!isChapterView && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
-                        {(Object.keys(allChaptersMap) as ChapterKey[]).map((chKey) => {
-                            const chData = allChaptersMap[chKey as Exclude<ChapterKey, 'additional-questions'>];
-                            const chCompletedCount = chData.ideas.filter(idea => completedItems.includes(`${chKey}-${idea.id}`)).length;
-                            const chProgress = Math.round((chCompletedCount / chData.ideas.length) * 100);
+                    <GuideTip
+                        id="module1-chapters-list-intro"
+                        text="مرحباً بك في قائمة الشباتر! 📚 اختر الشابتر للدراسة أو انتقل إلى قسم 'الأسئلة الإضافية'."
+                    />
+                )}
 
-                            return (
-                                <button
-                                    key={chKey}
-                                    type="button"
-                                    onClick={() => openChapter(chKey)}
-                                    style={{
-                                        width: '100%', background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '14px',
-                                        padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', cursor: 'pointer', textAlign: 'right', color: '#2C3531'
-                                    }}
-                                >
-                                    <div style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '10px' }}>
-                                        📖 Chapter {chData.chapterNumber}: {chData.chapterTitle}
-                                    </div>
-                                    <div style={{ color: '#8c5521', fontSize: '12px', marginBottom: '12px' }}>
-                                        {chData.ideas.length} أفكار رئيسية • مكتمل {chCompletedCount}/{chData.ideas.length}
-                                    </div>
-                                    <div style={{ background: '#f0ebdc', height: '7px', borderRadius: '20px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${chProgress}%`, background: '#CDD4B1', height: '100%' }} />
-                                    </div>
-                                    <div style={{ marginTop: '14px', color: '#DCA27B', fontWeight: 'bold', fontSize: '13px' }}>
-                                        فتح الشابتر والدخول للأفكار ←
-                                    </div>
-                                </button>
-                            );
-                        })}
-
-                        <button
-                            type="button"
-                            onClick={() => openChapter('additional-questions')}
-                            style={{
-                                width: '100%', background: '#FEECD0', border: '1px solid #DCA27B', borderRadius: '14px',
-                                padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', cursor: 'pointer', textAlign: 'right', color: '#2C3531'
-                            }}
-                        >
-                            <div style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '10px', color: '#8c5521' }}>
-                                ➕ الأسئلة الإضافية للمقرر
-                            </div>
-                            <div style={{ color: '#8c5521', fontSize: '12px', marginBottom: '26px' }}>
-                                تدرب على أسئلة إضافية مرتبطة بأفكار الشباتر مع الشرح الفوري.
-                            </div>
-                            <div style={{ marginTop: '14px', color: '#8c5521', fontWeight: 'bold', fontSize: '13px' }}>
-                                فتح صفحة الأسئلة الإضافية ←
-                            </div>
-                        </button>
-                    </div>
+                {isChapterView && !isAdditionalView && currentChapterData && (
+                    <GuideTip
+                        id={`chapter-${activeChapter}-intro`}
+                        text={`أهلاً بك في شابتر ${currentChapterData.chapterTitle}! 💡 تصفح الأفكار وشاهد الشرح.`}
+                    />
                 )}
 
                 {isAdditionalView && (
-                    <>
-                        <div style={{ marginBottom: '16px' }}>
-                            <button
-                                type="button"
-                                onClick={backToModule}
-                                style={{
-                                    background: '#FEECD0', border: '1px solid #e6dec5', padding: '8px 16px',
-                                    borderRadius: '8px', fontWeight: 'bold', color: '#8c5521', fontSize: '13px', cursor: 'pointer'
-                                }}
-                            >
-                                ⬅️ الرجوع للقائمة الرئيسية
-                            </button>
-                        </div>
+                    <GuideTip
+                        id="additional-questions-intro"
+                        text="أهلاً بك في صفحة الأسئلة الإضافية! ➕ تدرب على أسئلة إضافية مرتبطة بأفكار المقرر."
+                    />
+                )}
 
-                        <div style={{ background: '#fff', border: '1px solid #e6dec5', padding: '24px', borderRadius: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                            <h2 style={{ margin: '0 0 6px 0', color: '#2C3531', fontSize: '1.25rem' }}>
-                                ➕ صفحة الأسئلة الإضافية الشاملة
-                            </h2>
-                            <p style={{ color: '#8c5521', fontSize: '13px', margin: '0 0 16px 0' }}>تجميع لجميع الأسئلة الإضافية المستخرجة مع الشرح والتفاعل وربطها بالأفكار.</p>
+                {showSuccessToast && (
+                    <div style={{
+                        position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
+                        backgroundColor: '#CDD4B1', color: '#2C3531', border: '1px solid #b8c29e',
+                        padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        zIndex: 9999, fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px',
+                        opacity: isFadingOut ? 0 : 1, transition: 'opacity 0.5s ease-in-out'
+                    }}>
+                        <span>{toastMessage}</span>
+                    </div>
+                )}
 
-                            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px', borderBottom: '1px solid #e6dec5' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedAdditionalChapterTab('all')}
-                                    style={{
-                                        whiteSpace: 'nowrap', padding: '8px 14px', borderRadius: '8px', border: '1px solid #e6dec5',
-                                        background: selectedAdditionalChapterTab === 'all' ? '#8c5521' : '#FEECD0',
-                                        color: selectedAdditionalChapterTab === 'all' ? '#ffffff' : '#8c5521',
-                                        fontWeight: 'bold', cursor: 'pointer', fontSize: '12px'
-                                    }}
-                                >
-                                    🌟 جميع الأسئلة ({moreQuesData.length})
-                                </button>
+                <div style={{
+                    maxWidth: isAdditionalView ? '1400px' : isChapterView ? '1280px' : '1100px',
+                    margin: isAdditionalView ? '8px auto 0' : '14px auto',
+                    padding: '0 16px'
+                }}>
+
+                    {!isChapterView && (
+                        <>
+                            <div className="page-heading">
+                                <h1 className="page-title">شباتر الموديول الأول</h1>
+                                <Link href={`/workspace/${routeCourseId}`} className="back-link">
+                                    → الكورس
+                                </Link>
+                            </div>
+
+                            <div className="chapters-grid">
                                 {(Object.keys(allChaptersMap) as ChapterKey[]).map((chKey) => {
                                     const chData = allChaptersMap[chKey as Exclude<ChapterKey, 'additional-questions'>];
-                                    const countForCh = moreQuesData.filter(q => q.meta && q.meta.chapterNumber === chKey).length;
-                                    const isTabActive = selectedAdditionalChapterTab === chKey;
+                                    const chMasteredCount = chData.ideas.filter(idea => getIdeaStatus(ideaProgress[`${chKey}-${idea.id}`]) === 'mastered').length;
 
                                     return (
                                         <button
                                             key={chKey}
                                             type="button"
-                                            onClick={() => setSelectedAdditionalChapterTab(chKey)}
-                                            style={{
-                                                whiteSpace: 'nowrap', padding: '8px 14px', borderRadius: '8px', border: '1px solid #e6dec5',
-                                                background: isTabActive ? '#8c5521' : '#FEECD0',
-                                                color: isTabActive ? '#ffffff' : '#8c5521',
-                                                fontWeight: 'bold', cursor: 'pointer', fontSize: '12px'
-                                            }}
+                                            onClick={() => openChapter(chKey)}
+                                            className="chapter-card"
                                         >
-                                            شابتر {chData.chapterNumber} ({countForCh})
+                                            <div className="chapter-badge">
+                                                Chapter {chData.chapterNumber}
+                                            </div>
+                                            <div className="chapter-title">
+                                                {chData.chapterTitle}
+                                            </div>
+                                            <div className="chapter-meta">
+                                                أتقنت {chMasteredCount} من {chData.ideas.length} أفكار
+                                            </div>
+                                            <span className="chapter-progress">
+                                                <span
+                                                    className="chapter-progress-fill"
+                                                    style={{ width: `${(chMasteredCount / chData.ideas.length) * 100}%` }}
+                                                />
+                                            </span>
+                                            <div className="chapter-cta">
+                                                فتح الشابتر والدخول للأفكار ←
+                                            </div>
                                         </button>
                                     );
                                 })}
+
+                                <button
+                                    type="button"
+                                    onClick={() => openChapter('additional-questions')}
+                                    className="chapter-card additional-card"
+                                    style={{ background: '#FEECD0', border: '1px solid #DCA27B' }}
+                                >
+                                    <div className="chapter-badge" style={{ background: '#DCA27B', color: '#ffffff' }}>
+                                         إضافي
+                                    </div>
+                                    <div className="chapter-title" style={{ color: '#8c5521' }}>
+                                        الأسئلة الإضافية للمقرر
+                                    </div>
+                                    <div className="chapter-meta">
+                                        تدرب على أسئلة إضافية مرتبطة بأفكار الشباتر.
+                                    </div>
+                                    <div className="chapter-cta" style={{ color: '#8c5521' }}>
+                                        فتح صفحة الأسئلة الإضافية ←
+                                    </div>
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {isAdditionalView && (
+                        <AdditionalQuestionsView
+                            moreQuesData={additionalQuestions}
+                            selectedAdditionalChapterTab={selectedAdditionalChapterTab}
+                            setSelectedAdditionalChapterTab={setSelectedAdditionalChapterTab}
+                            allChaptersMap={allChaptersMap}
+                            backToModule={backToModule}
+                            jumpToIdeaFromAdditional={jumpToIdeaFromAdditional}
+                            activeSubPartIndexMap={activeSubPartIndexMap}
+                            setActiveSubPartIndexMap={setActiveSubPartIndexMap}
+                            additionalSelected={additionalSelected}
+                            setAdditionalSelected={setAdditionalSelected}
+                            additionalAttempted={additionalAttempted}
+                            setAdditionalAttempted={setAdditionalAttempted}
+                            subPartSelectedOptionsMap={subPartSelectedOptionsMap}
+                            setSubPartSelectedOptionsMap={setSubPartSelectedOptionsMap}
+                            subPartAttemptedMap={subPartAttemptedMap}
+                            setSubPartAttemptedMap={setSubPartAttemptedMap}
+                            setCurrentModalImage={setCurrentModalImage}
+                            setCurrentModalMath={setCurrentModalMath}
+                            setCurrentModalStorageKey={setCurrentModalStorageKey}
+                            setIsCanvasModalOpen={setIsCanvasModalOpen}
+                            renderOptionContent={renderOptionContent}
+                            renderStructuredExplanation={renderStructuredExplanation}
+                            onQuestionResult={handleQuestionResult}
+                            onTutorContext={setAdditionalTutor}
+                        />
+                    )}
+
+                    {isChapterView && !isAdditionalView && currentChapterData && (
+                        <>
+                            <div className="navigation-row">
+                                <div className="back-buttons">
+                                    <Link href={`/workspace/${routeCourseId}`} className="back-link">
+                                        → الكورس
+                                    </Link>
+                                    <button type="button" onClick={backToModule} className="back-link">
+                                        → الشباتر
+                                    </button>
+                                </div>
+                                <div className="ideas-container">
+                                    {currentChapterData.ideas.map((idea) => {
+                                        const isIdeaActive = idea.id === activeIdeaId;
+                                        const ideaStatus = getIdeaStatus(ideaProgress[`${activeChapter}-${idea.id}`]);
+
+                                        return (
+                                            <button
+                                                key={idea.id}
+                                                type="button"
+                                                onClick={() => handleChapterSwitch(activeChapter, idea.id)}
+                                                className="idea-btn"
+                                                data-idea-num={idea.ideaNumber}
+                                                style={{
+                                                    background: isIdeaActive ? '#8c5521' : '#ffffff',
+                                                    color: isIdeaActive ? '#ffffff' : '#2C3531',
+                                                    borderColor: isIdeaActive ? '#8c5521' : '#e6dec5'
+                                                }}
+                                            >
+                                                <span className="idea-full-text">
+                                                    فكرة {idea.ideaNumber}: {idea.ideaName}
+                                                </span>
+                                                <span
+                                                    className={`idea-mark ${ideaStatus === 'mastered' ? 'idea-mark-done' : ideaStatus === 'practicing' ? 'idea-mark-practicing' : ''}`}
+                                                    title={ideaStatus === 'mastered' ? 'متقنة' : ideaStatus === 'practicing' ? 'تحتاج تدريب' : 'لم تبدأ'}
+                                                >
+                                                    {ideaStatus === 'mastered' ? '✓' : ''}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
-                            {filteredAdditionalQuestions.length === 0 ? (
-                                <div style={{ padding: '30px', textAlign: 'center', color: '#8c5521', background: '#FAFAFA', borderRadius: '12px' }}>
-                                    لا توجد أسئلة إضافية مضافة لهذا الشابتر حالياً.
-                                </div>
-                            ) : (
-                                filteredAdditionalQuestions.map((q, index) => {
-                                    const activeSubIdx = activeSubPartIndexMap[index] || 0;
-                                    const userChoice = additionalSelected[index] || null;
-                                    const isAttempted = additionalAttempted[index] || false;
-                                    const isCorrect = userChoice === q.correctAnswer;
-
-                                    return (
-                                        <div key={index} style={{ marginBottom: '24px', padding: '18px', background: '#FAFAFA', borderRadius: '12px', border: '1px solid #eae5d5' }}>
-
-                                            {q.meta && (
-                                                <div style={{
-                                                    marginBottom: '12px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
-                                                    background: '#FEECD0', border: '1px solid #e6dec5', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', color: '#8c5521'
-                                                }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                                        <span style={{ background: '#8c5521', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-                                                            شابتر {q.meta.chapterNumber}
-                                                        </span>
-                                                        <span>
-                                                            فكرة ({q.meta.ideaNumber}): {q.meta.ideaName}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => jumpToIdeaFromAdditional(q.meta!.chapterNumber, q.meta!.ideaAnchorId)}
-                                                            style={{
-                                                                background: 'none', border: 'none', color: '#8c5521', fontWeight: 'bold',
-                                                                cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px'
-                                                            }}
-                                                        >
-                                                            الرجوع للفكرة ↗
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '10px', color: '#2C3531' }}>
-                                                سؤال {index + 1}: {q.questionText}
-                                            </div>
-
-                                            {q.subQuestions && q.subQuestions.length > 0 ? (
-                                                <div>
-                                                    <div style={{ margin: '15px 0 12px 0', display: 'flex', gap: '8px', flexWrap: 'wrap', borderBottom: '2px solid #e6dec5', paddingBottom: '10px' }}>
-                                                        {q.subQuestions.map((subQ, sIdx) => {
-                                                            const isSubActive = activeSubIdx === sIdx;
-                                                            const subAttemptKey = `${index}-${sIdx}`;
-                                                            const isSubTried = subPartAttemptedMap[subAttemptKey] || false;
-
-                                                            return (
-                                                                <button
-                                                                    key={sIdx}
-                                                                    type="button"
-                                                                    onClick={() => setActiveSubPartIndexMap(prev => ({ ...prev, [index]: sIdx }))}
-                                                                    style={{
-                                                                        padding: '8px 12px', borderRadius: '8px', border: '1px solid #e6dec5',
-                                                                        background: isSubActive ? '#8c5521' : '#FEECD0',
-                                                                        color: isSubActive ? '#ffffff' : '#8c5521',
-                                                                        fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s'
-                                                                    }}
-                                                                >
-                                                                    الجزئية ({sIdx + 1}) {isSubTried ? '✅' : ''}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-
-                                                    {(() => {
-                                                        const currentSub = q.subQuestions?.[activeSubIdx];
-                                                        if (!currentSub) return null;
-
-                                                        const subKey = `${index}-${activeSubIdx}`;
-                                                        const subUserChoice = subPartSelectedOptionsMap[subKey] || null;
-                                                        const isSubTried = subPartAttemptedMap[subKey] || false;
-                                                        const isSubCorrect = subUserChoice === currentSub.correctAnswer;
-
-                                                        return (
-                                                            <div style={{ background: '#fff', padding: '14px', borderRadius: '8px', border: '1px solid #e6dec5' }}>
-                                                                <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '10px', color: '#2C3531', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                                    <span>{currentSub.questionText}</span>
-                                                                    {currentSub.mathExpression && (
-                                                                        <span style={{ direction: 'ltr', display: 'inline-block', unicodeBidi: 'embed' }}>
-                                                                            <BlockMath math={currentSub.mathExpression} />
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-
-                                                                <div style={{ marginBottom: '12px' }}>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setCurrentModalImage(currentSub.graphImage || q.graphImage);
-                                                                            setCurrentModalMath(currentSub.mathExpression || q.mathExpression);
-                                                                            setCurrentModalStorageKey(`add_sub_${index}_${activeSubIdx}`);
-                                                                            setIsCanvasModalOpen(true);
-                                                                        }}
-                                                                        style={{
-                                                                            background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
-                                                                            padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
-                                                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                                        }}
-                                                                    >
-                                                                        ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
-                                                                    </button>
-                                                                </div>
-
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                                                                    {currentSub.options.map((opt) => (
-                                                                        <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: subUserChoice === opt ? '#FEECD0' : '#FFF9E2', border: '1px solid #e6dec5', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
-                                                                            <input
-                                                                                type="radio"
-                                                                                name={`add-sub-${subKey}`}
-                                                                                checked={subUserChoice === opt}
-                                                                                onChange={() => setSubPartSelectedOptionsMap(prev => ({ ...prev, [subKey]: opt }))}
-                                                                            />
-                                                                            {renderOptionContent(opt)}
-                                                                        </label>
-                                                                    ))}
-                                                                </div>
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setSubPartAttemptedMap(prev => ({ ...prev, [subKey]: true }))}
-                                                                    style={{ background: '#DCA27B', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                                                                >
-                                                                    تحقق من إجابة الجزئية ✅
-                                                                </button>
-
-                                                                {isSubTried && (
-                                                                    <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: isSubCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isSubCorrect ? '#bbf7d0' : '#fca5a5'}`, fontSize: '13px' }}>
-                                                                        {isSubCorrect ? (
-                                                                            <div>
-                                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ إجابة صحيحة!</div>
-                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div style={{ color: '#991b1b', fontWeight: 'bold' }}>
-                                                                                ❌ إجابة خاطئة، حاول مرة أخرى في هذه الجزئية!
-                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    {q.mathExpression && (
-                                                        <div style={{ marginBottom: '12px', direction: 'ltr', display: 'inline-block' }}>
-                                                            <BlockMath math={q.mathExpression} />
-                                                        </div>
-                                                    )}
-
-                                                    <div style={{ marginBottom: '12px' }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setCurrentModalImage(q.graphImage);
-                                                                setCurrentModalMath(q.mathExpression);
-                                                                setCurrentModalStorageKey(`add_q_${index}`);
-                                                                setIsCanvasModalOpen(true);
-                                                            }}
-                                                            style={{
-                                                                background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
-                                                                padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
-                                                                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                            }}
-                                                        >
-                                                            ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
-                                                        </button>
-                                                    </div>
-
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-                                                        {q.options?.map((opt) => (
-                                                            <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: userChoice === opt ? '#FEECD0' : '#fff', border: '1px solid #e6dec5', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
-                                                                <input
-                                                                    type="radio"
-                                                                    name={`additional-${index}`}
-                                                                    checked={userChoice === opt}
-                                                                    onChange={() => setAdditionalSelected(prev => ({ ...prev, [index]: opt }))}
-                                                                />
-                                                                {renderOptionContent(opt)}
-                                                            </label>
-                                                        ))}
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleAdditionalVerify(index)}
-                                                        style={{ background: '#DCA27B', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
-                                                    >
-                                                        تحقق من الإجابة ✅
-                                                    </button>
-
-                                                    {isAttempted && (
-                                                        <div style={{ marginTop: '14px', padding: '12px', borderRadius: '8px', background: isCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isCorrect ? '#bbf7d0' : '#fca5a5'}` }}>
-                                                            {isCorrect ? (
-                                                                <div>
-                                                                    <div style={{ color: '#16a34a', fontWeight: 'bold', fontSize: '13px' }}>✅ كفو! الإجابة صحيحة.</div>
-                                                                    {renderStructuredExplanation(q.questionExplanation)}
-                                                                </div>
-                                                            ) : (
-                                                                <div>
-                                                                    <div style={{ color: '#991b1b', fontWeight: 'bold', fontSize: '13px' }}>❌ إجابة خاطئة، حاول مرة أخرى!</div>
-                                                                    {renderStructuredExplanation(q.questionExplanation)}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
-
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {isChapterView && !isAdditionalView && currentChapterData && (
-                    <>
-                        <div style={{ marginBottom: '16px' }}>
-                            <button
-                                type="button"
-                                onClick={backToModule}
-                                style={{
-                                    background: '#FEECD0', border: '1px solid #e6dec5', padding: '8px 16px',
-                                    borderRadius: '8px', fontWeight: 'bold', color: '#8c5521', fontSize: '13px', cursor: 'pointer'
-                                }}
-                            >
-                                ⬅️ الرجوع لقائمة الشباتر
-                            </button>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px', marginBottom: '20px' }}>
-                            {currentChapterData.ideas.map((idea) => {
-                                const isIdeaActive = idea.id === activeIdeaId;
-                                const isIdeaCompleted = completedItems.includes(`${activeChapter}-${idea.id}`);
-
-                                return (
-                                    <button
-                                        key={idea.id}
-                                        type="button"
-                                        onClick={() => handleChapterSwitch(activeChapter, idea.id)}
-                                        style={{
-                                            padding: '12px 14px', borderRadius: '12px', border: '1px solid #e6dec5',
-                                            background: isIdeaActive ? '#8c5521' : '#ffffff',
-                                            color: isIdeaActive ? '#ffffff' : '#2C3531',
-                                            fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', textAlign: 'right',
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                                        }}
-                                    >
-                                        <span>فكرة {idea.ideaNumber}: {idea.ideaName}</span>
-                                        <span>{isIdeaCompleted ? '✅' : '⚪'}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {currentIdeaObj && (
-                            <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                                    <h2 style={{ color: '#8c5521', margin: 0, fontSize: '1.2rem' }}>
+                            {currentIdeaObj && (
+                                <div className="idea-card">
+                                    <div className="idea-eyebrow">
+                                        Chapter {currentChapterData.chapterNumber} · فكرة {ideaPosition + 1} من {currentChapterData.ideas.length}
+                                    </div>
+                                    <h2 className="idea-heading">
                                         فكرة {currentIdeaObj.ideaNumber}: {currentIdeaObj.ideaName}
                                     </h2>
-                                </div>
-
-                                <div style={{ marginBottom: '24px' }}>
-                                    <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>💡 الشرح النظري الممهد والمبسط:</h3>
-                                    <div style={{ display: 'grid', gap: '12px' }}>
-                                        {currentIdeaObj.theoreticalSteps.map((step, idx) => (
-                                            <div key={idx} style={{ background: '#FFF9E2', border: '1px solid #e6dec5', padding: '14px', borderRadius: '10px' }}>
-                                                <div style={{ fontWeight: 'bold', color: '#8c5521', marginBottom: '6px', fontSize: '0.95rem' }}>{step.stepTitle}</div>
-                                                <div style={{ color: '#2C3531', fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}>{step.stepDescription}</div>
+                                    {(() => {
+                                        const progress = ideaProgress[`${activeChapter}-${currentIdeaObj.id}`];
+                                        const status = getIdeaStatus(progress);
+                                        const solvedCount = progress?.solved.length ?? 0;
+                                        return (
+                                            <div className={`mastery-note mastery-${status}`}>
+                                                <strong>
+                                                    {status === 'mastered' ? '✓ أتقنت هذه الفكرة' : `الإتقان: ${solvedCount} من ${MASTERY_TARGET}`}
+                                                </strong>
+                                                {status !== 'mastered' && (
+                                                    <span>
+                                                        {solvedCount === 0
+                                                            ? ' · حل سؤالين مختلفين صح لإتقان الفكرة'
+                                                            : ' · باقي سؤال مختلف: ولّد سؤالًا جديدًا أو جرّب الأسئلة الإضافية'}
+                                                    </span>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                        );
+                                    })()}
 
-                                {currentIdeaObj.videoUrl && (
-                                    <div style={{ marginBottom: '24px' }}>
-                                        <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>🎥 فيديو الشرح:</h3>
-                                        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e6dec5' }}>
-                                            <iframe
-                                                src={currentIdeaObj.videoUrl}
-                                                title="YouTube video"
-                                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                allowFullScreen
+                                    <div className="idea-layout">
+
+                                        <div className="theory-section">
+                                            <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📖 الشرح النظري الممهد والمبسط:</h3>
+                                            <div style={{ display: 'grid', gap: '12px' }}>
+                                                {currentIdeaObj.theoreticalSteps.map((step, idx) => (
+                                                    <div key={idx} style={{ background: '#FFF9E2', border: '1px solid #e6dec5', padding: '14px', borderRadius: '10px' }}>
+                                                        <div style={{ fontWeight: 'bold', color: '#8c5521', marginBottom: '6px', fontSize: '0.95rem' }}>{step.stepTitle}</div>
+                                                        <div style={{ color: '#2C3531', fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}>{step.stepDescription}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {currentIdeaObj.videoUrl && (
+                                            <div className="video-section">
+                                                <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📹 فيديو الشرح:</h3>
+                                                <div className="video-frame">
+                                                    <iframe
+                                                        src={currentIdeaObj.videoUrl}
+                                                        title="YouTube video"
+                                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="question-section">
+                                            <h3 style={{ fontSize: '1rem', color: '#8c5521', marginBottom: '12px' }}>✍️ السؤال التطبيقي:</h3>
+                                            <IdeaQuestions
+                                                key={`${activeChapter}:${activeIdeaId}`}
+                                                idea={currentIdeaObj}
+                                                stableKey={`${activeChapter}:${activeIdeaId}`}
+                                                onQuestionResult={(questionId, isCorrect) =>
+                                                    handleQuestionResult(`${activeChapter}-${currentIdeaObj.id}`, questionId, isCorrect)
+                                                }
+                                                onTutorContext={setChapterTutorQuestion}
+                                                onOpenCanvas={(img, math, key) => {
+                                                    setCurrentModalImage(img);
+                                                    setCurrentModalMath(math);
+                                                    setCurrentModalStorageKey(key ?? 'default_canvas');
+                                                    setIsCanvasModalOpen(true);
+                                                }}
                                             />
                                         </div>
-                                    </div>
-                                )}
 
-                                <div style={{ background: '#FAFAFA', border: '1px solid #e6dec5', borderRadius: '12px', padding: '20px' }}>
-                                    <h3 style={{ fontSize: '1rem', color: '#8c5521', marginBottom: '12px' }}>✍️ السؤال التطبيقي:</h3>
-
-                                    {currentIdeaObj.practiceQuestion ? (
-                                        <div>
-                                            <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '10px', color: '#2C3531' }}>
-                                                {currentIdeaObj.practiceQuestion.questionText}
-                                            </div>
-
-                                            {currentIdeaObj.practiceQuestion.subQuestions && currentIdeaObj.practiceQuestion.subQuestions.length > 0 ? (
-                                                <div>
-                                                    <div style={{ margin: '15px 0 12px 0', display: 'flex', gap: '8px', flexWrap: 'wrap', borderBottom: '2px solid #e6dec5', paddingBottom: '10px' }}>
-                                                        {currentIdeaObj.practiceQuestion.subQuestions.map((subQ, sIdx) => {
-                                                            const isSubActive = activeSubPartIndex === sIdx;
-                                                            const isSubTried = subPartAttempted[sIdx] || false;
-                                                            const isSubCorrect = subPartSelectedOptions[sIdx] === subQ.correctAnswer;
-
-                                                            return (
-                                                                <button
-                                                                    key={sIdx}
-                                                                    type="button"
-                                                                    onClick={() => setActiveSubPartIndex(sIdx)}
-                                                                    style={{
-                                                                        padding: '8px 12px', borderRadius: '8px', border: '1px solid #e6dec5',
-                                                                        background: isSubActive ? '#8c5521' : '#FEECD0',
-                                                                        color: isSubActive ? '#ffffff' : '#8c5521',
-                                                                        fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s'
-                                                                    }}
-                                                                >
-                                                                    الجزئية ({sIdx + 1}) {isSubTried && isSubCorrect ? '✅' : isSubTried ? '❌' : '⚪'}
-                                                                </button>
-                                                            );
-                                                        })}
+                                        <div className="additional-link">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    router.push(`/workspace/${routeCourseId}/1?chapter=additional-questions&tab=${encodeURIComponent(activeChapter)}`);
+                                                }}
+                                                style={{
+                                                    width: '100%', background: '#FEECD0', border: '1px solid #DCA27B', borderRadius: '12px',
+                                                    padding: '16px 20px', cursor: 'pointer', textAlign: 'right', display: 'flex',
+                                                    justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span style={{ fontSize: '20px' }}>➕</span>
+                                                    <div>
+<div style={{ fontWeight: 'bold', fontSize: '14px', color: '#8c5521' }}>                                                            أسئلة إضافية للشابتر {currentChapterData.chapterNumber}
+                                                        </div>
+                                                        <div style={{ fontSize: '12px', color: '#2C3531', marginTop: '2px' }}>
+                                                            انتقل مباشرة لتدريبات هذا الشابتر واختبر فهمك
+                                                        </div>
                                                     </div>
-
-                                                    {(() => {
-                                                        const currentSub = currentIdeaObj.practiceQuestion?.subQuestions?.[activeSubPartIndex];
-                                                        if (!currentSub) return null;
-
-                                                        const subUserChoice = subPartSelectedOptions[activeSubPartIndex] || null;
-                                                        const isSubTried = subPartAttempted[activeSubPartIndex] || false;
-                                                        const isSubCorrect = subUserChoice === currentSub.correctAnswer;
-
-                                                        return (
-                                                            <div style={{ background: '#fff', padding: '14px', borderRadius: '8px', border: '1px solid #e6dec5' }}>
-                                                                <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '10px', color: '#2C3531', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                                    <span>{currentSub.questionText}</span>
-                                                                    {currentSub.mathExpression && (
-                                                                        <span style={{ direction: 'ltr', display: 'inline-block', unicodeBidi: 'embed' }}>
-                                                                            <BlockMath math={currentSub.mathExpression} />
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-
-                                                                <div style={{ marginBottom: '12px' }}>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setCurrentModalImage(currentSub.graphImage || currentIdeaObj.practiceQuestion?.graphImage);
-                                                                            setCurrentModalMath(currentSub.mathExpression || currentIdeaObj.practiceQuestion?.mathExpression);
-                                                                            setCurrentModalStorageKey(`idea_${activeChapter}_${activeIdeaId}_sub_${activeSubPartIndex}`);
-                                                                            setIsCanvasModalOpen(true);
-                                                                        }}
-                                                                        style={{
-                                                                            background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
-                                                                            padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
-                                                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                                        }}
-                                                                    >
-                                                                        ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
-                                                                    </button>
-                                                                </div>
-
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                                                                    {currentSub.options.map((opt) => (
-                                                                        <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: subUserChoice === opt ? '#FEECD0' : '#FFF9E2', border: '1px solid #e6dec5', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '8px' }}>
-                                                                            <input
-                                                                                type="radio"
-                                                                                name={`idea-sub-${activeSubPartIndex}`}
-                                                                                checked={subUserChoice === opt}
-                                                                                onChange={() => setSubPartSelectedOptions(prev => ({ ...prev, [activeSubPartIndex]: opt }))}
-                                                                            />
-                                                                            {renderOptionContent(opt)}
-                                                                        </label>
-                                                                    ))}
-                                                                </div>
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleSubPartVerify(activeSubPartIndex)}
-                                                                    style={{ background: '#DCA27B', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                                                                >
-                                                                    تحقق من إجابة الجزئية ✅
-                                                                </button>
-
-                                                                {isSubTried && (
-                                                                    <div style={{ marginTop: '10px', padding: '10px', borderRadius: '6px', background: isSubCorrect ? '#f0fdf4' : '#fee2e2', border: `1px solid ${isSubCorrect ? '#bbf7d0' : '#fca5a5'}`, fontSize: '13px' }}>
-                                                                        {isSubCorrect ? (
-                                                                            <div>
-                                                                                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>✅ إجابة صحيحة في هذه الجزئية!</div>
-                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div style={{ color: '#991b1b', fontWeight: 'bold' }}>
-                                                                                ❌ إجابة خاطئة، حاول مرة أخرى في هذه الجزئية!
-                                                                                {renderStructuredExplanation(currentSub.questionExplanation)}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()}
                                                 </div>
-                                            ) : (
-                                                <div>
-                                                    {currentIdeaObj.practiceQuestion.mathExpression && (
-                                                        <div style={{ marginBottom: '14px', direction: 'ltr', display: 'inline-block' }}>
-                                                            <BlockMath math={currentIdeaObj.practiceQuestion.mathExpression} />
-                                                        </div>
-                                                    )}
-
-                                                    <div style={{ marginBottom: '14px' }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setCurrentModalImage(currentIdeaObj.practiceQuestion?.graphImage);
-                                                                setCurrentModalMath(currentIdeaObj.practiceQuestion?.mathExpression);
-                                                                setCurrentModalStorageKey(`idea_${activeChapter}_${activeIdeaId}`);
-                                                                setIsCanvasModalOpen(true);
-                                                            }}
-                                                            style={{
-                                                                background: '#8c5521', border: '1px solid #8c5521', color: '#fff',
-                                                                padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
-                                                                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                            }}
-                                                        >
-                                                            ✍️ افتح صفحة الحل الكاملة (للحل والرسم)
-                                                        </button>
-                                                    </div>
-
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                                                        {currentIdeaObj.practiceQuestion.options.map((opt) => (
-                                                            <label key={opt} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: selectedOption === opt ? '#FEECD0' : '#FFF9E2', border: '1px solid #e6dec5', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', color: '#2C3531', gap: '10px' }}>
-                                                                <input
-                                                                    type="radio"
-                                                                    name="practice-option"
-                                                                    checked={selectedOption === opt}
-                                                                    onChange={() => setSelectedOption(opt)}
-                                                                />
-                                                                {renderOptionContent(opt)}
-                                                            </label>
-                                                        ))}
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleQuizVerify}
-                                                        style={{ background: '#8c5521', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
-                                                    >
-                                                        تحقق من الإجابة ✅
-                                                    </button>
-
-                                                    {errorMsg && <div style={{ color: '#991b1b', marginTop: '10px', fontSize: '13px', fontWeight: 'bold' }}>{errorMsg}</div>}
-
-                                                    {hasAttempted && selectedOption === currentIdeaObj.practiceQuestion.correctAnswer && (
-                                                        <div style={{ marginTop: '14px', padding: '14px', borderRadius: '8px', background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: '13px', color: '#16a34a' }}>
-                                                            <div style={{ fontWeight: 'bold' }}>✅ إجابة صحيحة!</div>
-                                                            {renderStructuredExplanation(currentIdeaObj.practiceQuestion.questionExplanation)}
-                                                        </div>
-                                                    )}
-
-                                                    {hasAttempted && selectedOption !== currentIdeaObj.practiceQuestion.correctAnswer && (
-                                                        <div style={{ marginTop: '14px', padding: '14px', borderRadius: '8px', background: '#fee2e2', border: '1px solid #fca5a5', fontSize: '13px', color: '#991b1b' }}>
-                                                            <div style={{ fontWeight: 'bold' }}>❌ إجابة خاطئة، حاول مرة أخرى!</div>
-                                                            {renderStructuredExplanation(currentIdeaObj.practiceQuestion.questionExplanation)}
-                                                        </div>
-                                                    )}
+                                                <div style={{ fontWeight: 'bold', color: '#8c5521', fontSize: '14px', whiteSpace: 'nowrap' }}>
+                                                    عرض الأسئلة ←
                                                 </div>
+                                            </button>
+                                        </div>
+
+                                        <div className="idea-pager">
+                                            {previousIdea && (
+                                                <button type="button" className="pager-btn" onClick={() => goToIdea(previousIdea.id)}>
+                                                    <span className="pager-label">→ الفكرة السابقة</span>
+                                                    <span className="pager-name">{previousIdea.ideaNumber} {previousIdea.ideaName}</span>
+                                                </button>
                                             )}
+                                            {nextIdea && (
+                                                <button type="button" className="pager-btn pager-next" onClick={() => goToIdea(nextIdea.id)}>
+                                                    <span className="pager-label">الفكرة التالية ←</span>
+                                                    <span className="pager-name">{nextIdea.ideaNumber} {nextIdea.ideaName}</span>
+                                                </button>
+                                            )}
+                                        </div>
 
-                                        </div>
-                                    ) : (
-                                        <div style={{ color: '#8c5521', fontSize: '13px', padding: '10px 0' }}>
-                                            لا توجد أسئلة تدريبية مضافة لهذه الفكرة حالياً.
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
+                            )}
+                        </>
+                    )}
 
-                                {/* مستطيل الانتقال للأسئلة الإضافية الخاصة بهذا الشابتر مع تمرير التاب الخاص به */}
-                                <div style={{ marginTop: '24px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            router.push(`/workspace/101/1?chapter=additional-questions&tab=${encodeURIComponent(activeChapter)}`);
-                                        }}
-                                        style={{
-                                            width: '100%', background: '#FEECD0', border: '1px solid #DCA27B', borderRadius: '12px',
-                                            padding: '16px 20px', cursor: 'pointer', textAlign: 'right', display: 'flex',
-                                            justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                                            transition: 'background 0.2s'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ fontSize: '20px' }}>➕</span>
-                                            <div>
-                                                <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#8c5521' }}>
-                                                    أسئلة إضافية للشابتر {currentChapterData.chapterNumber}
-                                                </div>
-                                                <div style={{ fontSize: '12px', color: '#2C3531', marginTop: '2px' }}>
-                                                    انتقل مباشرة لتدريبات هذا الشابتر واختبر فهمك
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div style={{ fontWeight: 'bold', color: '#8c5521', fontSize: '14px' }}>
-                                            عرض الأسئلة ←
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-
+                </div>
             </div>
-        </div>
+        </>
     );
 }

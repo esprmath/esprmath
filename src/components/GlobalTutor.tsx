@@ -1,59 +1,128 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { BlockMath, InlineMath } from 'react-katex'
+import 'katex/dist/katex.min.css'
+import { supabase } from '@/lib/supabase'
 
 interface GlobalTutorProps {
     courseId?: string | number
     currentModule?: number
-    userId?: string | null;
     currentChapter?: string
     currentQuestion?: string
-    currentIdea?: string | { id: string; name: string } | null // دعم الشابتر والفكرة المحددة
+    currentIdea?: string | { id: string; name: string } | null
     initialPrompt?: string | null
-    onPromptConsumed?: () => void;
+    onPromptConsumed?: () => void
     isAiAllowed?: boolean
     mode?: 'floating' | 'inline'
+    // عند تمريره تبقى المحادثة محفوظة في نفس التبويب، مثل الانتقال لصفحة الحل والرجوع
+    chatKey?: string
+    // شرح الفكرة في الدرس. عند تمريره يظهر زر "مختصر الفكرة" (داخل الشابتر فقط)
+    ideaNotes?: string
+}
+
+type ChatMessage = { role: 'ai' | 'user'; text: string }
+
+const MAX_SAVED_MESSAGES = 30
+
+/** يوحّد صيغ LaTeX التي قد يرسلها النموذج إلى $...$ */
+const normalizeMath = (text: string) =>
+    text
+        .replace(/\\\[([\s\S]+?)\\\]/g, (_, m) => `$$${m}$$`)
+        .replace(/\\\(([\s\S]+?)\\\)/g, (_, m) => `$${m}$`)
+
+function renderInline(text: string, keyPrefix: string) {
+    return text.split(/(\$[^$\n]+?\$|\*\*[^*\n]+?\*\*)/g).map((piece, i) => {
+        const key = `${keyPrefix}-${i}`
+        if (piece.length > 2 && piece.startsWith('$') && piece.endsWith('$')) {
+            return (
+                <span key={key} style={{ direction: 'ltr', unicodeBidi: 'isolate', display: 'inline-block', maxWidth: '100%', overflowX: 'auto', overflowY: 'hidden', verticalAlign: 'middle' }}>
+                    <InlineMath math={piece.slice(1, -1)} />
+                </span>
+            )
+        }
+        if (piece.startsWith('**') && piece.endsWith('**') && piece.length > 4) {
+            return <strong key={key}>{piece.slice(2, -2)}</strong>
+        }
+        return <span key={key}>{piece}</span>
+    })
+}
+
+/** يعرض رد فيكتور: معادلات بـ KaTeX وأسطر مرتبة وخط عريض */
+function MessageBody({ text }: { text: string }) {
+    const blocks = normalizeMath(text).split(/(\$\$[\s\S]+?\$\$)/g)
+    return (
+        <>
+            {blocks.map((block, i) => {
+                if (block.startsWith('$$') && block.endsWith('$$') && block.length > 4) {
+                    return (
+                        <div key={i} style={{ direction: 'ltr', overflowX: 'auto', overflowY: 'hidden', margin: '4px 0' }}>
+                            <BlockMath math={block.slice(2, -2)} />
+                        </div>
+                    )
+                }
+                return block
+                    .split('\n')
+                    .filter((line) => line.trim())
+                    .map((line, j) => (
+                        <div key={`${i}-${j}`} style={{ margin: '3px 0' }}>
+                            {renderInline(line, `${i}-${j}`)}
+                        </div>
+                    ))
+            })}
+        </>
+    )
 }
 
 export default function GlobalTutor({
-                                        courseId = '101',
-                                        currentModule = 1,
-                                        currentChapter = '1.5',
-                                        currentQuestion = '',
-                                        currentIdea = null, // استقبال الفكرة هنا
-                                        initialPrompt = null,
-                                        isAiAllowed = true,
-                                        mode = 'floating'
-                                    }: GlobalTutorProps) {
+    courseId = '101',
+    currentModule = 1,
+    currentChapter = '',
+    currentQuestion = '',
+    currentIdea = null,
+    initialPrompt = null,
+    isAiAllowed = true,
+    mode = 'floating',
+    chatKey,
+    ideaNotes = ''
+}: GlobalTutorProps) {
     const [isChatOpen, setIsChatOpen] = useState(mode === 'inline')
 
-    // استخلاص اسم الفكرة سواء كانت نص أو كائن
-    const ideaName = typeof currentIdea === 'object' && currentIdea !== null ? currentIdea.name : currentIdea;
+    const ideaName = typeof currentIdea === 'object' && currentIdea !== null ? currentIdea.name : currentIdea
 
-    const [messages, setMessages] = useState([
-        {
-            role: 'ai',
-            text: `أهلاً بك! أنا فيكتور (Vector)، معلمك الذكي لمقرر الرياضيات (Math ${courseId}). نحن الآن في الشابتر (${currentChapter})${ideaName ? ` - الفكرة: (${ideaName})` : currentQuestion ? ` - الفكرة: (${currentQuestion})` : ''}. كيف أقدر أساعدك اليوم؟`
-        }
-    ])
+    const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const storageKey = chatKey ? `vector_chat_${courseId}_${chatKey}` : null
+    const [loadedKey, setLoadedKey] = useState<string | null>(null)
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-
+    // استرجاع المحادثة المحفوظة
     useEffect(() => {
-        if (mode === 'inline') {
-            setIsChatOpen(true)
+        if (!storageKey) return
+        try {
+            const saved = sessionStorage.getItem(storageKey)
+            setMessages(saved ? JSON.parse(saved) : [])
+        } catch {
+            setMessages([])
         }
-    }, [mode])
+        setLoadedKey(storageKey)
+    }, [storageKey])
+
+    // حفظ المحادثة، بعد اكتمال الاسترجاع حتى لا تُستبدل بقائمة فارغة
+    useEffect(() => {
+        if (!storageKey || loadedKey !== storageKey) return
+        try {
+            sessionStorage.setItem(storageKey, JSON.stringify(messages.slice(-MAX_SAVED_MESSAGES)))
+        } catch {
+            // المحادثة تستمر حتى لو تعذر حفظها
+        }
+    }, [messages, storageKey, loadedKey])
 
     useEffect(() => {
         if (isChatOpen) {
-            scrollToBottom()
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         }
     }, [messages, loading, isChatOpen])
 
@@ -61,55 +130,43 @@ export default function GlobalTutor({
         if (!promptText.trim() || loading) return
 
         if (!isAiAllowed) {
-            setMessages(prev => [
-                ...prev,
-                {
-                    role: 'ai',
-                    text: '⚠️ عذراً، خدمة الذكاء الاصطناعي غير مسموحة أو غير مفعلة في حسابك حالياً.'
-                }
-            ])
+            setMessages(prev => [...prev, { role: 'ai', text: 'ميزة فيكتور غير مفعلة في حسابك حاليًا.' }])
             return
         }
 
+        const history = [...messages, { role: 'user' as const, text: promptText }]
         setIsChatOpen(true)
-        setMessages(prev => [...prev, { role: 'user', text: promptText }])
+        setMessages(history)
         setLoading(true)
 
         try {
+            const { data: { session } } = await supabase.auth.getSession()
+
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+                },
                 body: JSON.stringify({
                     courseId,
                     currentModule,
                     currentChapter,
                     currentQuestion,
-                    currentIdea: ideaName, // إرسال الفكرة مع الطلب للـ API ليفهمها الذكاء الاصطناعي
-                    messages: [
-                        ...messages.map(m => ({
-                            role: m.role === 'ai' ? 'assistant' : 'user',
-                            content: m.text
-                        })),
-                        { role: 'user', content: promptText }
-                    ]
+                    currentIdea: ideaName,
+                    ideaNotes,
+                    messages: history.map(m => ({
+                        role: m.role === 'ai' ? 'assistant' : 'user',
+                        content: m.text
+                    }))
                 })
             })
 
             const data = await res.json()
-
-            if (data.reply) {
-                setMessages(prev => [...prev, { role: 'ai', text: data.reply }])
-            } else {
-                throw new Error()
-            }
-        } catch (err) {
-            setMessages(prev => [
-                ...prev,
-                {
-                    role: 'ai',
-                    text: 'عذراً، حدث خطأ في الاتصال بخدمة الذكاء الاصطناعي. تأكد من إعداد المفتاح في .env.local'
-                }
-            ])
+            if (!data.reply) throw new Error('empty reply')
+            setMessages(prev => [...prev, { role: 'ai', text: data.reply }])
+        } catch {
+            setMessages(prev => [...prev, { role: 'ai', text: 'تعذر الاتصال بفيكتور، تأكد من الإنترنت وحاول مرة ثانية.' }])
         } finally {
             setLoading(false)
         }
@@ -122,9 +179,8 @@ export default function GlobalTutor({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialPrompt, isAiAllowed])
 
-    async function sendMessage() {
+    function sendMessage() {
         if (!input.trim() || loading) return
-
         const userMsg = input.trim()
         setInput('')
         sendDirectPrompt(userMsg)
@@ -137,15 +193,45 @@ export default function GlobalTutor({
         }
     }
 
+    const greeting = currentQuestion
+        ? 'أهلًا! أنا فيكتور، وشايف السؤال اللي قدامك. تبغى تلميح أو نحله خطوة خطوة؟'
+        : `أهلًا! أنا فيكتور، معلمك في Math ${courseId}. اسألني عن أي شي في الدرس.`
+
+    const quickActions = !isAiAllowed
+        ? []
+        : [
+            ...(ideaNotes ? [{ label: '📝 مختصر الفكرة', prompt: 'أعطني مختصر هذه الفكرة' }] : []),
+            ...(currentQuestion
+                ? [
+                    { label: '💡 أعطني تلميح', prompt: 'أعطني تلميحًا لهذا السؤال بدون الحل' },
+                    { label: '🪜 حله خطوة خطوة', prompt: 'اشرح لي حل هذا السؤال خطوة خطوة' },
+                ]
+                : []),
+        ]
+
+    const bubbleStyle = (isAi: boolean): React.CSSProperties => ({
+        margin: '8px 0',
+        padding: '10px 12px',
+        borderRadius: '10px',
+        background: isAi ? '#ffffff' : '#FEECD0',
+        border: '1px solid #e6dec5',
+        fontSize: '14px',
+        lineHeight: '1.6',
+        color: '#2C3531',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+        overflowWrap: 'anywhere'
+    })
+
     const chatBox = (
         <div
             style={{
                 position: mode === 'floating' ? 'fixed' : 'relative',
                 bottom: mode === 'floating' ? '85px' : 'auto',
                 left: mode === 'floating' ? '24px' : 'auto',
-                width: mode === 'floating' ? '380px' : '100%',
+                width: mode === 'floating' ? '400px' : '100%',
                 maxWidth: mode === 'floating' ? 'calc(100vw - 48px)' : '100%',
-                height: mode === 'floating' ? '480px' : '420px',
+                // الارتفاع يتبع الشاشة حتى لا ينقص الشات في الشاشات القصيرة
+                height: mode === 'floating' ? 'min(520px, calc(100dvh - 110px))' : '420px',
                 zIndex: mode === 'floating' ? 9998 : 'auto',
                 boxShadow:
                     mode === 'floating'
@@ -156,8 +242,7 @@ export default function GlobalTutor({
                 display: 'flex',
                 flexDirection: 'column',
                 backgroundColor: '#FFF9E2',
-                border: '1px solid #e6dec5',
-                fontFamily: 'sans-serif'
+                border: '1px solid #e6dec5'
             }}
         >
             <div
@@ -165,18 +250,27 @@ export default function GlobalTutor({
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    padding: '12px 16px',
-                    background: '#DCA27B',
+                    gap: '10px',
+                    padding: '10px 16px',
+                    background: '#8c5521',
                     color: '#fff'
                 }}
             >
-                <span style={{ fontWeight: 'bold' }}>
-                    🤖 فيكتور (Math {courseId} - Ch {currentChapter})
-                </span>
+                <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '15px' }}>🤖 فيكتور</div>
+                    {(currentChapter || ideaName) && (
+                        <div style={{ fontSize: '11px', color: '#fbdfb4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {currentChapter && `Chapter ${currentChapter}`}
+                            {currentChapter && ideaName ? ' · ' : ''}
+                            {ideaName}
+                        </div>
+                    )}
+                </div>
 
                 {mode === 'floating' && (
                     <button
                         type="button"
+                        aria-label="إغلاق الشات"
                         onClick={() => setIsChatOpen(false)}
                         style={{
                             background: 'none',
@@ -184,7 +278,8 @@ export default function GlobalTutor({
                             color: '#fff',
                             cursor: 'pointer',
                             fontSize: '18px',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            flexShrink: 0
                         }}
                     >
                         ✕
@@ -195,13 +290,13 @@ export default function GlobalTutor({
             <div
                 style={{
                     flex: 1,
+                    minHeight: 0,
                     overflowY: 'auto',
-                    padding: '12px',
-                    whiteSpace: 'pre-line',
+                    padding: '6px 12px',
                     backgroundColor: '#FFF9E2',
                     backgroundImage: `
-                        linear-gradient(to right, #e8dfc5 1px, transparent 1px),
-                        linear-gradient(to bottom, #e8dfc5 1px, transparent 1px)
+                        linear-gradient(to right, #efe6cf 1px, transparent 1px),
+                        linear-gradient(to bottom, #efe6cf 1px, transparent 1px)
                     `,
                     backgroundSize: '20px 20px'
                 }}
@@ -221,26 +316,15 @@ export default function GlobalTutor({
                             lineHeight: '1.5'
                         }}
                     >
-                        ⚠️ عذراً، ميزة المعلم الذكي غير مفعلة لديك حالياً.
+                        ميزة فيكتور غير مفعلة في حسابك حاليًا.
                     </div>
                 )}
 
+                <div style={bubbleStyle(true)}>{greeting}</div>
+
                 {messages.map((msg, i) => (
-                    <div
-                        key={i}
-                        style={{
-                            margin: '8px 0',
-                            padding: '10px 12px',
-                            borderRadius: '8px',
-                            background: msg.role === 'ai' ? '#ffffff' : '#FEECD0',
-                            border: '1px solid #e6dec5',
-                            fontSize: '14px',
-                            lineHeight: '1.4',
-                            color: '#2C3531',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                        }}
-                    >
-                        {msg.text}
+                    <div key={i} style={bubbleStyle(msg.role === 'ai')}>
+                        {msg.role === 'ai' ? <MessageBody text={msg.text} /> : <div dir="auto" style={{ whiteSpace: 'pre-line' }}>{msg.text}</div>}
                     </div>
                 ))}
 
@@ -250,40 +334,64 @@ export default function GlobalTutor({
                             fontSize: '13px',
                             color: '#4A5550',
                             padding: '8px',
-                            background: 'rgba(255,255,255,0.7)',
+                            background: 'rgba(255,255,255,0.8)',
                             borderRadius: '6px',
                             display: 'inline-block'
                         }}
                     >
-                        فيكتور جاري التفكير وتحليل السؤال... ⏳
+                        فيكتور يفكر... ⏳
                     </div>
                 )}
 
                 <div ref={messagesEndRef} />
             </div>
 
+            {quickActions.length > 0 && !loading && (
+                <div style={{ display: 'flex', gap: '6px', padding: '8px 10px 0', backgroundColor: '#ffffff', borderTop: '1px solid #e6dec5', flexWrap: 'wrap' }}>
+                    {quickActions.map((action) => (
+                        <button
+                            key={action.label}
+                            type="button"
+                            onClick={() => sendDirectPrompt(action.prompt)}
+                            style={{
+                                background: '#FEECD0',
+                                color: '#8c5521',
+                                border: '1px solid #e6d5b4',
+                                borderRadius: '999px',
+                                padding: '5px 12px',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {action.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <div
                 style={{
                     padding: '10px',
                     display: 'flex',
                     gap: '8px',
-                    borderTop: '1px solid #e6dec5',
+                    borderTop: quickActions.length > 0 && !loading ? 'none' : '1px solid #e6dec5',
                     backgroundColor: '#ffffff'
                 }}
             >
                 <input
                     type="text"
-                    placeholder={
-                        isAiAllowed
-                            ? 'اسأل فيكتور عن هذا الشابتر أو الفكرة...'
-                            : 'المحادثة غير مفعلة...'
-                    }
+                    dir="auto"
+                    maxLength={1500}
+                    placeholder={isAiAllowed ? 'اكتب سؤالك لفيكتور...' : 'المحادثة غير مفعلة...'}
+                    aria-label="رسالة إلى فيكتور"
                     value={input}
-                    disabled={loading || !isAiAllowed}
+                    disabled={!isAiAllowed}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     style={{
                         flex: 1,
+                        minWidth: 0,
                         padding: '8px',
                         border: '1px solid #e6dec5',
                         borderRadius: '6px',
@@ -299,12 +407,12 @@ export default function GlobalTutor({
                     onClick={sendMessage}
                     disabled={loading || !isAiAllowed}
                     style={{
-                        backgroundColor: isAiAllowed ? '#DCA27B' : '#9ca3af',
+                        backgroundColor: isAiAllowed && !loading ? '#8c5521' : '#9ca3af',
                         color: '#fff',
                         border: 'none',
                         padding: '8px 16px',
                         borderRadius: '6px',
-                        cursor: isAiAllowed ? 'pointer' : 'not-allowed',
+                        cursor: isAiAllowed && !loading ? 'pointer' : 'not-allowed',
                         fontWeight: 'bold'
                     }}
                 >

@@ -7,6 +7,24 @@
   font-family: 'Tajawal', sans-serif;
 }
 
+.katex,
+.katex-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* قاعدة * أعلاه تفرض خط Tajawal على عناصر المعادلة فتتداخل الكسور وتختفي رموز مثل ≠،
+   فنعيد لها خط KaTeX. فئات KaTeX الخاصة (مثل mathnormal) أقوى من هذه القاعدة. */
+.katex * {
+  font-family: inherit;
+}
+
+/* النص العربي داخل المعادلات ليس له حروف في خط KaTeX */
+.katex .text,
+.katex .text * {
+  font-family: KaTeX_Main, 'Tajawal', serif;
+}
+
 :root {
   --bg-flat: #f8fafc;
   --primary-blue: #2563eb;
@@ -391,3 +409,4 @@ body {
   font-weight: bold;
   cursor: pointer;
 }
+

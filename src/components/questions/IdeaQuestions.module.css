@@ -1,0 +1,57 @@
+/* src/components/questions/IdeaQuestions.module.css */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.questionWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.canvasBtn {
+  align-self: flex-start;
+  background: #8c5521;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.canvasBtn:hover {
+  background: #7a4a1d;
+}
+
+.regen {
+  align-self: flex-start;
+  background: #feecd0;
+  border: 1px solid #dca27b;
+  color: #8c5521;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.regen:hover {
+  background: #fde0b8;
+}
+
+.empty {
+  color: #8c5521;
+  font-size: 13px;
+  padding: 20px;
+  text-align: center;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px dashed #e6dec5;
+}
+
