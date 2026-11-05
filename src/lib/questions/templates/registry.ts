@@ -25,6 +25,23 @@ import { unknownValueTemplate } from './continuity/unknown-value';
 import { tangentLimitTemplate } from './derivatives/tangent-limit';
 import { instantaneousVelocityTemplate } from './derivatives/instantaneous-velocity';
 
+// === الموديول الثاني ===
+import { powerRulesTemplate } from './derivatives/power-rules';
+import { sumDifferenceTemplate } from './derivatives/sum-difference';
+import { productRuleTemplate } from './derivatives/product-rule';
+import { quotientRuleTemplate } from './derivatives/quotient-rule';
+import { trigProductTemplate } from './derivatives/trig-product';
+import { trigProofTemplate } from './derivatives/trig-proof';
+import { specialTrigTemplate } from './limits/special-trig';
+import { generalPowerTemplate } from './derivatives/general-power';
+import { chainTrigTemplate } from './derivatives/chain-trig';
+import { implicitCubicTemplate } from './derivatives/implicit-cubic';
+import { implicitTrigTemplate } from './derivatives/implicit-trig';
+import { particleMotionTemplate } from './derivatives/particle-motion';
+import { cubeVolumeTemplate } from './derivatives/cube-volume';
+import { torricelliTemplate } from './derivatives/torricelli';
+import { electricCurrentTemplate } from './derivatives/electric-current';
+
 export type TemplateId =
   | 'limits:numerical-table'
   | 'limits:rational-sign'
@@ -42,7 +59,22 @@ export type TemplateId =
   | 'continuity:rational-discontinuity'
   | 'continuity:unknown-value'
   | 'derivatives:tangent-limit'
-  | 'derivatives:instantaneous-velocity';
+  | 'derivatives:instantaneous-velocity'
+  | 'derivatives:power-rules'
+  | 'derivatives:sum-difference'
+  | 'derivatives:product-rule'
+  | 'derivatives:quotient-rule'
+  | 'derivatives:trig-product'
+  | 'derivatives:trig-proof'
+  | 'limits:special-trig'
+  | 'derivatives:general-power'
+  | 'derivatives:chain-trig'
+  | 'derivatives:implicit-cubic'
+  | 'derivatives:implicit-trig'
+  | 'derivatives:particle-motion'
+  | 'derivatives:cube-volume'
+  | 'derivatives:torricelli'
+  | 'derivatives:electric-current';
 
 export const TEMPLATE_REGISTRY: Record<TemplateId, QuestionTemplate> = {
   'limits:numerical-table': numericalTableTemplate,
@@ -62,6 +94,21 @@ export const TEMPLATE_REGISTRY: Record<TemplateId, QuestionTemplate> = {
   'continuity:unknown-value': unknownValueTemplate,
   'derivatives:tangent-limit': tangentLimitTemplate,
   'derivatives:instantaneous-velocity': instantaneousVelocityTemplate,
+  'derivatives:power-rules': powerRulesTemplate,
+  'derivatives:sum-difference': sumDifferenceTemplate,
+  'derivatives:product-rule': productRuleTemplate,
+  'derivatives:quotient-rule': quotientRuleTemplate,
+  'derivatives:trig-product': trigProductTemplate,
+  'derivatives:trig-proof': trigProofTemplate,
+  'limits:special-trig': specialTrigTemplate,
+  'derivatives:general-power': generalPowerTemplate,
+  'derivatives:chain-trig': chainTrigTemplate,
+  'derivatives:implicit-cubic': implicitCubicTemplate,
+  'derivatives:implicit-trig': implicitTrigTemplate,
+  'derivatives:particle-motion': particleMotionTemplate,
+  'derivatives:cube-volume': cubeVolumeTemplate,
+  'derivatives:torricelli': torricelliTemplate,
+  'derivatives:electric-current': electricCurrentTemplate,
 };
 
 export function hasTemplate(id: string): id is TemplateId {

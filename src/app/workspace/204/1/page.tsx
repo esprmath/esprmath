@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import GuideTip from '@/components/GuideTip';
 import GlobalTutor from '@/components/GlobalTutor';
 import { ChapterData } from '@/types/math';
 import { chapter1_5Data } from './1.5';
@@ -638,26 +637,6 @@ export default function ModulePage() {
                 />
             )}
 
-            {!isChapterView && (
-                <GuideTip
-                    id="module1-chapters-list-intro"
-                    text="مرحباً بك في قائمة الشباتر! 📚 اختر الشابتر للدراسة أو انتقل إلى قسم 'الأسئلة الإضافية'."
-                />
-            )}
-
-            {isChapterView && !isAdditionalView && currentChapterData && (
-                <GuideTip
-                    id={`chapter-${activeChapter}-intro`}
-                    text={`أهلاً بك في شابتر ${currentChapterData.chapterTitle}! 💡 تصفح الأفكار وشاهد الشرح.`}
-                />
-            )}
-
-            {isAdditionalView && (
-                <GuideTip
-                    id="additional-questions-intro"
-                    text="أهلاً بك في صفحة الأسئلة الإضافية! ➕ تدرب على أسئلة إضافية مرتبطة بأفكار المقرر."
-                />
-            )}
 
             {showSuccessToast && (
                 <div style={{

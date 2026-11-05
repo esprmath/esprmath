@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import OnboardingTour from '@/components/OnboardingTour';
 import { supabase } from '@/lib/supabase';
-import GuideTip from '@/components/GuideTip';
 import { FALLBACK_MODULES, hasQuizPage, quizPath, windowStatus, type CourseModule } from '@/lib/courseAccess';
 import { moduleProgressKey } from '@/lib/questions/mastery';
 import styles from './CourseHub.module.css';
@@ -149,6 +149,12 @@ export default function CourseHub({ courseId }: { courseId: string }) {
         return <div className={styles.loading}>جاري تحميل محتوى الكورس... ⏳</div>;
     }
 
+    // جولة أول دخول تشير لأول موديول يقدر الطالب يفتحه
+    const firstOpenModuleId = modules.find((mod) => {
+        const isAvailable = windowStatus(mod) === 'open';
+        return isAvailable && (mod.is_free || isAuthorized);
+    })?.id;
+
     const regularQuizzes = quizzes
         .filter((q) => q.quiz_id !== 'final-review' && !q.quiz_id.includes('mid'))
         .sort((a, b) => {
@@ -162,11 +168,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
     return (
         <div className={styles.page}>
             <Navbar isLoggedIn={true} />
-
-            <GuideTip
-                id={`workspace-intro-${courseId}`}
-                text={`أهلاً بك في مساحة كورس Math ${courseId}! 🚀 يمكنك تصفح الموديولات، الاستفادة من التجربة المجانية، ومتابعة اختباراتك بكل سهولة.`}
-            />
+            <OnboardingTour page="course" />
 
             <div className={styles.grid}>
                 <header className={styles.header}>
@@ -269,6 +271,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
                                     <Link
                                         href={modulePath}
                                         className={styles.startBtn}
+                                        data-tour={mod.id === firstOpenModuleId ? 'first-module' : undefined}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             remember();

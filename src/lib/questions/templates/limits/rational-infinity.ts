@@ -6,11 +6,56 @@ const variables: VariableDefinition[] = [
   { name: 'a', min: 1, max: 5, integer: true }, // معامل البسط
   { name: 'b', min: 2, max: 6, integer: true }, // معامل المقام
   { name: 'n', min: 1, max: 3, integer: true }, // الأس المشترك
+  // تُضاف آخر القائمة حتى لا تتغير أرقام الأسئلة القديمة: 0 = الشكل الأصلي، 1 = مثل Ex 4
+  { name: 'form', min: 0, max: 1, integer: true },
+  { name: 'negInf', min: 0, max: 1, integer: true },
 ];
 
 const pow = (n: number) => (n === 1 ? 'x' : `x^{${n}}`);
 
+const NON_SQUARES = [2, 3, 5, 6, 7];
+
+/** مثل Ex 4: f(x) = √(2x² + 1) / (3x - 5) */
+function radicalForm(a: number, b: number, n: number, neg: boolean): TemplateOutput {
+  const p = NON_SQUARES[a - 1];
+  const c = n + 2; // الثابت في المقام
+  const inf = neg ? '-\\infty' : '\\infty';
+  const value = `\\frac{\\sqrt{${p}}}{${b}}`;
+  const correct = `y = ${neg ? '-' : ''}${value}`;
+
+  return {
+    questionText: `Find the horizontal asymptote of the graph as x → ${neg ? '-∞' : '∞'}, using limits:`,
+    mathExpression: `f(x) = \\frac{\\sqrt{${p}x^{2} + 1}}{${b}x - ${c}}`,
+    correct,
+    distractors: uniqueExcept(
+      [
+        `y = ${neg ? '' : '-'}${value}`,   // خطأ الإشارة عند x → -∞
+        `y = ${frac(neg ? -p : p, b)}`,    // نسيان الجذر
+        `y = ${neg ? '-' : ''}\\frac{1}{${b}}`,
+        'y = 0',
+      ],
+      correct
+    ),
+    optionFormat: 'math',
+    steps: [
+      {
+        text: neg
+          ? 'نقسم على x. وعندما x → -∞ تكون x سالبة، فـ √(x²) = -x:'
+          : 'نقسم البسط والمقام على x، وداخل الجذر على x²:',
+        math: `\\lim_{x \\to ${inf}} \\frac{${neg ? '-' : ''}\\sqrt{${p} + \\frac{1}{x^{2}}}}{${b} - \\frac{${c}}{x}}`,
+      },
+      { text: 'الكسور تؤول إلى الصفر، فيبقى:', math: `${neg ? '-' : ''}${value}` },
+      { text: 'إذن خط التقارب الأفقي:', math: correct },
+    ],
+  };
+}
+
 function generate(v: Record<string, number>): TemplateOutput {
+  if (v.form === 1) return radicalForm(v.a, v.b, v.n, v.negInf === 1);
+  return originalForm(v);
+}
+
+function originalForm(v: Record<string, number>): TemplateOutput {
   const { a, b, n } = v;
 
   const coefA = a === 1 ? '' : `${a}`;

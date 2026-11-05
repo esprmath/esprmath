@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
-import { isAdminEmail } from '@/lib/admin'
-import GuideTip from '@/components/GuideTip'
+import { checkIsAdmin } from '@/lib/admin'
 
 interface Course {
     id: string
@@ -31,17 +30,18 @@ export default function HomePage() {
     const [showAlertModal, setShowAlertModal] = useState(false)
     const [alertMessage, setAlertMessage] = useState('')
 
-    const isAdmin = isAdminEmail(userEmail)
+    const [isAdmin, setIsAdmin] = useState(false)
 
     const fetchCourses = async (currentEmail?: string | null) => {
-        const { data, error } = await supabase
-            .from('courses')
-            .select('*')
-            .order('id')
+        const [{ data, error }, admin] = await Promise.all([
+            supabase.from('courses').select('*').order('id'),
+            checkIsAdmin(currentEmail),
+        ])
+        setIsAdmin(admin)
         setCoursesLoading(false)
 
         if (!error && data) {
-            const visibleCourses = data.filter(course => isAdminEmail(currentEmail) || course.is_active === true)
+            const visibleCourses = data.filter(course => admin || course.is_active === true)
 
             setCourses(visibleCourses)
             const initialStatuses: Record<string, string> = {}
@@ -373,14 +373,6 @@ export default function HomePage() {
                         </Link>
                     </div>
                 )}
-
-                <div style={{ position: 'absolute', top: '2px', left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
-                    <GuideTip
-                        id="home-welcome-general"
-                        text="أهلاً بك في منصة EsprMath! 🚀 منصتك الذكية لتبسيط وتسهيل مقررات الرياضيات الجامعية."
-                        position="bottom"
-                    />
-                </div>
 
                 {isLoggedIn && (
                     <h2 style={{ fontSize: '1.2rem', color: PRIMARY, fontWeight: 'bold', marginBottom: '6px', marginTop: '4px', textAlign: 'center' }}>

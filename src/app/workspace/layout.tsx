@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { isAdminEmail } from '@/lib/admin';
+import { checkIsAdmin } from '@/lib/admin';
 import { windowStatus } from '@/lib/courseAccess';
 
 type GateResult = { allowed: true } | { allowed: false; message: string; courseId: string };
@@ -16,7 +16,7 @@ async function checkAccess(pathname: string, userId: string, email?: string): Pr
     const [, , courseId = '', section = '', item = ''] = pathname.split('/');
 
     // صفحة الكورس نفسها متاحة لكل مسجل، وهي تعرض حالة كل موديول
-    if (!section || isAdminEmail(email)) return { allowed: true };
+    if (!section || (await checkIsAdmin(email))) return { allowed: true };
 
     const isModule = /^\d+$/.test(section);
     const quizId = section === 'final-review' ? 'final-review' : section === 'quizzes' || section === 'exam-leaks' ? item : '';

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { TOUR_EVENTS } from '@/components/OnboardingTour'
 
 interface NavbarProps {
     isLoggedIn: boolean;
@@ -262,6 +263,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             } else {
                 setExamDate(dateStr)
                 setShowCalendarModal(false)
+                window.dispatchEvent(new Event(TOUR_EVENTS.examDateSaved)) // تنقل جولة أول دخول للخطوة التالية
                 setAlertMessage('✅ تم حفظ موعد اختبارك بنجاح!')
                 setShowAlertModal(true)
             }
@@ -286,6 +288,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
     const daysLeft = getDaysRemaining()
     const isUrgent = daysLeft !== null && (daysLeft === 1 || daysLeft === 2)
+    const hasUpcomingExam = daysLeft !== null && daysLeft >= 0
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -381,6 +384,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                     type="button"
                                     onClick={() => handleToggleMinimize(false)}
                                     title="إظهار مؤشر موعد الاختبار"
+                                    data-tour="exam-date"
                                     style={{
                                         height: 'var(--btn-height)',
                                         padding: '0 var(--btn-padding-x)',
@@ -403,11 +407,12 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 <button
                                     type="button"
                                     onClick={() => setShowCalendarModal(true)}
+                                    data-tour="exam-date"
                                     style={{
                                         height: 'var(--btn-height)',
                                         padding: '0 var(--btn-padding-x)',
-                                        backgroundColor: examDate ? (isUrgent ? '#fee2e2' : '#ffffff') : '#ffffff',
-                                        color: examDate ? (isUrgent ? '#991b1b' : '#2C3531') : '#2C3531',
+                                        backgroundColor: hasUpcomingExam ? (isUrgent ? '#fee2e2' : '#ffffff') : '#ffffff',
+                                        color: hasUpcomingExam ? (isUrgent ? '#991b1b' : '#2C3531') : '#2C3531',
                                         border: '1px solid #6B5744',
                                         borderRadius: '8px',
                                         fontWeight: 'bold',
@@ -421,20 +426,19 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                         boxSizing: 'border-box'
                                     }}
                                 >
-                                    <span>{examDate ? (isUrgent ? '🚨' : '⏳') : '📌'}</span>
+                                    <span>{hasUpcomingExam ? (isUrgent ? '🚨' : '⏳') : '📌'}</span>
                                     <span>
-                                        {examDate
-                                            ? (daysLeft !== null && daysLeft >= 0
-                                                ? (daysLeft === 0
-                                                    ? 'اختبارك اليوم 🎯'
-                                                    : daysLeft === 1
-                                                        ? 'باقي: يوم 🎯'
-                                                        : daysLeft === 2
-                                                            ? 'باقي: يومين 🎯'
-                                                            : daysLeft >= 3 && daysLeft <= 10
-                                                                ? `باقي: ${daysLeft} أيام 🎯`
-                                                                : `باقي: ${daysLeft} يوم 🎯`)
-                                                : 'تم تحديد موعد الاختبار')
+                                        {/* بعد مرور الموعد يرجع الزر يطلب موعدًا جديدًا */}
+                                        {hasUpcomingExam
+                                            ? (daysLeft === 0
+                                                ? 'اختبارك اليوم 🎯'
+                                                : daysLeft === 1
+                                                    ? 'باقي: يوم 🎯'
+                                                    : daysLeft === 2
+                                                        ? 'باقي: يومين 🎯'
+                                                        : daysLeft! >= 3 && daysLeft! <= 10
+                                                            ? `باقي: ${daysLeft} أيام 🎯`
+                                                            : `باقي: ${daysLeft} يوم 🎯`)
                                             : 'تحديد موعد الاختبار'}
                                     </span>
                                 </button>

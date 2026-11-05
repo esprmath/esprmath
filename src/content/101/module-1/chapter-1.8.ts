@@ -18,10 +18,12 @@ export const chapter1_8Data: ChapterData = {
             ideaNumber: "4.1",
             ideaName: "Conditions of Continuity at a Point (Radical Functions Example)",
 
-            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
+            // 📖 ملخص الفكرة: الفكرة، وتعرف السؤال لما، وطريقة الحل، وانتبه. اكتب المعادلات بين علامتي $
             theoreticalSteps: [
-                { stepTitle: "Step 1: تطبيق شروط الاتصال على الدوال الجذرية", stepDescription: "عند فحص اتصال دالة تحتوي على جذور عند نقطة معينة a، نتبع نفس الشروط الثلاثة: إيجاد قيمة الدالة المباشرة f(a)، حساب النهاية عند نفس الاقتراب، ثم التأكد من مطابقة الطرفين." },
-                { stepTitle: "Step 2: خصائص الحسابات والتعويض المباشر", stepDescription: "بفضل خصائص النهايات، يمكن إدخال النهاية داخل الجذر للدوال المتصلة طالما أن ما تحت الجذر موجباً ومعرفاً عند النقطة المعطاة." }
+                { stepTitle: "💡 الفكرة", stepDescription: "الدالة متصلة (Continuous) عند $a$ إذا كانت نهايتها عند $a$ تساوي قيمتها: $\\lim_{x \\to a} f(x) = f(a)$." },
+                { stepTitle: "🔍 تعرف السؤال لما", stepDescription: "\"Use the definition of continuity\" عند عدد $a$، أو \"Explain why the function is discontinuous\"." },
+                { stepTitle: "🪜 طريقة الحل", stepDescription: "1. تأكد أن $f(a)$ معرفة\n2. تأكد أن $\\lim_{x \\to a} f(x)$ موجودة\n3. تأكد أن النهاية تساوي $f(a)$" },
+                { stepTitle: "⚠️ انتبه", stepDescription: "إذا اختل شرط واحد، فالدالة غير متصلة عند $a$." }
             ],
 
             // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
@@ -37,10 +39,12 @@ export const chapter1_8Data: ChapterData = {
             ideaNumber: "4.2",
             ideaName: "Classifying Types of Discontinuity",
 
-            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
+            // 📖 ملخص الفكرة: الفكرة، وتعرف السؤال لما، وطريقة الحل، وانتبه. اكتب المعادلات بين علامتي $
             theoreticalSteps: [
-                { stepTitle: "Step 1: الدوال الكسرية (Rational Functions)", stepDescription: "تكون الدالة غير متصلة عند النقاط التي تجعل المقام يساوي صفراً (Undefined)، وتحدث عندها فجوة أو خط محاذي." },
-                { stepTitle: "Step 2: الدوال متعددة التعريف (Piecewise Functions)", stepDescription: "نتحقق من شروط الاتصال عند النقطة المعطاة a: التأكد من معرفة الصورة f(a)، وجود النهاية، وهل النهاية تساوي الصورة." }
+                { stepTitle: "💡 الفكرة", stepDescription: "عدم الاتصال (Discontinuity) يحدث عند نقطة يختل فيها شرط من شروط الاتصال، مثل صفر المقام أو نقطة تغيّر القاعدة." },
+                { stepTitle: "🔍 تعرف السؤال لما", stepDescription: "\"Determine where the function is discontinuous\" لدالة كسرية أو متعددة التعريف (Piecewise)." },
+                { stepTitle: "🪜 طريقة الحل", stepDescription: "1. الدالة الكسرية: ساوِ المقام بالصفر\n2. الدالة Piecewise: قارن النهايتين من الجهتين مع $f(a)$ عند نقطة التغيّر\n3. حدد النوع: يختصر العامل = Removable، جهتان مختلفتان = Jump، نهاية لا نهائية = Infinite" },
+                { stepTitle: "⚠️ انتبه", stepDescription: "اختصار العامل لا يجعل الدالة متصلة، فهي تبقى غير معرفة عند هذه النقطة." }
             ],
 
             // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
@@ -56,10 +60,12 @@ export const chapter1_8Data: ChapterData = {
             ideaNumber: "4.3",
             ideaName: "Algebraic Properties of Continuous Functions and Intervals of Continuity",
 
-            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
+            // 📖 ملخص الفكرة: الفكرة، وتعرف السؤال لما، وطريقة الحل، وانتبه. اكتب المعادلات بين علامتي $
             theoreticalSteps: [
-                { stepTitle: "Step 1: خصائص العمليات على الدوال المتصلة", stepDescription: "إذا كانت الدوال f و g متصلتين عند النقطة a، فإن مجموعها، فرقها، ضربها، وقسمتها (بشرط عدم انعدام المقام) تكون جميعها دوال متصلة عند النقطة a." },
-                { stepTitle: "Step 2: فترات الاتصال للدوال المختلفة", stepDescription: "الدوال كثيرات الحدود متصلة على جميع الأعداد الحقيقية، بينما الدوال الكسرية والجذرية متصلة على جميع نقاط مجالاتها المعرفة." }
+                { stepTitle: "💡 الفكرة", stepDescription: "إذا كانت $f$ و$g$ متصلتين (Continuous) عند $a$، فالنهاية تساوي القيمة عند $a$. ومجموعهما وحاصل ضربهما متصلان أيضًا." },
+                { stepTitle: "🔍 تعرف السؤال لما", stepDescription: "\"Suppose f and g are continuous\"، ويعطيك $g(a)$ ونهاية، ويطلب $f(a)$. أو \"On what intervals is the function continuous\"." },
+                { stepTitle: "🪜 طريقة الحل", stepDescription: "1. عوّض مباشرة: استبدل $x$ بـ $a$ داخل النهاية\n2. عوّض قيمة $g(a)$ المعطاة\n3. حل المعادلة لإيجاد $f(a)$\n4. لفترات الاتصال (Intervals): الكسرية متصلة إلا حيث المقام صفر" },
+                { stepTitle: "⚠️ انتبه", stepDescription: "هذا التعويض صحيح لأن الدوال متصلة، فلا تطبقه على دالة غير متصلة." }
             ],
 
             // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
@@ -75,10 +81,12 @@ export const chapter1_8Data: ChapterData = {
             ideaNumber: "4.4",
             ideaName: "Continuity of Composite Radical and Rational Functions",
 
-            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
+            // 📖 ملخص الفكرة: الفكرة، وتعرف السؤال لما، وطريقة الحل، وانتبه. اكتب المعادلات بين علامتي $
             theoreticalSteps: [
-                { stepTitle: "Step 1: مجال الشروط للدوال المركبة والذرية", stepDescription: "عند إيجاد فترات اتصال دالة مركبة تحتوي على جذور ومقامات، ندمج شرطين: أن يكون ما تحت الجذر التربيعي موجباً أو مساوياً لصفر، وألا يساوي المقام الكلي صفراً." },
-                { stepTitle: "Step 2: استبعاد أصفار المقام وتحديد الفترة النهائية", stepDescription: "نساوي المقام بـ صفر لحل المعادلة وإيجاد القيم المستثناة، ثم نكتب فترة الاتصال النهائية بصيغة الأعداد الحقيقية عدا هذه القيم." }
+                { stepTitle: "💡 الفكرة", stepDescription: "الدالة متصلة في كل نقطة معرفة عندها، فنبحث عن النقاط التي تفشل: ما تحت الجذر سالب أو المقام صفر." },
+                { stepTitle: "🔍 تعرف السؤال لما", stepDescription: "\"Where is the function continuous?\" لدالة فيها جذر وكسر." },
+                { stepTitle: "🪜 طريقة الحل", stepDescription: "1. الجذر: تأكد أن ما تحته $\\geq 0$\n2. المقام: ساوِه بالصفر وأوجد القيم المستثناة\n3. اكتب الفترات (Intervals): كل الأعداد ما عدا هذه القيم" },
+                { stepTitle: "⚠️ انتبه", stepDescription: "المقدار $x^2 + c$ مع $c > 0$ موجب دائمًا، فلا يضيّق المجال." }
             ],
 
             // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع

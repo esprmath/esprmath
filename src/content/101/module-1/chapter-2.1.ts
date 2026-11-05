@@ -18,10 +18,12 @@ export const chapter2_1Data: ChapterData = {
             ideaNumber: "3.1",
             ideaName: "Slope and Equation of the Tangent Line Using the Limit Definition",
 
-            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
+            // 📖 ملخص الفكرة: الفكرة، وتعرف السؤال لما، وطريقة الحل، وانتبه. اكتب المعادلات بين علامتي $
             theoreticalSteps: [
-                { stepTitle: "Step 1: قانون إيجاد ميل المماس", stepDescription: "يُحسب ميل المماس للمنحنى عند النقطة a باستخدام قانون النهاية الأساسي: m = lim (x→a) [f(x) - f(a)] / [x - a]" },
-                { stepTitle: "Step 2: تكوين معادلة الخط المستقيم", stepDescription: "بعد إيجاد قيمة الميل (m) والنقطة المعطاة، نطبق صيغة الميل والنقطة: (y - y1) = m(x - x1) لإيجاد المعادلة بالشكل النهائي." }
+                { stepTitle: "💡 الفكرة", stepDescription: "ميل المماس (Tangent Line) عند نقطة هو نهاية ميل القاطع عند الاقتراب منها." },
+                { stepTitle: "🔍 تعرف السؤال لما", stepDescription: "\"Find an equation of the tangent line\" عند نقطة $(a, f(a))$." },
+                { stepTitle: "🪜 طريقة الحل", stepDescription: "1. اكتب قانون الميل: $m = \\lim_{x \\to a} \\frac{f(x) - f(a)}{x - a}$\n2. بسّط واختصر $(x - a)$، ثم عوّض\n3. اكتب المعادلة بصيغة Point-Slope: $y - y_1 = m(x - x_1)$" },
+                { stepTitle: "⚠️ انتبه", stepDescription: "التعويض المباشر في البداية يعطي $\\frac{0}{0}$، فبسّط أولًا." }
             ],
 
             // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
@@ -43,10 +45,12 @@ export const chapter2_1Data: ChapterData = {
             ideaNumber: "3.2",
             ideaName: "Physical Applications (Instantaneous Velocity and Rates of Change)",
 
-            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
+            // 📖 ملخص الفكرة: الفكرة، وتعرف السؤال لما، وطريقة الحل، وانتبه. اكتب المعادلات بين علامتي $
             theoreticalSteps: [
-                { stepTitle: "Step 1: السرعة اللحظية للأجسام الساقطة", stepDescription: "لحساب السرعة اللحظية بعد زمن محدد (t) لجسم يسقط سقوطاً حراً، نستخدم قانون السرعة الزمنية v(t) = g * t." },
-                { stepTitle: "Step 2: السرعة لحظة الاصطدام بالأرض", stepDescription: "لحساب السرعة عند الاصطدام بالاعتماد على ارتفاع السقوط الكلي (h)، نستخدم العلاقة: v = √(2gh)." }
+                { stepTitle: "💡 الفكرة", stepDescription: "السرعة (Velocity) عند لحظة معينة هي ميل دالة الموقع (Position Function) عند هذه اللحظة." },
+                { stepTitle: "🔍 تعرف السؤال لما", stepDescription: "\"A ball is dropped\"، ويسأل عن \"velocity\" بعد زمن معين أو \"How fast\" عند الاصطدام." },
+                { stepTitle: "🪜 طريقة الحل", stepDescription: "1. ابنِ دالة الموقع: $s(t) = s_0 + v_0 t - \\frac{1}{2}gt^2$\n2. احسب الميل بالنهاية: $v(a) = \\lim_{t \\to a} \\frac{s(t) - s(a)}{t - a}$\n3. عوّض الزمن المطلوب في $v(a)$\n4. للاصطدام: حل $s(t) = 0$ لإيجاد الزمن، ثم عوّضه" },
+                { stepTitle: "⚠️ انتبه", stepDescription: "\"dropped\" تعني $v_0 = 0$. السرعة السالبة تعني أن الجسم نازل، و\"How fast\" تسأل عن مقدارها فتكون موجبة." }
             ],
 
             // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع

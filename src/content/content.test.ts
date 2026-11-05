@@ -1,15 +1,19 @@
 // src/content/content.test.ts
 // يفحص ملفات المحتوى بالأمر: npm test
+import katex from 'katex';
 import { describe, expect, it } from 'vitest';
 import { toEmbedUrl } from '../lib/video';
 import { hasTemplate } from '../lib/questions/templates/registry';
 import { module1 as math101Module1 } from './101/module-1';
+import { module2 as math101Module2 } from './101/module-2';
 
 /** عند إضافة موديول جديد، أضفه هنا */
-const ALL_MODULES = [math101Module1];
+const ALL_MODULES = [math101Module1, math101Module2];
 
 // مقطع مؤقت استُخدم سابقًا مكان الروابط الحقيقية
 const PLACEHOLDER_VIDEO = 'dQw4w9WgXcQ';
+
+const IDEA_CARD_TITLES = ['💡 الفكرة', '🔍 تعرف السؤال لما', '🪜 طريقة الحل', '⚠️ انتبه'];
 
 const duplicates = (values: string[]) => values.filter((value, i) => values.indexOf(value) !== i);
 
@@ -35,6 +39,23 @@ describe.each(ALL_MODULES.map((m) => [`Math ${m.courseId} · الموديول ${
             for (const step of idea.theoreticalSteps) {
                 expect(step.stepTitle.trim()).not.toBe('');
                 expect(step.stepDescription.trim()).not.toBe('');
+            }
+
+            // بطاقة الفكرة لها نفس الأجزاء الأربعة، وطريقة الحل من خطوتين إلى أربع
+            expect(idea.theoreticalSteps.map((step) => step.stepTitle)).toEqual(IDEA_CARD_TITLES);
+            const methodSteps = idea.theoreticalSteps[2].stepDescription.split('\n');
+            expect(methodSteps.length).toBeGreaterThanOrEqual(2);
+            expect(methodSteps.length).toBeLessThanOrEqual(4);
+
+            // كل معادلة بين علامتي $ لازم تكون صالحة، وكل علامة لها ما يقابلها
+            for (const step of idea.theoreticalSteps) {
+                const quoted = step.stepDescription.split('"').filter((_, i) => i % 2 === 1);
+                expect(quoted.filter((text) => text.includes('$')), 'لا تضع معادلة داخل علامتي تنصيص').toEqual([]);
+                const parts = step.stepDescription.split('$');
+                expect(parts.length % 2, `علامة $ ناقصة: ${step.stepDescription}`).toBe(1);
+                for (const math of parts.filter((_, i) => i % 2 === 1)) {
+                    expect(() => katex.renderToString(math, { throwOnError: true, strict: 'ignore' }), math).not.toThrow();
+                }
             }
 
             if (idea.videoUrl) {

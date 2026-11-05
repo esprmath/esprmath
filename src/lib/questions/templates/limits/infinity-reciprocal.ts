@@ -6,9 +6,36 @@ const variables: VariableDefinition[] = [
   { name: 'k', min: 1, max: 9, integer: true },        // البسط الثابت
   { name: 'n', min: 1, max: 4, integer: true },        // الأس في المقام
   { name: 'isNegInf', min: 0, max: 1, integer: true }, // 0 → ∞ ، 1 → −∞
+  // يُضاف آخر القائمة حتى لا تتغير أرقام الأسئلة القديمة: 0 = الشكل الأصلي، 1 = مثل Q-23
+  { name: 'form', min: 0, max: 1, integer: true },
 ];
 
+/** مثل Q-23: lim (x → ∞) cos x */
+function trigForm(k: number, n: number, neg: boolean): TemplateOutput {
+  const fn = n % 2 === 0 ? '\\cos' : '\\sin';
+  const coef = k === 1 ? '' : `${k}`;
+  const inf = neg ? '-\\infty' : '\\infty';
+  const correct = DNE;
+
+  return {
+    questionText: 'Find the limit or show that it does not exist:',
+    mathExpression: `\\lim_{x \\to ${inf}} ${coef}${fn} x`,
+    correct,
+    distractors: uniqueExcept(['0', `${k}`, `-${k}`, '\\infty', '1'], correct),
+    optionFormat: 'math',
+    steps: [
+      { text: `${fn === '\\cos' ? 'cos' : 'sin'} x تتذبذب بين -1 و 1 مهما كبرت x، ولا تستقر على عدد واحد:`, math: `-${k} \\le ${coef}${fn} x \\le ${k}` },
+      { text: 'لا توجد قيمة واحدة تقترب منها الدالة، فالنهاية غير موجودة:', math: DNE },
+    ],
+  };
+}
+
 function generate(v: Record<string, number>): TemplateOutput {
+  if (v.form === 1) return trigForm(v.k, v.n, v.isNegInf === 1);
+  return originalForm(v);
+}
+
+function originalForm(v: Record<string, number>): TemplateOutput {
   const { k, n } = v;
   const neg = v.isNegInf === 1;
   const inf = neg ? '-\\infty' : '\\infty';

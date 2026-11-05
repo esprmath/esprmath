@@ -18,20 +18,22 @@ const answer = (a: number, b: number) =>
 function generate(v: Record<string, number>): TemplateOutput {
   const { t, m } = v;
 
-  const vT = r(G * t);        // (a) السرعة بعد t ثانية
-  const vImpact = r(G * m);   // (b) السرعة عند الاصطدام (زمن السقوط = m ثانية)
+  const vT = r(-G * t);       // (a) السرعة المتجهة بعد t ثانية: سالبة لأن الجسم نازل، مثل المقطع
+  const vImpact = r(-G * m);  // السرعة المتجهة عند الاصطدام (زمن السقوط = m ثانية)
+  const speed = r(G * m);     // (b) "How fast" تسأل عن مقدار السرعة، فتكون موجبة
   const h = r(4.9 * m * m);   // الارتفاع
 
-  const correct = answer(vT, vImpact);
+  const correct = answer(vT, speed);
 
+  // المقطع يكتب سرعة الاصطدام بالسالب، فلا نضع قيمة سالبة في (b) حتى لا تكون فخًا لمن تبعه
   const distractors = uniqueExcept(
     [
-      answer(vImpact, vT),
-      answer(r(vT + G), vImpact),
-      answer(vT, r(vImpact + G)),
-      answer(r(G * (t + 1)), vImpact),
-      answer(r(4.9 * t * t), vImpact), // خطأ: استخدام معادلة الموقع بدل السرعة
-      answer(vT, r(vImpact - G)),
+      answer(r(G * t), speed),         // خطأ: نسيان إشارة السرعة في (a)
+      answer(vImpact, r(G * t)),       // خطأ: تبديل الزمنين
+      answer(r(vT - G), speed),
+      answer(vT, r(speed + G)),
+      answer(r(-4.9 * t * t), speed),  // خطأ: استخدام معادلة الموقع بدل السرعة
+      answer(vT, r(speed - G)),
       answer(vT, h),                   // خطأ: اعتبار الارتفاع هو السرعة
     ],
     correct
@@ -45,16 +47,24 @@ function generate(v: Record<string, number>): TemplateOutput {
     optionFormat: 'math',
     steps: [
       {
-        text: 'الفقرة (a): السرعة اللحظية للجسم الساقط تساوي g × t:',
-        math: `v(${t}) = ${G} \\times ${t} = ${vT}\\ \\text{m/s}`,
+        text: 'ابنِ دالة الموقع: dropped تعني أن السرعة الابتدائية صفر:',
+        math: `s(t) = ${h} - 4.9t^2`,
       },
       {
-        text: 'الفقرة (b): السرعة لحظة الاصطدام بالأرض:',
-        math: `v = \\sqrt{2gh} = \\sqrt{2 \\times ${G} \\times ${h}}`,
+        text: 'احسب الميل بالنهاية:',
+        math: `v(a) = \\lim_{t \\to a} \\frac{s(t) - s(a)}{t - a} = \\lim_{t \\to a} \\frac{-4.9(t^2 - a^2)}{t - a} = \\lim_{t \\to a} -4.9(t + a) = -9.8a`,
       },
       {
-        text: 'نحسب ما تحت الجذر:',
-        math: `v = \\sqrt{${r(2 * G * h)}} = ${vImpact}\\ \\text{m/s}`,
+        text: 'الفقرة (a): عوّض الزمن المطلوب:',
+        math: `v(${t}) = -9.8(${t}) = ${vT}\\ \\text{m/s}`,
+      },
+      {
+        text: 'الفقرة (b): للاصطدام، حل s(t) = 0 لإيجاد الزمن:',
+        math: `${h} - 4.9t^2 = 0 \\Rightarrow t = ${m}\\ \\text{s}`,
+      },
+      {
+        text: 'عوّض الزمن. How fast تسأل عن مقدار السرعة، فنأخذ القيمة الموجبة:',
+        math: `v(${m}) = -9.8(${m}) = ${vImpact} \\Rightarrow |v| = ${speed}\\ \\text{m/s}`,
       },
     ],
   };

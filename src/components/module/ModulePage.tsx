@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { InlineMath } from 'react-katex';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import GuideTip from '@/components/GuideTip';
+import OnboardingTour, { TOUR_EVENTS } from '@/components/OnboardingTour';
 import GlobalTutor from '@/components/GlobalTutor';
 import FullScreenCanvasModal from '@/components/FullScreenCanvasModal';
 import AdditionalQuestionsView from '@/components/AdditionalQuestionsView';
@@ -16,6 +17,30 @@ import { toEmbedUrl } from '@/lib/video';
 import { useAiAllowed } from '@/components/useAiAllowed';
 
 const ADDITIONAL_VIEW = 'additional-questions';
+
+/**
+ * نص البطاقة: ما بين علامتي $ يظهر معادلة، وما بين علامتي تنصيص يبقى ترتيبه سليمًا
+ * داخل السطر العربي حتى لا تنزاح علامات الترقيم في العبارات الإنجليزية.
+ */
+function StepText({ text }: { text: string }) {
+    return (
+        <>
+            {text.split(/(\$[^$\n]+\$|"[^"\n]+")/g).map((piece, i) => {
+                if (piece.length > 2 && piece.startsWith('$') && piece.endsWith('$')) {
+                    return (
+                        <span key={i} className="step-math" style={{ direction: 'ltr', unicodeBidi: 'isolate', display: 'inline-block', maxWidth: '100%', overflowX: 'auto', overflowY: 'hidden', verticalAlign: 'middle', padding: '5px 1px', margin: '-3px 0', scrollbarWidth: 'none' }}>
+                            <InlineMath math={piece.slice(1, -1)} />
+                        </span>
+                    );
+                }
+                if (piece.length > 2 && piece.startsWith('"') && piece.endsWith('"')) {
+                    return <bdi key={i}>{piece}</bdi>;
+                }
+                return <span key={i}>{piece}</span>;
+            })}
+        </>
+    );
+}
 
 /**
  * قالب صفحة الموديول لكل الكورسات. يعرض قائمة الشباتر، وصفحة الفكرة، والأسئلة الإضافية.
@@ -105,6 +130,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
         const wasMastered = getIdeaStatus(ideaProgress[ideaKey]) === 'mastered';
         const updated = recordIdeaResult(courseId, ideaKey, questionId, isCorrect);
         setIdeaProgress(updated);
+        window.dispatchEvent(new Event(TOUR_EVENTS.questionChecked)); // تُنهي جولة أول دخول
         if (!isCorrect) return;
 
         const isMastered = getIdeaStatus(updated[ideaKey]) === 'mastered';
@@ -261,6 +287,10 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                     overflow: hidden;
                     border: 1px solid #e6dec5;
                     background: #000;
+                }
+                /* معادلات البطاقة تتحرك عند الحاجة بدون شريط تمرير ظاهر */
+                .theory-section :global(.step-math::-webkit-scrollbar) {
+                    display: none;
                 }
                 /* المعادلات الطويلة تتحرك داخل مكانها بدل أن توسّع الصفحة */
                 .question-section :global(.katex-display) {
@@ -531,6 +561,10 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
             }}>
                 <Navbar isLoggedIn={true} />
 
+                <OnboardingTour
+                    page={isAdditionalView ? 'other' : isChapterView ? (currentIdeaObj ? 'idea' : 'other') : 'moduleList'}
+                />
+
                 <FullScreenCanvasModal
                     isOpen={canvas !== null}
                     onClose={() => setCanvas(null)}
@@ -560,26 +594,6 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                     />
                 )}
 
-                {!isChapterView && (
-                    <GuideTip
-                        id={`module${moduleNumber}-chapters-list-intro`}
-                        text="مرحباً بك في قائمة الشباتر! 📚 اختر الشابتر للدراسة أو انتقل إلى قسم 'الأسئلة الإضافية'."
-                    />
-                )}
-
-                {isChapterView && !isAdditionalView && currentChapterData && (
-                    <GuideTip
-                        id={`chapter-${activeChapter}-intro`}
-                        text={`أهلاً بك في شابتر ${currentChapterData.chapterTitle}! 💡 تصفح الأفكار وشاهد الشرح.`}
-                    />
-                )}
-
-                {isAdditionalView && (
-                    <GuideTip
-                        id="additional-questions-intro"
-                        text="أهلاً بك في صفحة الأسئلة الإضافية! ➕ تدرب على أسئلة إضافية مرتبطة بأفكار المقرر."
-                    />
-                )}
 
                 {toast && (
                     <div style={{
@@ -609,7 +623,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                             </div>
 
                             <div className="chapters-grid">
-                                {chapters.map((chData) => {
+                                {chapters.map((chData, chIndex) => {
                                     const chKey = chData.chapterNumber;
                                     const chMasteredCount = chData.ideas.filter(idea => getIdeaStatus(ideaProgress[`${chKey}-${idea.id}`]) === 'mastered').length;
 
@@ -619,6 +633,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                             type="button"
                                             onClick={() => openChapter(chKey)}
                                             className="chapter-card"
+                                            data-tour={chIndex === 0 ? 'first-chapter' : undefined}
                                         >
                                             <div className="chapter-badge">
                                                 Chapter {chData.chapterNumber}
@@ -754,12 +769,12 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                     <div className={`idea-layout ${currentVideoUrl ? '' : 'idea-layout-no-video'}`}>
 
                                         <div className="theory-section">
-                                            <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📖 الشرح النظري الممهد والمبسط:</h3>
+                                            <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📖 ملخص الفكرة:</h3>
                                             <div style={{ display: 'grid', gap: '12px' }}>
                                                 {currentIdeaObj.theoreticalSteps.map((step, idx) => (
                                                     <div key={idx} style={{ background: '#FFF9E2', border: '1px solid #e6dec5', padding: '14px', borderRadius: '10px' }}>
                                                         <div style={{ fontWeight: 'bold', color: '#8c5521', marginBottom: '6px', fontSize: '0.95rem' }}>{step.stepTitle}</div>
-                                                        <div style={{ color: '#2C3531', fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}>{step.stepDescription}</div>
+                                                        <div style={{ color: '#2C3531', fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}><StepText text={step.stepDescription} /></div>
                                                     </div>
                                                 ))}
                                             </div>

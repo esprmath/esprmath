@@ -254,7 +254,7 @@ function runChecks() {
     for (let m = 3; m <= 7; m++) {
       if (t >= m) continue;
       const out = instantaneousVelocityTemplate.generate({ t, m });
-      const nums = out.correct.match(/\(a\)[\s\S]*?([\d.]+)[\s\S]*?\(b\)[\s\S]*?([\d.]+)/);
+      const nums = out.correct.match(/\(a\)[^\d-]*(-?[\d.]+)[\s\S]*?\(b\)[^\d-]*(-?[\d.]+)/);
       const hMatch = out.questionText.match(/(\d+(?:\.\d+)?)\s*m above/);
       if (!nums || !hMatch) {
         bad++;
@@ -263,7 +263,7 @@ function runChecks() {
       const h = Number(hMatch[1]);
       const a = Number(nums[1]);
       const b = Number(nums[2]);
-      const okA = Math.abs(a - 9.8 * t) < 1e-9;
+      const okA = Math.abs(a + 9.8 * t) < 1e-9;
       const okB = Math.abs(b - Math.sqrt(2 * 9.8 * h)) < 1e-6;
       const landsAfterT = t < Math.sqrt((2 * h) / 9.8);
       if (!okA || !okB || !landsAfterT) bad++;

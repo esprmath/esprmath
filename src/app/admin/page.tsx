@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { isAdminEmail } from '@/lib/admin';
+import { checkIsAdmin } from '@/lib/admin';
 import styles from './admin.module.css';
 import type { CourseModule } from '@/lib/courseAccess';
 import { Courses, type CourseForm } from './courses';
 import { ExamsAndModules, type ExamsActions, type ModuleForm } from './exams';
+import { Admins } from './admins';
 import {
     AiPanel, Overview, Students, cx,
     type AiLog, type AiSummary, type Course, type Quiz, type StudentRow, type TabId,
@@ -19,6 +20,7 @@ const TABS: Array<{ id: TabId; label: string; icon: string; sub: string }> = [
     { id: 'courses', label: 'الكورسات', icon: '📚', sub: 'إنشاء الكورسات وتعديلها وحذفها' },
     { id: 'exams', label: 'الاختبارات والموديولات', icon: '📝', sub: 'اختر الكورس، ثم افتح وأغلق وجدول موديولاته واختباراته' },
     { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },
+    { id: 'admins', label: 'المشرفون', icon: '🛡️', sub: 'من يقدر يدخل لوحة التحكم: أضف بالإيميل أو أزل' },
 ];
 
 const LOG_DAYS = 62;
@@ -93,6 +95,7 @@ export default function AdminDashboard() {
     const [logs, setLogs] = useState<AiLog[]>([]);
     const [aiEnabled, setAiEnabled] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
+    const [refreshCount, setRefreshCount] = useState(0);
 
     const notify = useCallback((text: string, error = false) => {
         setToast({ text, error });
@@ -128,8 +131,8 @@ export default function AdminDashboard() {
     }, []);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (isAdminEmail(session?.user?.email)) {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            if (await checkIsAdmin(session?.user?.email)) {
                 setAccess('allowed');
                 loadAll();
             } else {
@@ -392,7 +395,7 @@ export default function AdminDashboard() {
                         <h1 className={styles.pageTitle}>{current.label}</h1>
                         <p className={styles.pageSub}>{current.sub}</p>
                     </div>
-                    <button type="button" className={cx(styles.btn, styles.btnGhost)} onClick={loadAll} disabled={busy}>
+                    <button type="button" className={cx(styles.btn, styles.btnGhost)} onClick={() => { setRefreshCount((n) => n + 1); loadAll(); }} disabled={busy}>
                         ↻ تحديث
                     </button>
                 </div>
@@ -463,6 +466,7 @@ export default function AdminDashboard() {
                             />
                         )}
                         {tab === 'ai' && <AiPanel ai={ai} enabled={aiEnabled} busy={busy} onToggle={askToggleAi} />}
+                        {tab === 'admins' && <Admins key={refreshCount} notify={notify} askConfirm={setConfirm} />}
                     </>
                 )}
             </main>
