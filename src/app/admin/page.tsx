@@ -19,9 +19,7 @@ const TABS: Array<{ id: TabId; label: string; icon: string; sub: string }> = [
     { id: 'students', label: 'الطلاب', icon: '🎓', sub: 'البحث والاعتماد وصلاحية فيكتور' },
     { id: 'courses', label: 'الكورسات', icon: '📚', sub: 'إنشاء الكورسات وتعديلها وحذفها' },
     { id: 'exams', label: 'الاختبارات والموديولات', icon: '📝', sub: 'اختر الكورس، ثم افتح وأغلق وجدول موديولاته واختباراته' },
-    { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },
-    { id: 'admins', label: 'المشرفون', icon: '🛡️', sub: 'من يقدر يدخل لوحة التحكم: أضف بالإيميل أو أزل' },
-];
+    { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },];
 
 const LOG_DAYS = 62;
 
@@ -96,6 +94,16 @@ export default function AdminDashboard() {
     const [aiEnabled, setAiEnabled] = useState(true);
     const [loadFailed, setLoadFailed] = useState(false);
     const [refreshCount, setRefreshCount] = useState(0);
+    const [adminsOpen, setAdminsOpen] = useState(false);
+
+    useEffect(() => {
+        if (!adminsOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setAdminsOpen(false);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [adminsOpen]);
 
     const notify = useCallback((text: string, error = false) => {
         setToast({ text, error });
@@ -426,6 +434,20 @@ export default function AdminDashboard() {
                             />
                         )}
                         {tab === 'students' && (
+                            <div className={styles.adminsBar}>
+                                <button
+                                    type="button"
+                                    className={styles.adminsCircle}
+                                    onClick={() => setAdminsOpen(true)}
+                                    title="المشرفون"
+                                    aria-label="إدارة المشرفين"
+                                >
+                                    🛡️
+                                </button>
+                                <span className={styles.adminsLabel}>المشرفون</span>
+                            </div>
+                        )}
+                        {tab === 'students' && (
                             <Students
                                 students={students}
                                 courses={courses}
@@ -465,11 +487,22 @@ export default function AdminDashboard() {
                                 actions={examsActions}
                             />
                         )}
-                        {tab === 'ai' && <AiPanel ai={ai} enabled={aiEnabled} busy={busy} onToggle={askToggleAi} />}
-                        {tab === 'admins' && <Admins key={refreshCount} notify={notify} askConfirm={setConfirm} />}
-                    </>
+                        {tab === 'ai' && <AiPanel ai={ai} enabled={aiEnabled} busy={busy} onToggle={askToggleAi} />}                    </>
                 )}
             </main>
+
+            {adminsOpen && (
+                <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && setAdminsOpen(false)}>
+                    <div className={cx(styles.dialog, styles.adminsDialog)} role="dialog" aria-modal="true" aria-labelledby="admins-title">
+                        <div className={styles.adminsHead}>
+                            <h2 id="admins-title" className={styles.dialogTitle}>🛡️ المشرفون</h2>
+                            <button type="button" className={cx(styles.btn, styles.btnGhost)} onClick={() => setAdminsOpen(false)} aria-label="إغلاق">✕</button>
+                        </div>
+                        <p className={styles.dialogText}>من يقدر يدخل لوحة التحكم. أضف بالإيميل أو أزل.</p>
+                        <Admins key={refreshCount} notify={notify} askConfirm={setConfirm} />
+                    </div>
+                </div>
+            )}
 
             {confirm && (
                 <div className={styles.overlay}>

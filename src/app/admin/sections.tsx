@@ -54,7 +54,7 @@ export interface AiSummary {
     usageByUser: Record<string, number>;
 }
 
-export type TabId = 'overview' | 'students' | 'courses' | 'exams' | 'ai' | 'admins';
+export type TabId = 'overview' | 'students' | 'courses' | 'exams' | 'ai';
 
 const formatMoney = (value: number) => `$${value.toFixed(value < 1 ? 4 : 2)}`;
 const formatDate = (value?: string | null) => {

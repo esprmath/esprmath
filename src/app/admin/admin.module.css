@@ -1111,3 +1111,53 @@ button.kpi:hover {
 .requestsCard {
     margin-bottom: 14px;
 }
+
+/* ===== المشرفون: دائرة أعلى قسم الطلاب تفتح نافذة ===== */
+.adminsBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.adminsCircle {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 2px solid #dca27b;
+    background: #fff9e2;
+    font-size: 20px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 4px 12px rgba(140, 85, 33, 0.15);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.adminsCircle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(140, 85, 33, 0.25);
+}
+
+.adminsLabel {
+    font-size: 14px;
+    font-weight: 800;
+    color: #8c5521;
+}
+
+.adminsDialog {
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.adminsHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.adminsHead .btn {
+    padding: 4px 10px;
+}
