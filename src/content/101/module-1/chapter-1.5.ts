@@ -1,16 +1,24 @@
-// src/data/courses/101/1/1.5.ts
-import { ChapterData } from '@/types/math';
-import type { QuestionItem } from '@/lib/questions/types';
+// ════════════════════════════════════════════════════════════
+// Math 101 · الموديول 1 · الشابتر 1.5
+// هذا الملف للمحتوى فقط. تصميم الصفحة في components/module/ModulePage.tsx
+// ════════════════════════════════════════════════════════════
+import type { ChapterData } from '@/types/math';
 
 export const chapter1_5Data: ChapterData = {
+    // رقم الموديول، ورقم الشابتر، واسمه كما يظهر في بطاقة الشابتر
     moduleNumber: "1",
     chapterNumber: "1.5",
     chapterTitle: "The Concept of a Limit and Infinite Limits",
+    // أفكار الشابتر بالترتيب الذي تظهر به للطالب
     ideas: [
+        // ─────────── الفكرة 1.1 ───────────
         {
+            // id ثابت لا تغيّره: تقدم الطالب محفوظ عليه
             id: "idea-1",
             ideaNumber: "1.1",
             ideaName: "The Intuitive Idea of a Limit and Estimating Limits Numerically",
+
+            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
             theoreticalSteps: [
                 { stepTitle: "🎯 فكرة الدرس", stepDescription: "في هذا الجزء ستتعلم مفهوم النهاية للدالة، وكيف نقدر قيمتها عندما تقترب المتغيرات من نقطة معينة." },
                 { stepTitle: "📌 المفهوم الأساسي", stepDescription: "النهاية لا تهتم بما تفعله الدالة عند النقطة بالضبط، بل بما يحدث عند الاقتراب منها." },
@@ -18,13 +26,21 @@ export const chapter1_5Data: ChapterData = {
                 { stepTitle: "↔️ الاقتراب من اليمين واليسار", stepDescription: "ستتعلم كيف تقرأ السلوك من الجهتين وتقارن بينهما." },
                 { stepTitle: "✅ متى تكون النهاية موجودة", stepDescription: "إذا تقاربت القيم من اليمين واليسار نحو نفس العدد فالنهاية موجودة." }
             ],
+
+            // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
             videoUrl: "https://www.youtube.com/embed/djHhCU1yENQ",
-            questions: [{ templateId: 'limits:numerical-table', count: 1, difficulty: 'easy' }] as QuestionItem[],
+
+            // ✍️ الأسئلة: templateId هو اسم القالب، والقوالب في lib/questions/templates
+            questions: [{ templateId: 'limits:numerical-table', count: 1, difficulty: 'easy' }],
         },
+        // ─────────── الفكرة 1.2 ───────────
         {
+            // id ثابت لا تغيّره: تقدم الطالب محفوظ عليه
             id: "idea-2",
             ideaNumber: "1.2",
             ideaName: "Estimating Limits Graphically",
+
+            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
             theoreticalSteps: [
                 { stepTitle: "🎯 فكرة الدرس", stepDescription: "كيف توجد قيمة النهاية وقيمة الدالة مباشرة من الرسم البياني." },
                 { stepTitle: "⬅️ اقتراب اليسار", stepDescription: "تتبع المنحنى قادماً من اليسار نحو العدد على محور x وانظر لقيمة y." },
@@ -32,7 +48,11 @@ export const chapter1_5Data: ChapterData = {
                 { stepTitle: "❌ متى تكون النهاية غير موجودة", stepDescription: "إذا كانت قيمة الاقتراب من اليمين لا تساوي قيمة الاقتراب من اليسار." },
                 { stepTitle: "🔵 الفرق بين النهاية وقيمة الدالة", stepDescription: "النهاية تهتم باتجاه الأطراف، وقيمة الدالة تعتمد على النقطة المغلقة الممتلئة." }
             ],
+
+            // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
             videoUrl: "https://www.youtube.com/embed/J9y13Rn9R5k",
+
+            // ✍️ الأسئلة: templateId هو اسم القالب، والقوالب في lib/questions/templates
             questions: [
                 {
                     kind: 'group',
@@ -49,17 +69,25 @@ export const chapter1_5Data: ChapterData = {
                         { kind: 'static', stableId: '1.5-idea2-graph-q1-part-f', questionText: "و) إيجاد قيمة الدالة الفعليّة عند x = 4.", mathExpression: "f(4)", options: [{ id: 'A', text: '1' }, { id: 'B', text: '2' }, { id: 'C', text: '3' }, { id: 'D', text: 'Undefined' }], correctId: 'C', steps: [{ text: "النقطة المغلقة الفعلية عند x = 4 تقع تماماً عند الإحداثي y = 3." }] }
                     ]
                 }
-            ] as QuestionItem[],
+            ],
         },
+        // ─────────── الفكرة 1.3 ───────────
         {
+            // id ثابت لا تغيّره: تقدم الطالب محفوظ عليه
             id: "idea-3",
             ideaNumber: "1.3",
             ideaName: "Infinite Limits",
+
+            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
             theoreticalSteps: [
                 { stepTitle: "مفهوم النهايات اللانهائية", stepDescription: "تحدث عندما يقترب الناتج من عدد ثابت لا يساوي الصفر بينما يقترب المقام من الصفر." },
                 { stepTitle: "خطوات الحل السريع", stepDescription: "التعويض المباشر، ثم اختبار إشارة العامل الصفري بتعويض قيمة قريبة جداً." }
             ],
+
+            // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
             videoUrl: "https://www.youtube.com/embed/T2_YaOw-g4c",
+
+            // ✍️ الأسئلة: templateId هو اسم القالب، والقوالب في lib/questions/templates
             questions: [
                 {
                     templateId: 'limits:rational-sign',
@@ -70,25 +98,32 @@ export const chapter1_5Data: ChapterData = {
                         asymptote: { min: -5, max: 5 },
                     }
                 }
-            ] as QuestionItem[],
+            ],
         },
+        // ─────────── الفكرة 1.4 ───────────
         {
+            // id ثابت لا تغيّره: تقدم الطالب محفوظ عليه
             id: "idea-4",
             ideaNumber: "1.4",
             ideaName: "Finding Vertical Asymptotes Using Limits",
+
+            // 📖 الشرح النظري: كل سطر بطاقة، فيها عنوان وشرح
             theoreticalSteps: [
                 { stepTitle: "خطوط التقارب الرأسية", stepDescription: "يوجد خط تقارب رأسي إذا اقتربت قيمة الدالة من مالانهاية عند الاقتراب من قيمة معينة." },
                 { stepTitle: "خطوات الحل السريع", stepDescription: "نساوي المقام بالصفر ونحسب النهاية من اليمين واليسار." }
             ],
+
+            // 🎬 رابط المقطع: الصق رابط يوتيوب بأي صيغة، واتركه "" إذا لا يوجد مقطع
             videoUrl: "https://www.youtube.com/embed/o7rjD4v5oN8",
-            // ✅ تم تحويله إلى قالب ديناميكي
+
+            // ✍️ الأسئلة: templateId هو اسم القالب، والقوالب في lib/questions/templates
             questions: [
                 {
                     templateId: 'limits:vertical-asymptote',
                     count: 1,
                     difficulty: 'easy'
                 }
-            ] as QuestionItem[],
+            ],
         }
     ]
 };

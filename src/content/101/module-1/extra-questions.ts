@@ -1,19 +1,12 @@
-import { PracticeQuestion } from '@/types/math';
+// ════════════════════════════════════════════════════════════
+// Math 101 · الموديول 1 · الأسئلة الإضافية الثابتة
+// صفحة الأسئلة الإضافية والكويز يولّدان سؤالًا من قالب كل فكرة تلقائيًا.
+// اكتب هنا فقط أسئلة الأفكار التي ليس لها قالب، مثل أسئلة الرسم البياني.
+// ════════════════════════════════════════════════════════════
+import type { ExtraQuestion } from '@/types/math';
 
-// الأسئلة الثابتة للأفكار التي ليس لها قالب فقط (مثل أسئلة الرسم).
-// باقي الأفكار تتولد أسئلتها من قوالبها في ملفات الشباتر.
-export interface ConnectedPracticeQuestion extends PracticeQuestion {
-    meta: {
-        moduleNumber: string;
-        chapterNumber: string;
-        ideaNumber: string;
-        ideaName: string;
-        ideaAnchorId: string; // معرف للوصول السريع أو العودة للفكرة عند الضغط
-    };
-}
-
-export const moreQuesData: ConnectedPracticeQuestion[] = [
-    // ================= شابتر 1.5 (تم تحويله إلى قوالب ديناميكية) =================
+export const extraQuestions: ExtraQuestion[] = [
+    // ─────────── الشابتر 1.5 · الفكرة 1.2 ───────────
     {
         meta: {
             moduleNumber: "1",

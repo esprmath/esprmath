@@ -18,23 +18,38 @@ async function checkAccess(pathname: string, userId: string, email?: string): Pr
     // صفحة الكورس نفسها متاحة لكل مسجل، وهي تعرض حالة كل موديول
     if (!section || isAdminEmail(email)) return { allowed: true };
 
-    const { data: enrollment } = await supabase
-        .from('user_courses')
-        .select('is_approved')
-        .eq('user_id', userId)
-        .eq('course_id', courseId)
-        .maybeSingle();
+    const isModule = /^\d+$/.test(section);
+    const quizId = section === 'final-review' ? 'final-review' : section === 'quizzes' || section === 'exam-leaks' ? item : '';
+
+    // الطلبات تشتغل مع بعض حتى لا ينتظر الطالب كل واحد بعد الآخر
+    const [{ data: enrollment }, { data: mod }, { data: quiz }] = await Promise.all([
+        supabase
+            .from('user_courses')
+            .select('is_approved')
+            .eq('user_id', userId)
+            .eq('course_id', courseId)
+            .maybeSingle(),
+        isModule
+            ? supabase
+                .from('course_modules')
+                .select('is_open, is_free, opens_at, closes_at')
+                .eq('course_id', courseId)
+                .eq('module_number', Number(section))
+                .maybeSingle()
+            : { data: null },
+        quizId
+            ? supabase
+                .from('quiz_settings')
+                .select('is_open, opens_at, closes_at')
+                .eq('course_id', courseId)
+                .eq('quiz_id', quizId)
+                .maybeSingle()
+            : { data: null },
+    ]);
     const isApproved = enrollment?.is_approved === true;
 
     // موديول: /workspace/101/2
-    if (/^\d+$/.test(section)) {
-        const { data: mod } = await supabase
-            .from('course_modules')
-            .select('is_open, is_free, opens_at, closes_at')
-            .eq('course_id', courseId)
-            .eq('module_number', Number(section))
-            .maybeSingle();
-
+    if (isModule) {
         // الكورسات التي لم تُضف موديولاتها في اللوحة: الأول مجاني والباقي بالاعتماد
         if (!mod) {
             return section === '1' || isApproved ? { allowed: true } : { allowed: false, message: NOT_APPROVED, courseId };
@@ -46,16 +61,7 @@ async function checkAccess(pathname: string, userId: string, email?: string): Pr
     // بقية الأقسام (الاختبارات، الفاينل، بنك الأسئلة) للمعتمدين فقط
     if (!isApproved) return { allowed: false, message: NOT_APPROVED, courseId };
 
-    const quizId = section === 'final-review' ? 'final-review' : section === 'exam-leaks' ? item : '';
-    if (quizId) {
-        const { data: quiz } = await supabase
-            .from('quiz_settings')
-            .select('is_open, opens_at, closes_at')
-            .eq('course_id', courseId)
-            .eq('quiz_id', quizId)
-            .maybeSingle();
-        if (quiz && windowStatus(quiz) !== 'open') return { allowed: false, message: NOT_OPEN, courseId };
-    }
+    if (quiz && windowStatus(quiz) !== 'open') return { allowed: false, message: NOT_OPEN, courseId };
 
     return { allowed: true };
 }

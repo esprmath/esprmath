@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import { supabase } from '@/lib/supabase';
 import GuideTip from '@/components/GuideTip';
 import { FALLBACK_MODULES, hasQuizPage, quizPath, windowStatus, type CourseModule } from '@/lib/courseAccess';
+import { moduleProgressKey } from '@/lib/questions/mastery';
 import styles from './CourseHub.module.css';
 
 const cx = (...names: Array<string | false | undefined>) => names.filter(Boolean).join(' ');
@@ -28,6 +29,30 @@ const quizLabel = (quiz: QuizSetting) => {
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-nu-latn', { day: 'numeric', month: 'short' });
 
+interface HubCache {
+    modules: CourseModule[];
+    quizzes: QuizSetting[];
+}
+
+const hubCacheKey = (courseId: string) => `course_hub_${courseId}`;
+
+function readHubCache(courseId: string): HubCache | null {
+    try {
+        const cached = JSON.parse(localStorage.getItem(hubCacheKey(courseId)) ?? 'null');
+        return Array.isArray(cached?.modules) && Array.isArray(cached?.quizzes) ? cached : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeHubCache(courseId: string, cache: HubCache) {
+    try {
+        localStorage.setItem(hubCacheKey(courseId), JSON.stringify(cache));
+    } catch {
+        // الصفحة تعمل بدون النسخة المحفوظة
+    }
+}
+
 /** صفحة الكورس: موديولاته واختباراته تأتي من لوحة التحكم */
 export default function CourseHub({ courseId }: { courseId: string }) {
     const router = useRouter();
@@ -42,33 +67,46 @@ export default function CourseHub({ courseId }: { courseId: string }) {
     const lastModuleKey = `last_module_${courseId}`;
 
     useEffect(() => {
+        let cancelled = false;
+
         async function load() {
-            const [modulesRes, quizzesRes, sessionRes] = await Promise.all([
+            // نعرض آخر نسخة فورًا، ثم نحدّثها من قاعدة البيانات في الخلفية
+            const cached = readHubCache(courseId);
+            if (cached) {
+                setModules(cached.modules);
+                setQuizzes(cached.quizzes);
+                setLoading(false);
+            }
+
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+            if (cancelled) return;
+
+            const approvedKey = user ? `course_approved_${user.id}_${courseId}` : '';
+            if (user) setIsAuthorized(localStorage.getItem(approvedKey) === 'true');
+
+            const [modulesRes, quizzesRes, enrollmentRes] = await Promise.all([
                 supabase.from('course_modules').select('*').eq('course_id', courseId).order('module_number'),
                 supabase.from('quiz_settings').select('quiz_id, title, is_open, opens_at, closes_at').eq('course_id', courseId),
-                supabase.auth.getSession(),
+                user
+                    ? supabase.from('user_courses').select('is_approved').eq('user_id', user.id).eq('course_id', courseId).maybeSingle()
+                    : null,
             ]);
+            if (cancelled) return;
 
-            setModules(
-                modulesRes.error
-                    ? (FALLBACK_MODULES[courseId] ?? []).map((m, i) => ({ ...m, id: -(i + 1), course_id: courseId, opens_at: null, closes_at: null }))
-                    : modulesRes.data ?? []
-            );
-            setQuizzes(quizzesRes.data ?? []);
+            // إذا تعذر الاتصال نبقي النسخة المحفوظة، وبدونها نعرض القائمة الاحتياطية
+            const nextModules = modulesRes.error
+                ? cached?.modules ?? (FALLBACK_MODULES[courseId] ?? []).map((m, i) => ({ ...m, id: -(i + 1), course_id: courseId, opens_at: null, closes_at: null }))
+                : modulesRes.data ?? [];
+            const nextQuizzes = quizzesRes.error ? cached?.quizzes ?? [] : quizzesRes.data ?? [];
 
-            const user = sessionRes.data.session?.user;
-            if (user) {
-                // الاعتماد من قاعدة البيانات، والنسخة المحفوظة احتياط إذا تعذر الاتصال
-                const cacheKey = `course_approved_${user.id}_${courseId}`;
-                const { data, error } = await supabase
-                    .from('user_courses')
-                    .select('is_approved')
-                    .eq('user_id', user.id)
-                    .eq('course_id', courseId)
-                    .maybeSingle();
+            setModules(nextModules);
+            setQuizzes(nextQuizzes);
+            if (!modulesRes.error && !quizzesRes.error) writeHubCache(courseId, { modules: nextModules, quizzes: nextQuizzes });
 
-                const approved = error ? localStorage.getItem(cacheKey) === 'true' : data?.is_approved === true;
-                if (!error) localStorage.setItem(cacheKey, String(approved));
+            if (enrollmentRes && !enrollmentRes.error) {
+                const approved = enrollmentRes.data?.is_approved === true;
+                localStorage.setItem(approvedKey, String(approved));
                 setIsAuthorized(approved);
             }
             setLoading(false);
@@ -76,15 +114,17 @@ export default function CourseHub({ courseId }: { courseId: string }) {
 
         load();
 
-        if (courseId === '101') {
-            const saved: Record<number, number> = {};
-            for (let i = 1; i <= 8; i++) {
-                saved[i] = parseInt(localStorage.getItem(`module_${i}_progress`) ?? '0', 10) || 0;
-            }
-            setProgressMap(saved);
+        const saved: Record<number, number> = {};
+        for (let i = 1; i <= 8; i++) {
+            saved[i] = parseInt(localStorage.getItem(moduleProgressKey(courseId, i)) ?? '0', 10) || 0;
         }
+        setProgressMap(saved);
         setLastModuleNumber(Number(localStorage.getItem(lastModuleKey)) || null);
         localStorage.setItem('last_studied_course', courseId);
+
+        return () => {
+            cancelled = true;
+        };
     }, [courseId, lastModuleKey]);
 
     const canOpen = (quiz: QuizSetting) => isAuthorized && windowStatus(quiz) === 'open';

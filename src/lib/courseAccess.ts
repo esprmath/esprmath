@@ -32,7 +32,7 @@ const QUIZ_PAGES: Record<string, string[]> = {
 export const hasQuizPage = (courseId: string, quizId: string) => QUIZ_PAGES[courseId]?.includes(quizId) ?? false;
 
 export const quizPath = (courseId: string, quizId: string) =>
-    quizId === 'final-review' ? `/workspace/${courseId}/final-review` : `/workspace/${courseId}/exam-leaks/${quizId}`;
+    quizId === 'final-review' ? `/workspace/${courseId}/final-review` : `/workspace/${courseId}/quizzes/${quizId}`;
 
 // تُستخدم إذا لم يُشغَّل ملف SQL بعد، حتى لا تفرغ صفحة الكورس
 export const FALLBACK_MODULES: Record<string, Omit<CourseModule, 'id' | 'course_id' | 'opens_at' | 'closes_at'>[]> = {

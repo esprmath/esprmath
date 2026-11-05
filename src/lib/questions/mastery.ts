@@ -1,8 +1,7 @@
 // src/lib/questions/mastery.ts
 // إتقان الأفكار: تُعد الفكرة متقنة بعد حل سؤالين مختلفين صح.
-// التقدم محفوظ في متصفح الطالب فقط (localStorage).
+// التقدم محفوظ في متصفح الطالب فقط (localStorage)، ولكل كورس سجله.
 
-const STORAGE_KEY = 'math101_idea_progress';
 const LEGACY_KEY = 'module_1_completed_items';
 
 export const MASTERY_TARGET = 2;
@@ -15,18 +14,24 @@ export interface IdeaProgress {
 export type IdeaProgressMap = Record<string, IdeaProgress>;
 export type IdeaStatus = 'new' | 'practicing' | 'mastered';
 
-function readStorage(): IdeaProgressMap | null {
+const storageKey = (courseId: string) => `math${courseId}_idea_progress`;
+
+/** مفتاح نسبة الموديول. كورس 101 يبقى على اسمه القديم حتى لا يفقد الطلاب تقدمهم */
+export const moduleProgressKey = (courseId: string, moduleNumber: number | string) =>
+    courseId === '101' ? `module_${moduleNumber}_progress` : `math${courseId}_module_${moduleNumber}_progress`;
+
+function readStorage(courseId: string): IdeaProgressMap | null {
     try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(storageKey(courseId));
         return saved ? JSON.parse(saved) : null;
     } catch {
         return null;
     }
 }
 
-function writeStorage(progress: IdeaProgressMap) {
+function writeStorage(courseId: string, progress: IdeaProgressMap) {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        localStorage.setItem(storageKey(courseId), JSON.stringify(progress));
     } catch {
         // إذا امتلأت مساحة المتصفح يستمر الطالب، لكن التقدم لا يُحفظ
     }
@@ -42,20 +47,20 @@ function fromLegacy(): IdeaProgressMap {
     }
 }
 
-export function loadIdeaProgress(): IdeaProgressMap {
-    return readStorage() ?? fromLegacy();
+export function loadIdeaProgress(courseId: string): IdeaProgressMap {
+    return readStorage(courseId) ?? (courseId === '101' ? fromLegacy() : {});
 }
 
 /** يسجل نتيجة سؤال ويرجع التقدم الجديد. نفس السؤال لا يُحسب مرتين */
-export function recordIdeaResult(ideaKey: string, questionId: string, isCorrect: boolean): IdeaProgressMap {
-    const progress = loadIdeaProgress();
+export function recordIdeaResult(courseId: string, ideaKey: string, questionId: string, isCorrect: boolean): IdeaProgressMap {
+    const progress = loadIdeaProgress(courseId);
     const current = progress[ideaKey] ?? { tried: false, solved: [] };
     const solved = isCorrect && !current.solved.includes(questionId)
         ? [...current.solved, questionId]
         : current.solved;
 
     const updated = { ...progress, [ideaKey]: { tried: true, solved } };
-    writeStorage(updated);
+    writeStorage(courseId, updated);
     return updated;
 }
 

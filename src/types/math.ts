@@ -40,3 +40,37 @@ export interface ChapterData {
     chapterTitle: string;
     ideas: Idea[];
 }
+
+/** سؤال ثابت في صفحة الأسئلة الإضافية، مربوط بفكرته */
+export interface ExtraQuestion extends PracticeQuestion {
+    meta: {
+        moduleNumber: string;
+        chapterNumber: string;
+        ideaNumber: string;
+        ideaName: string;
+        ideaAnchorId: string; // id الفكرة، يُستخدم لزر الرجوع إليها
+    };
+}
+
+/** كل ما يحتاجه نظام الكويز لعرض كويز كامل */
+export interface QuizContent {
+    courseId: string;
+    quizId: string;
+    title: string;
+    chapters: ChapterData[];
+    extraQuestions: ExtraQuestion[];
+    /** أفكار جاءت في اختبارات سابقة، بصيغة "رقم الشابتر-رقم الفكرة" مثل "1.5-1.2" */
+    pastExamIdeas: string[];
+    pastExamVideoUrl?: string;
+    mockQuestionCount: number;
+    mockMinutes: number;
+}
+
+/** كل ما يحتاجه قالب الموديول لعرض موديول كامل */
+export interface ModuleContent {
+    courseId: string;
+    moduleNumber: string;
+    title: string;
+    chapters: ChapterData[];
+    extraQuestions: ExtraQuestion[];
+}

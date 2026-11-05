@@ -2,69 +2,83 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import { generateFromTemplate } from '@/lib/questions/additional';
 import { describeQuestionForTutor } from '@/lib/questions/tutorContext';
+import type { ChapterData } from '@/types/math';
 import styles from './AdditionalQuestionsView.module.css';
 
 interface AdditionalQuestionsViewProps {
-    moreQuesData: any[];
-    selectedAdditionalChapterTab: string;
-    setSelectedAdditionalChapterTab: (tab: string) => void;
-    allChaptersMap: Record<string, any>;
+    questions: any[];
+    chapters: ChapterData[];
+    initialChapter: string | null;
+    coursePath: string;
     backToModule: () => void;
-    jumpToIdeaFromAdditional: (chKey: string, anchorId: string) => void;
-    activeSubPartIndexMap: Record<string, number>;
-    setActiveSubPartIndexMap: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-    additionalSelected: Record<string, string>;
-    setAdditionalSelected: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-    additionalAttempted: Record<string, boolean>;
-    setAdditionalAttempted: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-    subPartSelectedOptionsMap: Record<string, string>;
-    setSubPartSelectedOptionsMap: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-    subPartAttemptedMap: Record<string, boolean>;
-    setSubPartAttemptedMap: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-    setCurrentModalImage: (img: string | undefined) => void;
-    setCurrentModalMath: (math: string | undefined) => void;
-    setCurrentModalStorageKey: (key: string) => void;
-    setIsCanvasModalOpen: (isOpen: boolean) => void;
-    renderOptionContent: (opt: string) => React.ReactNode;
-    renderStructuredExplanation: (text?: string) => React.ReactNode;
+    jumpToIdea: (chapterKey: string, ideaId: string) => void;
+    onOpenCanvas: (image?: string, math?: string, storageKey?: string) => void;
     onQuestionResult: (ideaKey: string, questionId: string, isCorrect: boolean) => void;
     onTutorContext: (context: { chapter: string; ideaName: string; question: string } | null) => void;
 }
 
 const cx = (...names: Array<string | false | undefined>) => names.filter(Boolean).join(' ');
 
+function renderOptionContent(opt: string) {
+    if (!opt.includes('\\')) return opt;
+    return <span style={{ direction: 'ltr', display: 'inline-block' }}><InlineMath math={opt} /></span>;
+}
+
+function renderExplanation(text?: string) {
+    if (!text) return null;
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <div style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '13px' }}>💡 خطوات الحل والتفصيل:</div>
+            {text.split('\n').filter((line) => line.trim() !== '').map((line, idx) => (
+                <div
+                    key={idx}
+                    style={{
+                        background: '#ffffff',
+                        border: '1px solid #bbf7d0',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        color: '#2C3531',
+                        lineHeight: '1.5',
+                        whiteSpace: 'pre-line'
+                    }}
+                >
+                    {line}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export default function AdditionalQuestionsView({
-    moreQuesData,
-    selectedAdditionalChapterTab,
-    setSelectedAdditionalChapterTab,
-    allChaptersMap,
+    questions,
+    chapters,
+    initialChapter,
+    coursePath,
     backToModule,
-    jumpToIdeaFromAdditional,
-    activeSubPartIndexMap,
-    setActiveSubPartIndexMap,
-    additionalSelected,
-    setAdditionalSelected,
-    additionalAttempted,
-    setAdditionalAttempted,
-    subPartSelectedOptionsMap,
-    setSubPartSelectedOptionsMap,
-    subPartAttemptedMap,
-    setSubPartAttemptedMap,
-    setCurrentModalImage,
-    setCurrentModalMath,
-    setCurrentModalStorageKey,
-    setIsCanvasModalOpen,
-    renderOptionContent,
-    renderStructuredExplanation,
+    jumpToIdea,
+    onOpenCanvas,
     onQuestionResult,
     onTutorContext,
 }: AdditionalQuestionsViewProps) {
+    const router = useRouter();
 
-    const [expandedQuestionIndex, setExpandedQuestionIndex] = useState<number | null>(null);
+    const [selectedAdditionalChapterTab, setSelectedAdditionalChapterTab] = useState(
+        chapters.some((chapter) => chapter.chapterNumber === initialChapter) ? initialChapter! : chapters[0]?.chapterNumber ?? ''
+    );
+    const [expandedQuestionIndex, setExpandedQuestionIndex] = useState(0);
+
+    // الإجابات الحالية. تُصفَّر عند مغادرة السؤال
+    const [activeSubPartIndexMap, setActiveSubPartIndexMap] = useState<Record<string, number>>({});
+    const [additionalSelected, setAdditionalSelected] = useState<Record<string, string>>({});
+    const [additionalAttempted, setAdditionalAttempted] = useState<Record<string, boolean>>({});
+    const [subPartSelectedOptionsMap, setSubPartSelectedOptionsMap] = useState<Record<string, string>>({});
+    const [subPartAttemptedMap, setSubPartAttemptedMap] = useState<Record<string, boolean>>({});
 
     // 🧠 حالة لتخزين الأسئلة الديناميكية المولدة لكل قوالب الأسئلة الإضافية
     const [dynamicQuestionsCache, setDynamicQuestionsCache] = useState<Record<string, any>>({});
@@ -83,31 +97,12 @@ export default function AdditionalQuestionsView({
         }, 0);
     };
 
-    const filteredAdditionalQuestions = moreQuesData.filter((q) => {
-        if (selectedAdditionalChapterTab === 'all') return true;
-        return q.meta && q.meta.chapterNumber === selectedAdditionalChapterTab;
-    });
-
-    const questionsByChapter = filteredAdditionalQuestions.reduce((acc, q, index) => {
-        const ch = q.meta?.chapterNumber || 'غير مصنف';
-        if (!acc[ch]) acc[ch] = [];
-        acc[ch].push({ q, index });
-        return acc;
-    }, {} as Record<string, Array<{ q: any; index: number }>>);
-
-    useEffect(() => {
-        if ((!selectedAdditionalChapterTab || selectedAdditionalChapterTab === 'all') && Object.keys(allChaptersMap).length > 0) {
-            setSelectedAdditionalChapterTab(Object.keys(allChaptersMap)[0]);
-            setExpandedQuestionIndex(null);
-        } else if (selectedAdditionalChapterTab && questionsByChapter[selectedAdditionalChapterTab] && questionsByChapter[selectedAdditionalChapterTab].length > 0 && expandedQuestionIndex === null) {
-            setExpandedQuestionIndex(questionsByChapter[selectedAdditionalChapterTab][0].index);
-        }
-    }, [selectedAdditionalChapterTab, allChaptersMap, questionsByChapter, expandedQuestionIndex, setSelectedAdditionalChapterTab]);
+    const filteredAdditionalQuestions = questions.filter((q) => q.meta?.chapterNumber === selectedAdditionalChapterTab);
 
     // 🔄 تصفير إجابات السؤال تلقائياً بمجرد مغادرته أو الانتقال عنه
     useEffect(() => {
         return () => {
-            if (expandedQuestionIndex !== null && selectedAdditionalChapterTab) {
+            if (selectedAdditionalChapterTab) {
                 const prevUniqueKey = `${selectedAdditionalChapterTab}-${expandedQuestionIndex}`;
                 const q = filteredAdditionalQuestions[expandedQuestionIndex];
 
@@ -152,7 +147,7 @@ export default function AdditionalQuestionsView({
 
     // نخبر فيكتور بالسؤال أو الجزء المعروض حاليًا
     const tutorQuestionKey = `${selectedAdditionalChapterTab}-${expandedQuestionIndex}`;
-    const tutorBaseQuestion = expandedQuestionIndex !== null ? filteredAdditionalQuestions[expandedQuestionIndex] : null;
+    const tutorBaseQuestion = filteredAdditionalQuestions[expandedQuestionIndex];
     const tutorQuestion = tutorBaseQuestion?.templateId ? dynamicQuestionsCache[tutorQuestionKey] : tutorBaseQuestion;
     const tutorSubIndex = activeSubPartIndexMap[tutorQuestionKey] || 0;
 
@@ -178,7 +173,7 @@ export default function AdditionalQuestionsView({
         });
     }, [tutorQuestion, tutorSubIndex, onTutorContext]);
 
-    const chapterQuestions: Array<{ q: any; index: number }> = questionsByChapter[selectedAdditionalChapterTab] || [];
+    const chapterQuestions: Array<{ q: any; index: number }> = filteredAdditionalQuestions.map((q, index) => ({ q, index }));
 
     // حالة السؤال في شريط الأرقام: محلول، جزئيًا، خطأ، أو لم يبدأ
     const getQuestionStatus = (q: any, index: number): 'done' | 'progress' | 'wrong' | null => {
@@ -258,10 +253,7 @@ export default function AdditionalQuestionsView({
         };
 
         const openSolutionPage = () => {
-            setCurrentModalImage(q.graphImage);
-            setCurrentModalMath(part.mathExpression);
-            setCurrentModalStorageKey(`add_q_${qUniqueKey}`);
-            setIsCanvasModalOpen(true);
+            onOpenCanvas(q.graphImage, part.mathExpression, `add_q_${qUniqueKey}`);
         };
 
         return (
@@ -282,7 +274,7 @@ export default function AdditionalQuestionsView({
                             <button
                                 type="button"
                                 className={styles.linkBtn}
-                                onClick={() => jumpToIdeaFromAdditional(q.meta.chapterNumber, q.meta.ideaAnchorId)}
+                                onClick={() => jumpToIdea(q.meta.chapterNumber, q.meta.ideaAnchorId)}
                             >
                                 الرجوع للفكرة ↗
                             </button>
@@ -380,7 +372,7 @@ export default function AdditionalQuestionsView({
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : renderStructuredExplanation(part.questionExplanation)}
+                                    ) : renderExplanation(part.questionExplanation)}
                                 </div>
                             )}
                         </div>
@@ -413,8 +405,8 @@ export default function AdditionalQuestionsView({
         );
     };
 
-    const expandedQuestion = expandedQuestionIndex !== null ? filteredAdditionalQuestions[expandedQuestionIndex] : null;
-    const activeChapterData = allChaptersMap[selectedAdditionalChapterTab];
+    const expandedQuestion = filteredAdditionalQuestions[expandedQuestionIndex];
+    const activeChapterData = chapters.find((chapter) => chapter.chapterNumber === selectedAdditionalChapterTab);
 
     return (
         <div className={styles.shell}>
@@ -429,24 +421,24 @@ export default function AdditionalQuestionsView({
                 </div>
                 <div className={styles.topActions}>
                     <button type="button" onClick={backToModule} className={styles.ghostBtn}>→ الشباتر</button>
-                    <button type="button" onClick={() => window.location.href = '/workspace/101'} className={styles.ghostBtn}>→ الكورس</button>
+                    <button type="button" onClick={() => router.push(coursePath)} className={styles.ghostBtn}>→ الكورس</button>
                 </div>
             </div>
 
             <div className={styles.tabs}>
-                {Object.keys(allChaptersMap).map((chKey) => {
-                    const countForCh = moreQuesData.filter(q => q.meta && q.meta.chapterNumber === chKey).length;
+                {chapters.map(({ chapterNumber: chKey }) => {
+                    const countForCh = questions.filter(q => q.meta?.chapterNumber === chKey).length;
                     return (
                         <button
                             key={chKey}
                             type="button"
                             onClick={() => {
                                 setSelectedAdditionalChapterTab(chKey);
-                                setExpandedQuestionIndex(null);
+                                setExpandedQuestionIndex(0);
                             }}
                             className={cx(styles.tab, selectedAdditionalChapterTab === chKey && styles.tabActive)}
                         >
-                            <span>{allChaptersMap[chKey].chapterNumber}</span>
+                            <span>{chKey}</span>
                             <span className={styles.tabCount}>{countForCh}</span>
                         </button>
                     );
@@ -486,7 +478,7 @@ export default function AdditionalQuestionsView({
                 </div>
 
                 {expandedQuestion ? (
-                    renderQuestion(expandedQuestion, expandedQuestionIndex!)
+                    renderQuestion(expandedQuestion, expandedQuestionIndex)
                 ) : (
                     <div className={styles.empty}>لا توجد أسئلة إضافية في هذا الشابتر بعد</div>
                 )}
