@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { TOUR_EVENTS } from '@/components/OnboardingTour'
+import { authErrorText, MIN_PASSWORD } from '@/lib/authErrors'
 
 interface NavbarProps {
     isLoggedIn: boolean;
@@ -70,7 +71,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
 
             const { data: coursesData, error: coursesError } = await supabase
                 .from('user_courses')
-                .select('course_id, exam_date, is_approved, "students-id"')
+                .select('course_id, exam_date, is_approved, username')
                 .eq('user_id', user.id)
 
             if (!coursesError && coursesData && coursesData.length > 0) {
@@ -82,9 +83,9 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 if (activeCourse.exam_date) {
                     setExamDate(activeCourse.exam_date)
                 }
-                if (activeCourse['students-id']) {
-                    setStudentId(activeCourse['students-id'])
-                    setNewStudentId(activeCourse['students-id'])
+                if (activeCourse.username) {
+                    setStudentId(activeCourse.username)
+                    setNewStudentId(activeCourse.username)
                 }
             }
         }
@@ -123,10 +124,10 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
         e.preventDefault()
         if (!newFullName.trim()) return
 
-        const cleanStudentId = newStudentId.trim().toLowerCase()
-        const idRegex = /^[a-z0-9_]*$/
-        if (cleanStudentId && !idRegex.test(cleanStudentId)) {
-            setAlertMessage('معرف الطالب يجب أن يتكون من أحرف إنجليزية، أرقام، أو شرطة سفلى (_) فقط.')
+        // اسم المستخدم اختياري: الفارغ يعني بدون اسم مستخدم
+        const cleanStudentId = newStudentId.trim().replace(/^@/, '').toLowerCase()
+        if (cleanStudentId && !/^[a-z0-9_]{3,30}$/.test(cleanStudentId)) {
+            setAlertMessage('اسم المستخدم من 3 إلى 30 خانة: حروف إنجليزية أو أرقام أو _ فقط.')
             setShowAlertModal(true)
             return
         }
@@ -136,27 +137,35 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            if (cleanStudentId) {
-                const { data: existingRecords, error: checkError } = await supabase
-                    .from('user_courses')
-                    .select('user_id, "students-id"')
-                    .eq('"students-id"', cleanStudentId)
-
-                if (!checkError && existingRecords && existingRecords.length > 0) {
-                    const isUsedBySomeoneElse = existingRecords.some(record => record.user_id !== user.id)
-
-                    if (isUsedBySomeoneElse) {
-                        setAlertMessage('❌ عذراً، معرف الطالب (Student ID) هذا مستخدم من قبل طالب آخر. يرجى اختيار معرف مختلف.')
+            if (cleanStudentId !== (studentId ?? '')) {
+                if (cleanStudentId) {
+                    // الفحص من قاعدة البيانات لأن الطالب لا يرى سجلات غيره
+                    const { data: available, error: checkError } = await supabase.rpc('username_available', { p_username: cleanStudentId })
+                    if (!checkError && available === false) {
+                        setAlertMessage('❌ اسم المستخدم هذا مأخوذ، اختر اسمًا ثانيًا.')
                         setShowAlertModal(true)
-                        setLoadingName(false)
                         return
                     }
                 }
 
-                await supabase
+                const { data: updated, error: usernameError } = await supabase
                     .from('user_courses')
-                    .update({ 'students-id': cleanStudentId })
+                    .update({ username: cleanStudentId || null })
                     .eq('user_id', user.id)
+                    .select('id')
+
+                if (usernameError) {
+                    setAlertMessage(usernameError.message.includes('USERNAME_TAKEN')
+                        ? '❌ اسم المستخدم هذا مأخوذ، اختر اسمًا ثانيًا.'
+                        : 'تعذر حفظ اسم المستخدم، جرب مرة ثانية.')
+                    setShowAlertModal(true)
+                    return
+                }
+                if (!updated || updated.length === 0) {
+                    setAlertMessage('اسم المستخدم يُحفظ بعد ما تسجل في كورس. سجّل في كورس من الصفحة الرئيسية ثم جرّب.')
+                    setShowAlertModal(true)
+                    return
+                }
             }
 
             const { error } = await supabase.auth.updateUser({
@@ -170,7 +179,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 setShowAlertModal(true)
             } else {
                 setUserName(newFullName.trim())
-                setStudentId(cleanStudentId)
+                setStudentId(cleanStudentId || null)
                 setShowEditModal(false)
                 setShowMenu(false)
                 setAlertMessage('✅ تم تحديث الملف الشخصي بنجاح!')
@@ -191,8 +200,8 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             return
         }
 
-        if (newPassword.length < 6) {
-            setAlertMessage('⚠️ كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف أو أرقام.')
+        if (newPassword.length < MIN_PASSWORD) {
+            setAlertMessage(`⚠️ كلمة المرور الجديدة يجب ألا تقل عن ${MIN_PASSWORD} أحرف أو أرقام.`)
             setShowAlertModal(true)
             return
         }
@@ -205,7 +214,9 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             })
 
             if (signInError) {
-                setAlertMessage('❌ كلمة المرور الحالية غير صحيحة. يرجى التأكد وإعادة المحاولة.')
+                setAlertMessage(signInError.code === 'invalid_credentials'
+                    ? '❌ كلمة المرور الحالية غير صحيحة. يرجى التأكد وإعادة المحاولة.'
+                    : `❌ ${authErrorText(signInError)}`)
                 setShowAlertModal(true)
                 setLoadingPassword(false)
                 return
@@ -216,7 +227,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             })
 
             if (updateError) {
-                setAlertMessage(`❌ حدث خطأ أثناء تحديث كلمة المرور: ${updateError.message}`)
+                setAlertMessage(`❌ ${authErrorText(updateError)}`)
                 setShowAlertModal(true)
             } else {
                 setAlertMessage('✅ تم تغيير كلمة المرور بنجاح!')
@@ -520,7 +531,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                             <div>
                                                 <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 'bold', color: '#2C3531' }}>{userName}</p>
                                                 <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#7C9E6B', fontWeight: 'bold' }}>
-                                                    ID: {studentId || 'غير محدد'}
+                                                    {studentId ? <span dir="ltr">@{studentId}</span> : 'بدون اسم مستخدم'}
                                                 </p>
                                             </div>
                                             <button
@@ -664,8 +675,9 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 <input type="text" value={newFullName} onChange={(e) => setNewFullName(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box' }} />
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>معرف الطالب (Student ID):</label>
-                                <input type="text" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box' }} />
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>اسم المستخدم (اختياري):</label>
+                                <input type="text" dir="ltr" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} placeholder="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', textAlign: 'right' }} />
+                                <div style={{ fontSize: '0.72rem', color: '#6B5744', marginTop: '4px' }}>حروف إنجليزية وأرقام و _ فقط. اتركه فاضي إذا ما تبي.</div>
                             </div>
                             <button type="submit" disabled={loadingName} style={{ width: '100%', padding: '10px', backgroundColor: '#7C9E6B', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px', boxSizing: 'border-box' }}>
                                 {loadingName ? 'جاري الحفظ...' : 'حفظ التعديلات'}
@@ -690,7 +702,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>كلمة المرور الجديدة:</label>
-                                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder="6 أحرف على الأقل" style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', direction: 'ltr', textAlign: 'right' }} />
+                                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder={`${MIN_PASSWORD} أحرف على الأقل`} style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.9rem', boxSizing: 'border-box', direction: 'ltr', textAlign: 'right' }} />
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '4px', color: '#6B5744' }}>تأكيد كلمة المرور الجديدة:</label>

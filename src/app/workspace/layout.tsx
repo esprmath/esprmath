@@ -96,7 +96,7 @@ function CourseGate({ children }: { children: React.ReactNode }) {
         let cancelled = false;
         supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (!session?.user) {
-                router.replace('/login');
+                router.replace(`/login?next=${encodeURIComponent(pathname)}`);
                 return;
             }
             const result = await checkAccess(pathname, session.user.id, session.user.email);

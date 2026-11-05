@@ -1,65 +1,103 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import { authErrorText, MIN_PASSWORD } from '@/lib/authErrors'
+import PasswordInput from '@/components/PasswordInput'
+import AuthCard, { AuthMessage, fieldStyle, labelStyle, linkStyle, submitStyle } from '@/components/AuthCard'
+
+const RECOVERY_FLAG = 'esprmath_password_recovery'
+
+/**
+ * رابط الاستعادة يجي بعلامة type=recovery في الرابط، ومكتبة Supabase تمسحها بعد ما تقرأ الجلسة.
+ * فنقرأها هنا فور تحميل الملف قبل أن تُمسح، حتى نعرف أن الطالب جاء من رابط استعادة
+ * وليس مجرد مسجل دخول يحاول يغير كلمة المرور بدون القديمة.
+ */
+const urlInfo = (() => {
+    if (typeof window === 'undefined') return { recovery: false, linkError: false }
+    const params = new URLSearchParams(window.location.hash.slice(1) + '&' + window.location.search.slice(1))
+    const recovery = params.get('type') === 'recovery'
+    try {
+        if (recovery) sessionStorage.setItem(RECOVERY_FLAG, '1')
+    } catch {
+        // التخزين معطل: يكفي ما في الرابط
+    }
+    return { recovery, linkError: params.has('error') || params.has('error_code') }
+})()
+
+const cameFromRecovery = () => {
+    if (urlInfo.recovery) return true
+    try {
+        return sessionStorage.getItem(RECOVERY_FLAG) === '1'
+    } catch {
+        return false
+    }
+}
+
+type Status = 'checking' | 'ready' | 'invalid' | 'notRecovery' | 'done'
 
 export default function UpdatePasswordPage() {
     const router = useRouter()
     const [password, setPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
     const [error, setError] = useState('')
-    const [message, setMessage] = useState('')
     const [loading, setLoading] = useState(false)
-    const [isValidSession, setIsValidSession] = useState(false)
-    const [checking, setChecking] = useState(true)
+    const [status, setStatus] = useState<Status>('checking')
 
-    // التحقق مما إذا كانت الصفحة مفتوحة عبر رابط استعادة صالح
     useEffect(() => {
-        async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession()
-            // إذا لم تكن هناك جلسة نشطة، فالرابط غير صالح أو تم استخدامه مسبقاً
-            if (!session) {
-                setError('هذا الرابط غير صالح أو انتهت صلاحيته أو تم استخدامه مسبقاً.')
-            } else {
-                setIsValidSession(true)
+        let settled = false
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                settled = true
+                setStatus('ready')
             }
-            setChecking(false)
-        }
-        checkSession()
+        })
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (settled) return
+            if (!session || urlInfo.linkError) setStatus('invalid')
+            else setStatus(cameFromRecovery() ? 'ready' : 'notRecovery')
+        })
+
+        return () => subscription.unsubscribe()
     }, [])
 
     async function handleUpdatePassword(e: React.FormEvent) {
         e.preventDefault()
-        setLoading(true)
         setError('')
-        setMessage('')
 
-        // 1. تحديث كلمة المرور
-        const { error } = await supabase.auth.updateUser({
-            password: password,
-        })
+        if (password.length < MIN_PASSWORD) {
+            setError(`كلمة المرور لازم تكون ${MIN_PASSWORD} أحرف على الأقل.`)
+            return
+        }
+        if (password !== confirmPassword) {
+            setError('كلمة المرور وتأكيدها غير متطابقين.')
+            return
+        }
 
-        if (error) {
-            setError(error.message)
+        setLoading(true)
+        const { error: updateError } = await supabase.auth.updateUser({ password })
+
+        if (updateError) {
+            setError(authErrorText(updateError))
             setLoading(false)
             return
         }
 
-        // 2. تسجيل الخروج فوراً لإنهاء صلاحية الجلسة بالكامل وإبطال الرابط
-        await supabase.auth.signOut()
-
-        // 3. عرض رسالة النجاح والتحويل
-        setMessage('✅ تم تحديث كلمة المرور بنجاح! تم تعطيل هذا الرابط ولن يعمل مرة أخرى. جاري تحويلك لتسجيل الدخول...')
-        setIsValidSession(false) // منع إظهار نموذج التحديث مرة أخرى إذا حاول الرجوع
-
-        setTimeout(() => {
-            router.push('/login')
-        }, 3000)
+        try {
+            sessionStorage.removeItem(RECOVERY_FLAG)
+        } catch {
+            // لا شيء
+        }
+        // نسجل الخروج من كل الأجهزة حتى لا تبقى جلسة قديمة مفتوحة عند أحد
+        await supabase.auth.signOut({ scope: 'global' })
+        setStatus('done')
+        setTimeout(() => router.push('/login'), 3000)
     }
 
-    if (checking) {
+    if (status === 'checking') {
         return (
             <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', textAlign: 'center', paddingTop: '100px', fontFamily: 'sans-serif' }}>
                 <p style={{ color: '#2C3531', fontWeight: 'bold' }}>جاري التحقق من صلاحية الرابط...</p>
@@ -68,103 +106,56 @@ export default function UpdatePasswordPage() {
     }
 
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '60px' }}>
-            <Navbar isLoggedIn={false} />
-            <div style={{ maxWidth: '440px', margin: '40px auto', padding: '0 20px' }}>
-                <div style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e6dec5',
-                    borderRadius: '16px',
-                    padding: '32px 24px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                    textAlign: 'right',
-                    color: '#2C3531'
-                }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#2C3531', marginBottom: '8px', textAlign: 'center' }}>
-                        تعيين كلمة مرور جديدة
-                    </h2>
-
-                    {error && (
-                        <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-                            {error}
-                            <div style={{ marginTop: '12px' }}>
-                                <Link href="/forgot-password" style={{ color: '#991b1b', textDecoration: 'underline' }}>
-                                    طلب رابط استعادة جديد
-                                </Link>
-                            </div>
-                        </div>
-                    )}
-
-                    {message && (
-                        <div style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-                            {message}
-                        </div>
-                    )}
-
-                    {isValidSession && !message && (
-                        <>
-                            <p style={{ color: '#4A5550', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
-                                الرجاء إدخال كلمة المرور الجديدة لحسابك
-                            </p>
-                            <form onSubmit={handleUpdatePassword}>
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#2C3531', marginBottom: '6px' }}>
-                                        كلمة المرور الجديدة (6 أحرف على الأقل)
-                                    </label>
-                                    <input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e6dec5',
-                                            backgroundColor: '#ffffff',
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            boxSizing: 'border-box',
-                                            color: '#2C3531',
-                                            direction: 'ltr',
-                                            textAlign: 'right'
-                                        }}
-                                    />
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px',
-                                        backgroundColor: '#DCA27B',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        fontSize: '15px',
-                                        cursor: loading ? 'not-allowed' : 'pointer',
-                                        boxShadow: '0 4px 12px rgba(220, 162, 123, 0.3)',
-                                        transition: 'opacity 0.2s'
-                                    }}
-                                >
-                                    {loading ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
-                                </button>
-                            </form>
-                        </>
-                    )}
-
-                    <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px', color: '#4A5550' }}>
-                        <p style={{ margin: 0 }}>
-                            <Link href="/login" style={{ color: '#DCA27B', fontWeight: 'bold', textDecoration: 'none' }}>
-                                العودة لتسجيل الدخول
-                            </Link>
-                        </p>
+        <AuthCard title="تعيين كلمة مرور جديدة">
+            {status === 'invalid' && (
+                <AuthMessage tone="error">
+                    هذا الرابط غير صالح أو انتهت صلاحيته أو استُخدم من قبل.
+                    <div style={{ marginTop: 10 }}>
+                        <Link href="/forgot-password" style={{ color: '#991b1b', textDecoration: 'underline' }}>اطلب رابط استعادة جديد</Link>
                     </div>
-                </div>
-            </div>
-        </div>
+                </AuthMessage>
+            )}
+
+            {status === 'notRecovery' && (
+                <AuthMessage tone="error">
+                    هذه الصفحة لرابط الاستعادة اللي يوصلك على البريد. لتغيير كلمة المرور وأنت مسجل دخول، افتح القائمة واختر «تغيير كلمة المرور».
+                    <div style={{ marginTop: 10 }}>
+                        <Link href="/" style={{ color: '#991b1b', textDecoration: 'underline' }}>الرجوع للرئيسية</Link>
+                    </div>
+                </AuthMessage>
+            )}
+
+            {status === 'done' && (
+                <AuthMessage tone="success">
+                    ✅ تم تحديث كلمة المرور، وسجلنا خروجك من كل الأجهزة. جاري تحويلك لتسجيل الدخول...
+                </AuthMessage>
+            )}
+
+            {status === 'ready' && (
+                <>
+                    <p style={{ color: '#4A5550', fontSize: '14px', margin: '0 0 24px', textAlign: 'center' }}>اكتب كلمة المرور الجديدة لحسابك</p>
+                    {error && <AuthMessage tone="error">{error}</AuthMessage>}
+                    <form onSubmit={handleUpdatePassword}>
+                        <div style={fieldStyle}>
+                            <label htmlFor="password" style={labelStyle}>كلمة المرور الجديدة ({MIN_PASSWORD} أحرف على الأقل)</label>
+                            <PasswordInput id="password" value={password} onChange={setPassword} autoComplete="new-password" />
+                        </div>
+                        <div style={fieldStyle}>
+                            <label htmlFor="confirm" style={labelStyle}>تأكيد كلمة المرور</label>
+                            <PasswordInput id="confirm" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
+                        </div>
+                        <button type="submit" disabled={loading} style={submitStyle(loading)}>
+                            {loading ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
+                        </button>
+                    </form>
+                </>
+            )}
+
+            {status !== 'done' && (
+                <p style={{ margin: '20px 0 0', textAlign: 'center', fontSize: '14px' }}>
+                    <Link href="/login" style={linkStyle}>العودة لتسجيل الدخول</Link>
+                </p>
+            )}
+        </AuthCard>
     )
 }

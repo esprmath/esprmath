@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import { authErrorText } from '@/lib/authErrors'
+import AuthCard, { AuthMessage, fieldStyle, inputStyle, labelStyle, linkStyle, submitStyle } from '@/components/AuthCard'
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('')
-    const [message, setMessage] = useState('')
+    const [sentTo, setSentTo] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -15,58 +16,52 @@ export default function ForgotPasswordPage() {
         e.preventDefault()
         setLoading(true)
         setError('')
-        setMessage('')
 
-        // إرسال رابط إعادة التعيين إلى الإيميل
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/update-password`, // يجب إنشاء هذه الصفحة لاحقاً
+        const cleanEmail = email.trim().toLowerCase()
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: `${window.location.origin}/update-password`,
         })
+        setLoading(false)
 
         if (resetError) {
-            setError(resetError.message)
+            setError(authErrorText(resetError))
         } else {
-            setMessage('✅ تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني. يرجى التحقق من صندوق الوارد.')
+            setSentTo(cleanEmail)
         }
-        setLoading(false)
     }
 
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-            <Navbar isLoggedIn={false} />
-            <div style={{ maxWidth: '400px', margin: '40px auto', padding: '0 20px' }}>
-                <div style={{ backgroundColor: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '32px 24px', textAlign: 'right' }}>
-                    <h2 style={{ textAlign: 'center', marginBottom: '16px' }}>نسيت كلمة المرور؟</h2>
-                    <p style={{ fontSize: '14px', color: '#4A5550', textAlign: 'center', marginBottom: '24px' }}>
-                        أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.
-                    </p>
+        <AuthCard title="نسيت كلمة المرور؟" subtitle={sentTo ? undefined : 'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.'}>
+            {error && <AuthMessage tone="error">{error}</AuthMessage>}
 
-                    {error && <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
-                    {message && <div style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{message}</div>}
-
-                    <form onSubmit={handleResetPassword}>
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={{ fontSize: '13px', fontWeight: 'bold' }}>البريد الإلكتروني</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                style={{ width: '100%', padding: '10px', marginTop: '8px', borderRadius: '8px', border: '1px solid #e6dec5', boxSizing: 'border-box' }}
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            style={{ width: '100%', padding: '12px', backgroundColor: '#DCA27B', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                            {loading ? 'جاري الإرسال...' : 'إرسال رابط الاستعادة'}
+            {sentTo ? (
+                <>
+                    <AuthMessage tone="success">
+                        إذا كان <span dir="ltr">{sentTo}</span> مسجلًا عندنا، بيوصله رابط لتعيين كلمة مرور جديدة.
+                    </AuthMessage>
+                    <p style={{ fontSize: '13px', color: '#4A5550', textAlign: 'center', lineHeight: 1.7, margin: '0 0 8px' }}>
+                        ما وصلك؟ تفقد مجلد Spam، أو{' '}
+                        <button type="button" onClick={() => setSentTo('')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...linkStyle, fontSize: '13px' }}>
+                            أرسل مرة ثانية
                         </button>
-                    </form>
-                    <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                        <Link href="/login" style={{ color: '#8B5E3C', fontSize: '14px' }}>العودة لتسجيل الدخول</Link>
+                        {' '}بعد دقيقة.
+                    </p>
+                </>
+            ) : (
+                <form onSubmit={handleResetPassword}>
+                    <div style={{ ...fieldStyle, marginBottom: '20px' }}>
+                        <label htmlFor="email" style={labelStyle}>البريد الإلكتروني</label>
+                        <input id="email" type="email" autoComplete="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ ...inputStyle, direction: 'ltr', textAlign: 'right' }} />
                     </div>
-                </div>
-            </div>
-        </div>
+                    <button type="submit" disabled={loading} style={submitStyle(loading)}>
+                        {loading ? 'جاري الإرسال...' : 'إرسال رابط الاستعادة'}
+                    </button>
+                </form>
+            )}
+
+            <p style={{ margin: '20px 0 0', textAlign: 'center', fontSize: '14px' }}>
+                <Link href="/login" style={linkStyle}>العودة لتسجيل الدخول</Link>
+            </p>
+        </AuthCard>
     )
 }

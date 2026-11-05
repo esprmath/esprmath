@@ -1,151 +1,113 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import { authErrorText, safeNextPath } from '@/lib/authErrors'
+import PasswordInput from '@/components/PasswordInput'
+import AuthCard, { AuthMessage, fieldStyle, inputStyle, labelStyle, linkStyle, submitStyle } from '@/components/AuthCard'
+
+/** الصفحة اللي يرجع لها الطالب بعد الدخول، مثل رابط درس فتحه قبل ما يسجل */
+const nextPath = () => safeNextPath(new URLSearchParams(window.location.search).get('next'))
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [notice, setNotice] = useState('')
+    const [unconfirmed, setUnconfirmed] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [resending, setResending] = useState(false)
+
+    // المسجل دخول يروح مباشرة (ويشمل الراجع من رابط تأكيد البريد)
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) window.location.replace(nextPath())
+        })
+    }, [])
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true)
         setError('')
+        setNotice('')
+        setUnconfirmed(false)
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
             password,
         })
 
-        if (error) {
-            setError('البريد الإلكتروني أو كلمة المرور غير صحيحة')
+        if (signInError) {
+            setError(authErrorText(signInError))
+            setUnconfirmed(signInError.code === 'email_not_confirmed' || /not confirmed/i.test(signInError.message))
             setLoading(false)
             return
         }
 
-        // التوجيه إلى الصفحة الرئيسية بدلاً من مسار الكورس
-        window.location.href = '/'
+        window.location.href = nextPath()
+    }
+
+    async function resendConfirmation() {
+        setResending(true)
+        const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email: email.trim().toLowerCase(),
+            options: { emailRedirectTo: `${window.location.origin}/` },
+        })
+        setResending(false)
+        if (resendError) {
+            setError(authErrorText(resendError))
+        } else {
+            setError('')
+            setUnconfirmed(false)
+            setNotice('أرسلنا رسالة تأكيد جديدة. تفقد بريدك ومجلد Spam.')
+        }
     }
 
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '60px' }}>
-            <Navbar isLoggedIn={false} />
-            <div style={{ maxWidth: '440px', margin: '40px auto', padding: '0 20px' }}>
-                <div style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e6dec5',
-                    borderRadius: '16px',
-                    padding: '32px 24px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                    textAlign: 'right',
-                    color: '#2C3531'
-                }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#2C3531', marginBottom: '8px', textAlign: 'center' }}>
-                        تسجيل الدخول
-                    </h2>
-                    <p style={{ color: '#4A5550', fontSize: '14px', marginBottom: '24px', textAlign: 'center' }}>
-                        ادخل بياناتك للوصول إلى الكورس والمعلم الذكي
-                    </p>
-
-                    {error && (
-                        <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
-                            {error}
+        <AuthCard title="تسجيل الدخول" subtitle="ادخل بياناتك للوصول إلى الكورس والمعلم الذكي">
+            {error && (
+                <AuthMessage tone="error">
+                    {error}
+                    {unconfirmed && (
+                        <div style={{ marginTop: 10 }}>
+                            <button
+                                type="button"
+                                onClick={resendConfirmation}
+                                disabled={resending}
+                                style={{ background: '#991b1b', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                                {resending ? 'جاري الإرسال...' : 'إرسال رسالة تأكيد جديدة'}
+                            </button>
                         </div>
                     )}
+                </AuthMessage>
+            )}
+            {notice && <AuthMessage tone="success">{notice}</AuthMessage>}
 
-                    <form onSubmit={handleLogin}>
-                        <div style={{ marginBottom: '16px' }}>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#2C3531', marginBottom: '6px' }}>
-                                البريد الإلكتروني
-                            </label>
-                            <input
-                                type="email"
-                                placeholder="name@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e6dec5',
-                                    backgroundColor: '#ffffff',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    boxSizing: 'border-box',
-                                    color: '#2C3531',
-                                    direction: 'ltr',
-                                    textAlign: 'right'
-                                }}
-                            />
-                        </div>
-
-                        <div style={{ marginBottom: '24px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#2C3531' }}>
-                                    كلمة المرور
-                                </label>
-                                <Link href="/forgot-password" style={{ fontSize: '12px', color: '#8B5E3C', textDecoration: 'none', fontWeight: 'bold' }}>
-                                    نسيت كلمة المرور؟
-                                </Link>
-                            </div>
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 14px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e6dec5',
-                                    backgroundColor: '#ffffff',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    boxSizing: 'border-box',
-                                    color: '#2C3531',
-                                    direction: 'ltr',
-                                    textAlign: 'right'
-                                }}
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            style={{
-                                width: '100%',
-                                padding: '12px',
-                                backgroundColor: '#DCA27B',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontWeight: 'bold',
-                                fontSize: '15px',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                boxShadow: '0 4px 12px rgba(220, 162, 123, 0.3)',
-                                transition: 'opacity 0.2s'
-                            }}
-                        >
-                            {loading ? 'جاري الدخول...' : 'دخول'}
-                        </button>
-                    </form>
-
-                    <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px', color: '#4A5550' }}>
-                        <p style={{ margin: 0 }}>
-                            ليس لديك حساب؟{' '}
-                            <Link href="/signup" style={{ color: '#DCA27B', fontWeight: 'bold', textDecoration: 'none' }}>
-                                إنشاء حساب
-                            </Link>
-                        </p>
-                    </div>
+            <form onSubmit={handleLogin}>
+                <div style={fieldStyle}>
+                    <label htmlFor="email" style={labelStyle}>البريد الإلكتروني</label>
+                    <input id="email" type="email" autoComplete="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ ...inputStyle, direction: 'ltr', textAlign: 'right' }} />
                 </div>
-            </div>
-        </div>
+
+                <div style={{ ...fieldStyle, marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <label htmlFor="password" style={{ ...labelStyle, marginBottom: 0 }}>كلمة المرور</label>
+                        <Link href="/forgot-password" style={{ ...linkStyle, fontSize: '12px' }}>نسيت كلمة المرور؟</Link>
+                    </div>
+                    <PasswordInput id="password" value={password} onChange={setPassword} autoComplete="current-password" />
+                </div>
+
+                <button type="submit" disabled={loading} style={submitStyle(loading)}>
+                    {loading ? 'جاري الدخول...' : 'دخول'}
+                </button>
+            </form>
+
+            <p style={{ margin: '20px 0 0', textAlign: 'center', fontSize: '14px', color: '#4A5550' }}>
+                ليس لديك حساب؟ <Link href="/signup" style={linkStyle}>إنشاء حساب</Link>
+            </p>
+        </AuthCard>
     )
 }
