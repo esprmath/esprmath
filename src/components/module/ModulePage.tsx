@@ -47,7 +47,7 @@ function StepText({ text }: { text: string }) {
  * المحتوى يصله من src/content، والصفحة المعروضة تتحدد من رابط الصفحة.
  */
 export default function ModulePage({ content }: { content: ModuleContent }) {
-    const { courseId, moduleNumber, title, chapters } = content;
+    const { courseId, moduleNumber, chapters } = content;
     const searchParams = useSearchParams();
     const modulePath = `/workspace/${courseId}/${moduleNumber}`;
     const coursePath = `/workspace/${courseId}`;
@@ -215,15 +215,16 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                     font-size: 13px;
                 }
 
+                /* زر الرجوع فوق، وتحته اسم الموديول، والاثنين على اليمين */
                 .page-heading {
                     display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 12px;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 10px;
                     margin-bottom: 14px;
                 }
                 .page-title {
-                    font-size: clamp(16px, 1.6vw, 20px);
+                    font-size: clamp(18px, 1.8vw, 22px);
                     font-weight: 900;
                     color: #2C3531;
                     margin: 0;
@@ -616,10 +617,10 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                     {!isChapterView && (
                         <>
                             <div className="page-heading">
-                                <h1 className="page-title">شباتر {title}</h1>
                                 <Link href={coursePath} className="back-link">
                                     → الكورس
                                 </Link>
+                                <h1 className="page-title">Module {moduleNumber}</h1>
                             </div>
 
                             <div className="chapters-grid">

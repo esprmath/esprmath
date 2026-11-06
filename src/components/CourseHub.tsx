@@ -63,6 +63,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [loading, setLoading] = useState(true);
     const [alertMessage, setAlertMessage] = useState('');
+    const [showExams, setShowExams] = useState(false);
 
     const lastModuleKey = `last_module_${courseId}`;
 
@@ -164,10 +165,88 @@ export default function CourseHub({ courseId }: { courseId: string }) {
     const midterms = quizzes.filter((q) => q.quiz_id.includes('mid'));
     const finalReview = quizzes.find((q) => q.quiz_id === 'final-review');
     const isFinalOpen = finalReview ? canOpen(finalReview) : false;
+    const hasExams = regularQuizzes.length > 0 || midterms.length > 0 || Boolean(finalReview);
+
+    // الكويزات والميد ثم الفاينل: تظهر في عمود الصفحة، وفي الجوال داخل نافذة «الاختبارات»
+    const renderExams = (pick: (quiz: QuizSetting) => void) => (
+        <>
+            {(regularQuizzes.length > 0 || midterms.length > 0) && (
+                <div className={styles.examsRow}>
+                    {regularQuizzes.length > 0 && (
+                        <section className={styles.panel}>
+                            <h2 className={styles.panelTitle}>الكويزات</h2>
+                            <div className={styles.exams}>
+                                {regularQuizzes.map((quiz) => {
+                                    const isOpen = canOpen(quiz);
+                                    return (
+                                        <button
+                                            key={quiz.quiz_id}
+                                            type="button"
+                                            onClick={() => pick(quiz)}
+                                            aria-label={`${quiz.title}${isOpen ? '' : ' (مقفل)'}`}
+                                            className={cx(styles.exam, isOpen && styles.examOpen)}
+                                        >
+                                            <span className={styles.examCircle}>
+                                                {quizLabel(quiz)}
+                                                {!isOpen && <span className={styles.lock}>🔒</span>}
+                                            </span>
+                                            <span>{quiz.title.split(' - ')[0]}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    )}
+
+                    {midterms.map((quiz) => {
+                        const isOpen = canOpen(quiz);
+                        return (
+                            <button
+                                key={quiz.quiz_id}
+                                type="button"
+                                onClick={() => pick(quiz)}
+                                aria-label={`${quiz.title}${isOpen ? '' : ' (مقفل)'}`}
+                                className={cx(styles.midCard, isOpen && styles.midOpen)}
+                            >
+                                <span className={styles.examCircle}>
+                                    MID
+                                    {!isOpen && <span className={styles.lock}>🔒</span>}
+                                </span>
+                                <span className={styles.midText}>
+                                    <span className={styles.midName}>{quiz.title.split(' - ')[0]}</span>
+                                    <span className={styles.midState}>{isOpen ? '✓ متاح الآن' : 'مقفل حاليًا'}</span>
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {finalReview && (
+                <section className={cx(styles.finalBox, isFinalOpen && styles.finalOpen)}>
+                    <span className={styles.finalEyebrow}>{isFinalOpen ? '✓ متاحة الآن' : '🔒 تفتح قبل الاختبار'}</span>
+                    <h3 className={styles.finalName}>مراجعة الفاينل</h3>
+                    <p className={styles.finalDesc}>تجميعات شاملة ونماذج اختبارات نهائية.</p>
+                    <button type="button" onClick={() => pick(finalReview)} className={styles.finalBtn}>
+                        {isFinalOpen ? 'ابدأ المراجعة ←' : 'مقفلة حاليًا'}
+                    </button>
+                </section>
+            )}
+        </>
+    );
 
     return (
         <div className={styles.page}>
-            <Navbar isLoggedIn={true} />
+            <Navbar
+                isLoggedIn={true}
+                mobileAction={
+                    hasExams ? (
+                        <button type="button" className={styles.examsBtn} onClick={() => setShowExams(true)}>
+                            📝 الاختبارات
+                        </button>
+                    ) : undefined
+                }
+            />
             <OnboardingTour page="course" />
 
             <div className={styles.grid}>
@@ -181,6 +260,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
                     </span>
                 </header>
 
+                <h2 className={styles.modulesTitle}>Modules</h2>
                 <div className={styles.modules}>
                     {modules.length === 0 && (
                         <div className={styles.panel} style={{ textAlign: 'center', fontWeight: 700 }}>
@@ -288,71 +368,30 @@ export default function CourseHub({ courseId }: { courseId: string }) {
                     })}
                 </div>
 
-                <div className={styles.sidebar}>
-                    {(regularQuizzes.length > 0 || midterms.length > 0) && (
-                        <div className={styles.examsRow}>
-                            {regularQuizzes.length > 0 && (
-                                <section className={styles.panel}>
-                                    <h2 className={styles.panelTitle}>الكويزات</h2>
-                                    <div className={styles.exams}>
-                                        {regularQuizzes.map((quiz) => {
-                                            const isOpen = canOpen(quiz);
-                                            return (
-                                                <button
-                                                    key={quiz.quiz_id}
-                                                    type="button"
-                                                    onClick={() => openQuiz(quiz)}
-                                                    aria-label={`${quiz.title}${isOpen ? '' : ' (مقفل)'}`}
-                                                    className={cx(styles.exam, isOpen && styles.examOpen)}
-                                                >
-                                                    <span className={styles.examCircle}>
-                                                        {quizLabel(quiz)}
-                                                        {!isOpen && <span className={styles.lock}>🔒</span>}
-                                                    </span>
-                                                    <span>{quiz.title.split(' - ')[0]}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </section>
-                            )}
-
-                            {midterms.map((quiz) => {
-                                const isOpen = canOpen(quiz);
-                                return (
-                                    <button
-                                        key={quiz.quiz_id}
-                                        type="button"
-                                        onClick={() => openQuiz(quiz)}
-                                        aria-label={`${quiz.title}${isOpen ? '' : ' (مقفل)'}`}
-                                        className={cx(styles.midCard, isOpen && styles.midOpen)}
-                                    >
-                                        <span className={styles.examCircle}>
-                                            MID
-                                            {!isOpen && <span className={styles.lock}>🔒</span>}
-                                        </span>
-                                        <span className={styles.midText}>
-                                            <span className={styles.midName}>{quiz.title.split(' - ')[0]}</span>
-                                            <span className={styles.midState}>{isOpen ? '✓ متاح الآن' : 'مقفل حاليًا'}</span>
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {finalReview && (
-                        <section className={cx(styles.finalBox, isFinalOpen && styles.finalOpen)}>
-                            <span className={styles.finalEyebrow}>{isFinalOpen ? '✓ متاحة الآن' : '🔒 تفتح قبل الاختبار'}</span>
-                            <h3 className={styles.finalName}>مراجعة الفاينل</h3>
-                            <p className={styles.finalDesc}>تجميعات شاملة ونماذج اختبارات نهائية.</p>
-                            <button type="button" onClick={() => openQuiz(finalReview)} className={styles.finalBtn}>
-                                {isFinalOpen ? 'ابدأ المراجعة ←' : 'مقفلة حاليًا'}
-                            </button>
-                        </section>
-                    )}
-                </div>
+                <div className={styles.sidebar}>{renderExams(openQuiz)}</div>
             </div>
+
+            {/* الجوال: الاختبارات في نافذة تفتح من زر «الاختبارات» في الشريط العلوي */}
+            {showExams && (
+                <div className={styles.overlay} onClick={() => setShowExams(false)}>
+                    <div
+                        className={styles.examsSheet}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="الاختبارات"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className={styles.examsSheetHead}>
+                            <h2>📝 الاختبارات</h2>
+                            <button type="button" aria-label="إغلاق" onClick={() => setShowExams(false)}>✕</button>
+                        </div>
+                        {renderExams((quiz) => {
+                            setShowExams(false);
+                            openQuiz(quiz);
+                        })}
+                    </div>
+                </div>
+            )}
 
             {alertMessage && (
                 <div className={styles.overlay}>

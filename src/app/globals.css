@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Playfair+Display:ital,wght@1,700&display=swap');
 
 * {
   box-sizing: border-box;
@@ -9,29 +9,33 @@
 
 /* شريط السكرول بألوان الموقع بدل شكل المتصفح. شكل فقط، ولا يغيّر طريقة السكرول */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f5edd8;
+  background: #f3e8cf;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #dca27b;
-  border: 2px solid #f5edd8;
+  background: linear-gradient(180deg, #a5672d, #8c5521);
+  border: 3px solid #f3e8cf;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8c5521;
+  background: #6b3f17;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* المتصفحات التي لا تدعم التنسيق أعلاه مثل Firefox */
 @supports not selector(::-webkit-scrollbar) {
   html {
-    scrollbar-width: thin;
-    scrollbar-color: #dca27b #f5edd8;
+    scrollbar-color: #8c5521 #f3e8cf;
   }
 }
 

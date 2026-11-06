@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
+import BrandName from '@/components/BrandName'
 import { supabase } from '@/lib/supabase'
 import { checkIsAdmin } from '@/lib/admin'
 
@@ -394,7 +395,8 @@ export default function HomePage() {
     }
 
     return (
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
+        // سكرول الصفحة العادي، وشريط التواصل ينزل لآخر الشاشة إذا كان المحتوى قصير
+        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100dvh', display: 'flex', flexDirection: 'column', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
             <Navbar isLoggedIn={isLoggedIn} />
 
             {/* قسم الترحيب: مرفوع للأعلى، بالنص تماماً، وبحجم أكبر */}
@@ -486,7 +488,7 @@ export default function HomePage() {
             <section style={{ maxWidth: '1100px', margin: '0 auto 40px auto', padding: '0 20px', width: '100%' }}>
                 <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
                     <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '8px' }}>
-                        🚀 قريباً في EsprMath
+                        🚀 قريباً في <BrandName black />
                     </h3>
                     <p style={{ color: '#4A5550', fontSize: '0.95rem', margin: 0 }}>
                         كورسات جديدة قادمة قريباً بإذن الله ✨
@@ -496,7 +498,7 @@ export default function HomePage() {
 
             {/* ليه EsprMath */}
             <section style={{ ...sectionStyle, marginBottom: '50px' }}>
-                <h2 style={sectionTitleStyle}>ليه EsprMath؟</h2>
+                <h2 style={sectionTitleStyle}>ليه <BrandName black />؟</h2>
                 <div style={gridStyle}>
                     {FEATURES.map((f) => (
                         <div key={f.title} style={boxStyle}>
@@ -508,9 +510,9 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* شريط التواصل في أسفل الصفحة */}
+            {/* شريط التواصل في آخر الصفحة، ينزل لتحت إذا كان المحتوى قصير */}
             {/* خط متقطع بني بعرض الصفحة كامل، القطع أطول من dashed العادي */}
-            <div style={{ height: '2px', backgroundImage: `repeating-linear-gradient(to left, ${PRIMARY} 0 18px, transparent 18px 30px)` }} />
+            <div style={{ marginTop: 'auto', height: '2px', backgroundImage: `repeating-linear-gradient(to left, ${PRIMARY} 0 18px, transparent 18px 30px)` }} />
             <footer dir="rtl" style={{ padding: '20px 24px 28px', display: 'flex', justifyContent: 'flex-start', gap: '28px', flexWrap: 'wrap' }}>
                 {CONTACT_LINKS.map((c) => {
                     const circle = (

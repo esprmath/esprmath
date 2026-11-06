@@ -9,9 +9,11 @@ import { authErrorText, MIN_PASSWORD } from '@/lib/authErrors'
 
 interface NavbarProps {
     isLoggedIn: boolean;
+    /** زر يظهر في الجوال فقط مكان زر موعد الاختبار، مثل زر «الاختبارات» في صفحة الكورس */
+    mobileAction?: React.ReactNode;
 }
 
-export default function Navbar({ isLoggedIn }: NavbarProps) {
+export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
     const router = useRouter()
     const pathname = usePathname()
     const isHomePage = pathname === '/'
@@ -339,18 +341,71 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                     justify-content: space-between;
                     align-items: center;
                     flex-wrap: nowrap;
-                    padding: 1rem 1.5rem;
-                    background-color: #8B5E3C;
-                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-                    border-bottom: 1px solid #6B5744;
-                    margin-bottom: 1.5rem;
+                    padding: 0.7rem 1.5rem;
+                    /* بدون خلفية ولا خط: النافبار جزء من الصفحة، والشريط البني تحت الأزرار فقط */
+                    background: transparent;
+                    margin-bottom: 1rem;
                     position: relative;
                     z-index: 1000;
                     font-family: sans-serif;
                     box-sizing: border-box;
                 }
+                /* الشريط البني من اليسار، وينتهي بطرف دائري قبل الشعار فيبقى مكانه فاضي بلون الصفحة */
+                .nav-container::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 175px;
+                    background: #8B5E3C;
+                    /* طرف منحني: يبدأ من فوق عند الشعار وينزل مايل لين يلتف لتحت */
+                    border-radius: 0 0 90px 0 / 0 0 100% 0;
+                    z-index: 0;
+                }
+                .nav-logo,
+                .nav-left-group {
+                    position: relative;
+                    z-index: 1;
+                }
                 .nav-logo {
                     flex-shrink: 0;
+                }
+                .nav-logo :global(.logo) {
+                    display: inline-flex;
+                    align-items: flex-start;
+                    text-decoration: none;
+                    line-height: 1;
+                }
+                /* الخط يُحدد على كل كلمة لأن globals.css يفرض Tajawal على كل العناصر */
+                .logo-espr,
+                .logo-math {
+                    font-family: 'Playfair Display', Georgia, serif;
+                    font-style: italic;
+                    font-weight: 700;
+                }
+                .logo-espr {
+                    font-size: 1.2rem;
+                    color: #8B5E3C;
+                    margin-right: -3px;
+                }
+                .logo-bottom {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    margin-top: 8px;
+                }
+                .logo-math {
+                    font-size: 1.75rem;
+                    color: #2C3531;
+                }
+                .logo-yic {
+                    margin-top: -1px;
+                    font-family: 'Tajawal', sans-serif;
+                    font-weight: 700;
+                    font-size: 0.65rem;
+                    letter-spacing: 2.5px;
+                    color: #8B5E3C;
                 }
                 .nav-left-group {
                     display: flex;
@@ -358,13 +413,44 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                     gap: 10px;
                     flex-shrink: 0;
                 }
+                .exam-date-slot {
+                    display: contents;
+                }
+                .mobile-action {
+                    display: none;
+                }
+                /* الجوال فقط (الآيباد واللابتوب يبقى فيهم موعد الاختبار) */
+                @media (max-width: 767px) {
+                    .exam-date-slot {
+                        display: none;
+                    }
+                    .mobile-action {
+                        display: flex;
+                    }
+                }
 
                 @media (max-width: 768px) {
                     .nav-container {
-                        padding: 0.5rem 0.75rem;
+                        padding: 0.35rem 0.75rem;
+                        margin-bottom: 0.6rem;
                         --btn-height: 32px;
                         --btn-font-size: 0.75rem;
                         --btn-padding-x: 0.5rem;
+                    }
+                    .nav-container::before {
+                        right: 130px;
+                    }
+                    .logo-espr {
+                        font-size: 0.9rem;
+                    }
+                    .logo-bottom {
+                        margin-top: 6px;
+                    }
+                    .logo-math {
+                        font-size: 1.35rem;
+                    }
+                    .logo-yic {
+                        font-size: 0.55rem;
                     }
                     .nav-left-group {
                         gap: 8px;
@@ -375,12 +461,12 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
             <nav className="nav-container">
                 {/* 1. الشعار أقصى اليمين */}
                 <div className="nav-logo">
-                    <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.2' }}>
-                            EsprMath 📐
-                        </span>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#FEECD0', letterSpacing: '1.5px', marginTop: '2px' }}>
-                            YIC
+                    {/* Espr صغيرة ومرفوعة مثل الأس، وMath أكبر وتحتها YIC */}
+                    <Link href="/" dir="ltr" aria-label="EsprMath" className="logo">
+                        <span className="logo-espr">Espr</span>
+                        <span className="logo-bottom">
+                            <span className="logo-math">Math</span>
+                            <span className="logo-yic">YIC</span>
                         </span>
                     </Link>
                 </div>
@@ -388,8 +474,11 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                 {/* 2. مجموعة اليسار: موعد الاختبار (بجانب الملف الشخصي مباشرة) + الملف الشخصي */}
                 <div className="nav-left-group">
                     {/* زر موعد الاختبار يأتي يمين الملف الشخصي مباشرة */}
+                    {mobileAction && <div className="mobile-action">{mobileAction}</div>}
+
+                    {/* موعد الاختبار للشاشات الأكبر من الجوال فقط */}
                     {isLoggedIn && !isHomePage && courseApprovalStatus && (
-                        <>
+                        <div className="exam-date-slot">
                             {isExamPromptMinimized ? (
                                 <button
                                     type="button"
@@ -454,7 +543,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                     </span>
                                 </button>
                             )}
-                        </>
+                        </div>
                     )}
 
                     {isLoggedIn ? (

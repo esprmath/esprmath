@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { checkIsAdmin } from '@/lib/admin';
 import styles from './admin.module.css';
+import BrandName from '@/components/BrandName';
 import type { CourseModule } from '@/lib/courseAccess';
 import { Courses, type CourseForm } from './courses';
 import { ExamsAndModules, type ExamsActions, type ModuleForm } from './exams';
@@ -372,7 +373,7 @@ export default function AdminDashboard() {
         <div className={styles.shell}>
             <aside className={styles.side}>
                 <div className={styles.brand}>
-                    <div className={styles.brandName}>EsprMath</div>
+                    <div className={styles.brandName}><BrandName onDark /></div>
                     <div className={styles.brandSub}>لوحة التحكم</div>
                 </div>
                 <nav className={styles.nav} aria-label="أقسام لوحة التحكم">
