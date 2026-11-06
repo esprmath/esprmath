@@ -4,9 +4,6 @@
 // الحماية الفعلية للبيانات من صلاحيات قاعدة البيانات (RLS)، وليس من هذا الفحص.
 import { supabase } from './supabase';
 
-// احتياط فقط: إذا لم يُشغَّل ملف SQL الخاص بإدارة المشرفين بعد
-const FALLBACK_ADMIN_EMAILS = ['sofe@gmail.com', 'osamhjix@gmail.com'];
-
 const cache = new Map<string, Promise<boolean>>();
 
 /** يسأل قاعدة البيانات مرة واحدة لكل حساب في الزيارة */
@@ -15,10 +12,15 @@ export function checkIsAdmin(email?: string | null): Promise<boolean> {
     const key = email.toLowerCase();
     let result = cache.get(key);
     if (!result) {
-        result = Promise.resolve(supabase.rpc('is_admin')).then(({ data, error }) => {
-            if (error) return FALLBACK_ADMIN_EMAILS.includes(key);
-            return data === true;
-        }, () => FALLBACK_ADMIN_EMAILS.includes(key));
+        // إذا فشل الاتصال نعتبره غير مشرف، ولا نحفظ النتيجة حتى يُعاد الفحص في المرة الجاية
+        const forget = () => {
+            cache.delete(key);
+            return false;
+        };
+        result = Promise.resolve(supabase.rpc('is_admin')).then(
+            ({ data, error }) => (error ? forget() : data === true),
+            forget,
+        );
         cache.set(key, result);
     }
     return result;

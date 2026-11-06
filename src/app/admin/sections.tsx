@@ -180,7 +180,9 @@ export function Overview({ students, requests, courses, quizzes, ai, aiEnabled, 
     });
     const courseMax = Math.max(...courseStats.map((c) => c.approved + c.pending), 1);
 
-    const todayKey = new Date().toISOString().slice(0, 10);
+    // تاريخ اليوم بتوقيت الجهاز، وليس UTC، حتى لا تظهر اختبارات أمس بعد منتصف الليل
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const examCounts = students.reduce<Record<string, number>>((acc, s) => {
         if (s.exam_date && s.exam_date.slice(0, 10) >= todayKey) {
             const key = s.exam_date.slice(0, 10);

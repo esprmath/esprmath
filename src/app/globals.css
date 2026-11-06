@@ -7,6 +7,34 @@
   font-family: 'Tajawal', sans-serif;
 }
 
+/* شريط السكرول بألوان الموقع بدل شكل المتصفح. شكل فقط، ولا يغيّر طريقة السكرول */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5edd8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dca27b;
+  border: 2px solid #f5edd8;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8c5521;
+}
+
+/* المتصفحات التي لا تدعم التنسيق أعلاه مثل Firefox */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: #dca27b #f5edd8;
+  }
+}
+
 .katex,
 .katex-display {
   direction: ltr;

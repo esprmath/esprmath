@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { hasQuizPage, windowStatus, type CourseModule, type WindowStatus } from '@/lib/courseAccess';
 import styles from './admin.module.css';
+import DateTimePicker from './DateTimePicker';
 import { Pill, Switch, cx, type Course, type Quiz } from './sections';
 
 const toLocalInput = (iso: string | null) => {
@@ -32,14 +33,14 @@ function ScheduleEditor({ item, busy, onSave }: {
     return (
         <>
             <div className={styles.schedule}>
-                <label className={styles.field}>
+                <div className={styles.field}>
                     يفتح في
-                    <input type="datetime-local" className={styles.input} value={opensAt} onChange={(e) => setOpensAt(e.target.value)} />
-                </label>
-                <label className={styles.field}>
+                    <DateTimePicker label="موعد الفتح" value={opensAt} onChange={setOpensAt} />
+                </div>
+                <div className={styles.field}>
                     يغلق في
-                    <input type="datetime-local" className={styles.input} value={closesAt} onChange={(e) => setClosesAt(e.target.value)} />
-                </label>
+                    <DateTimePicker label="موعد الإغلاق" value={closesAt} onChange={setClosesAt} />
+                </div>
                 <button
                     type="button"
                     className={cx(styles.btn, styles.btnGhost)}

@@ -13,8 +13,7 @@ const OUTPUT_COST = 0.0000006
 const MAX_REPLY_TOKENS = 800
 const MAX_CONTEXT_CHARS = 4000
 const MAX_MESSAGES_PER_HOUR = 40
-// الموديول الأول تجربة مجانية، فالطالب بدون تسجيل في الكورس يقدر يستخدم فيكتور فيه
-const FREE_TRIAL_COURSE = '101'
+const DEFAULT_COURSE = '101'
 
 const reply = (text: string, status: number) => NextResponse.json({ reply: text }, { status })
 
@@ -40,19 +39,29 @@ export async function POST(req: Request) {
         if (globalSwitch?.value === false) return reply('فيكتور متوقف مؤقتًا، جرّب بعد قليل.', 503)
 
         const body = await req.json()
-        const courseId = clip(String(body?.courseId ?? FREE_TRIAL_COURSE), 20)
+        const courseId = clip(String(body?.courseId ?? DEFAULT_COURSE), 20)
+        const moduleNumber = Number(body?.currentModule) || 1
 
-        // 2) صلاحية فيكتور من نفس الإعداد الذي يتحكم فيه المشرف
-        const { data: enrollment } = await supabase
-            .from('user_courses')
-            .select('is_ai_allowed')
-            .eq('user_id', user.id)
-            .eq('course_id', courseId)
-            .maybeSingle()
+        // 2) صلاحية فيكتور: المعتمد في الكورس، أو أي طالب داخل الموديول المجاني.
+        // طلب الانضمام المعلّق لا يفتح فيكتور، والمشرف يقدر يوقفه لأي طالب.
+        const [{ data: enrollment }, { data: mod }] = await Promise.all([
+            supabase
+                .from('user_courses')
+                .select('is_approved, is_ai_allowed')
+                .eq('user_id', user.id)
+                .eq('course_id', courseId)
+                .maybeSingle(),
+            supabase
+                .from('course_modules')
+                .select('is_free')
+                .eq('course_id', courseId)
+                .eq('module_number', moduleNumber)
+                .maybeSingle(),
+        ])
 
-        const isAllowed = enrollment
-            ? enrollment.is_ai_allowed !== false
-            : courseId === FREE_TRIAL_COURSE
+        // نفس قاعدة بوابة الصفحات: بدون إعداد في اللوحة يكون الموديول الأول هو المجاني
+        const isFreeModule = mod ? mod.is_free === true : moduleNumber === 1
+        const isAllowed = enrollment?.is_ai_allowed !== false && (enrollment?.is_approved === true || isFreeModule)
         if (!isAllowed) return reply('ميزة فيكتور غير مفعلة في حسابك حاليًا.', 403)
 
         // 3) حد الاستخدام لكل طالب حتى لا تخرج التكلفة عن السيطرة
