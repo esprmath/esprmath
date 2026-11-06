@@ -385,7 +385,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                     </Link>
                 </div>
 
-                {/* 2. مجموعة اليسار: موعد الاختبار (بجانب الملف الشخصي مباشرة) + الضمير الغائب + الملف الشخصي */}
+                {/* 2. مجموعة اليسار: موعد الاختبار (بجانب الملف الشخصي مباشرة) + الملف الشخصي */}
                 <div className="nav-left-group">
                     {/* زر موعد الاختبار يأتي يمين الملف الشخصي مباشرة */}
                     {isLoggedIn && !isHomePage && courseApprovalStatus && (
@@ -455,33 +455,6 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
                                 </button>
                             )}
                         </>
-                    )}
-
-                    {/* زر "الضمير الغائب" يظهر فقط في الصفحة الرئيسية */}
-                    {isHomePage && (
-                        <Link
-                            href="/absence"
-                            style={{
-                                height: 'var(--btn-height)',
-                                padding: '0 var(--btn-padding-x)',
-                                backgroundColor: '#FEECD0',
-                                color: '#8B5E3C',
-                                border: '1px solid #6B5744',
-                                borderRadius: '8px',
-                                fontWeight: 'bold',
-                                fontSize: 'var(--btn-font-size)',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                whiteSpace: 'nowrap',
-                                boxSizing: 'border-box'
-                            }}
-                        >
-                            <span>👤</span>
-                            <span>الضمير الغائب</span>
-                        </Link>
                     )}
 
                     {isLoggedIn ? (

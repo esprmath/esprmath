@@ -391,6 +391,11 @@ export default function AdminDashboard() {
                             )}
                         </button>
                     ))}
+                    {/* أداة الغياب مخفية عن الطلاب، وتفتح للمشرف من هنا فقط */}
+                    <Link href="/absence" className={styles.navBtn} style={{ textDecoration: 'none' }}>
+                        <span aria-hidden="true">📅</span>
+                        <span>الضمير الغائب</span>
+                    </Link>
                 </nav>
                 <div className={styles.sideFoot}>
                     <Link href="/" className={styles.backLink}>→ الرجوع للمنصة</Link>

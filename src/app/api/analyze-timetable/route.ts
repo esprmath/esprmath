@@ -115,6 +115,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, error: 'سجّل دخولك أولًا حتى تستخدم التحليل الذكي.' }, { status: 401 })
         }
 
+        // أداة الغياب للمشرفين فقط حاليًا
+        const { data: isAdmin } = await auth.supabase.rpc('is_admin')
+        if (isAdmin !== true) {
+            return NextResponse.json({ success: false, error: 'هذه الأداة غير متاحة حاليًا.' }, { status: 403 })
+        }
+
         const {
             imageBase64,
             type,

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
+import { checkIsAdmin } from '@/lib/admin'
 import { availableMajors, CourseItem } from './majorsData'
 
 interface TimetableSlot {
@@ -15,7 +16,35 @@ interface TimetableSlot {
     courseTitle: string
 }
 
+/** أداة الغياب مخفية عن الطلاب: تفتح للمشرف فقط (من لوحة التحكم) */
 export default function AbsencePage() {
+    const [access, setAccess] = useState<'checking' | 'allowed' | 'denied'>('checking')
+
+    useEffect(() => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            const admin = await checkIsAdmin(session?.user?.email)
+            setAccess(admin ? 'allowed' : 'denied')
+        })
+    }, [])
+
+    if (access === 'allowed') return <AbsenceTool />
+
+    return (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#FFF9E2', color: '#2C3531', fontWeight: 800, textAlign: 'center', padding: 20 }}>
+            {access === 'checking' ? (
+                'جاري التحميل... ⏳'
+            ) : (
+                <>
+                    <div style={{ fontSize: 42 }}>🔍</div>
+                    <div>الصفحة غير موجودة</div>
+                    <Link href="/" style={{ color: '#8c5521' }}>الرجوع للصفحة الرئيسية</Link>
+                </>
+            )}
+        </div>
+    )
+}
+
+function AbsenceTool() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [userId, setUserId] = useState<string | null>(null)
     const [userEmail, setUserEmail] = useState<string | null>(null)
