@@ -18,6 +18,40 @@ interface Course {
 
 const PRIMARY = '#8c5521'
 
+const FEATURES = [
+    {
+        icon: '📖',
+        title: 'كل فكرة بثلاث خطوات',
+        text: 'شرح نظري مختصر، ثم مقطع فيديو يوضحها، ثم سؤال تطبيقي مباشرة. بسيطة وواضحة وبدون تشتت.',
+    },
+    {
+        icon: '🤖',
+        title: 'معلم ذكي معك أي وقت',
+        text: 'فيكتور يشوف السؤال اللي قدامك، ويعطيك تلميح أو يحل معك خطوة بخطوة متى ما احتجته.',
+    },
+    {
+        icon: '🔄',
+        title: 'أكبر عدد من الأسئلة',
+        text: 'أسئلة بأرقام وأشكال مختلفة تغطي كل أنماط الفكرة، عشان يثبت الفهم مو الحفظ.',
+    },
+    {
+        icon: '🎯',
+        title: 'جاهز ليوم الاختبار',
+        text: 'اختبارات تجريبية بوقت، أفكار جاءت في اختبارات سابقة، ومراجعة لأخطائك قبل الاختبار.',
+    },
+]
+
+// روابط تيليقرام أسفل الصفحة: الرابط الفارغ تظهر دائرته بدون ما تنضغط
+const CONTACT_LINKS = [
+    { title: 'تواصل معنا', href: 'https://t.me/Natlus_1' },
+    { title: 'قناة التحديثات', href: 'https://t.me/esprmath' },
+]
+
+const sectionStyle: React.CSSProperties = { maxWidth: '1100px', margin: '0 auto 40px auto', padding: '0 20px', width: '100%' }
+const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px' }
+const boxStyle: React.CSSProperties = { background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '22px', textAlign: 'center' }
+const sectionTitleStyle: React.CSSProperties = { fontSize: '1.4rem', color: '#2C3531', fontWeight: 'bold', textAlign: 'center', margin: '0 0 18px 0' }
+
 export default function HomePage() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [userName, setUserName] = useState<string>('')
@@ -459,6 +493,48 @@ export default function HomePage() {
                     </p>
                 </div>
             </section>
+
+            {/* ليه EsprMath */}
+            <section style={{ ...sectionStyle, marginBottom: '50px' }}>
+                <h2 style={sectionTitleStyle}>ليه EsprMath؟</h2>
+                <div style={gridStyle}>
+                    {FEATURES.map((f) => (
+                        <div key={f.title} style={boxStyle}>
+                            <div style={{ fontSize: '34px', marginBottom: '10px' }}>{f.icon}</div>
+                            <h3 style={{ fontSize: '1.05rem', color: PRIMARY, fontWeight: 'bold', margin: '0 0 8px 0' }}>{f.title}</h3>
+                            <p style={{ color: '#4A5550', fontSize: '0.92rem', lineHeight: 1.7, margin: 0 }}>{f.text}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* شريط التواصل في أسفل الصفحة */}
+            {/* خط متقطع بني بعرض الصفحة كامل، القطع أطول من dashed العادي */}
+            <div style={{ height: '2px', backgroundImage: `repeating-linear-gradient(to left, ${PRIMARY} 0 18px, transparent 18px 30px)` }} />
+            <footer dir="rtl" style={{ padding: '20px 24px 28px', display: 'flex', justifyContent: 'flex-start', gap: '28px', flexWrap: 'wrap' }}>
+                {CONTACT_LINKS.map((c) => {
+                    const circle = (
+                        <span style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#ffffff', border: '2px solid #DCA27B', boxShadow: '0 2px 6px rgba(140,85,33,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {/* سهم الرسالة مثل شعار تيليقرام بلون الموقع */}
+                            <svg width="26" height="26" viewBox="3 4 18.5 16" fill={PRIMARY} aria-hidden="true" style={{ display: 'block' }}>
+                                <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+                            </svg>
+                        </span>
+                    )
+                    return (
+                        <div key={c.title} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
+                            <span style={{ color: PRIMARY, fontWeight: 'bold', fontSize: '0.85rem' }}>{c.title}</span>
+                            {c.href ? (
+                                <a href={c.href} target="_blank" rel="noopener noreferrer" aria-label={`${c.title} على تيليقرام`}>
+                                    {circle}
+                                </a>
+                            ) : (
+                                <span title="قريبًا">{circle}</span>
+                            )}
+                        </div>
+                    )
+                })}
+            </footer>
 
             {showAlertModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
