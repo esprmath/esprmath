@@ -307,6 +307,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                 .pager-btn {
                     flex: 0 1 48%;
                     min-width: 0;
+                    overflow: hidden;
                     display: flex;
                     flex-direction: column;
                     gap: 2px;
@@ -332,7 +333,11 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                     font-size: 11px;
                     color: #b0764a;
                 }
+                /* Safari في الآيفون ما يقص النص داخل الأزرار إلا إذا كان للعنصر عرض محدد */
                 .pager-name {
+                    display: block;
+                    width: 100%;
+                    min-width: 0;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;

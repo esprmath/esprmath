@@ -15,7 +15,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-    themeColor: '#8B5E3C',
+    // لون شريط حالة الجوال بلون الصفحة، حتى يبان الشريط البني بنفس المسافة فوق الأزرار وتحتها
+    themeColor: '#FFF9E2',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

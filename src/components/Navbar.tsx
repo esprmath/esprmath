@@ -431,7 +431,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
 
                 @media (max-width: 768px) {
                     .nav-container {
-                        padding: 0.35rem 0.75rem;
+                        padding: 0.5rem 0.75rem;
                         margin-bottom: 0.6rem;
                         --btn-height: 32px;
                         --btn-font-size: 0.75rem;
