@@ -508,6 +508,19 @@ html[data-theme="dark"]:not([data-dark-native]) :is(
 ) {
   filter: invert(1) hue-rotate(180deg);
 }
+/* أزرار السؤال بألوان ليلية حقيقية (بعد إلغاء الفلتر): خلفية بنية غامقة وكلام فاتح */
+html[data-theme="dark"]:not([data-dark-native]) :is([class*="__canvasBtn"], [class*="__regen"]) {
+  background: #3D2C1D !important;
+  border-color: #9A6A40 !important;
+  color: #F3E9DC !important;
+}
+html[data-theme="dark"]:not([data-dark-native]) :is([class*="__canvasBtn"], [class*="__regen"]):hover {
+  background: #4A3426 !important;
+}
+html[data-theme="dark"]:not([data-dark-native]) [class*="__checkBtn"]:disabled {
+  background: #4A3B2E !important;
+  color: #C9B8A6 !important;
+}
 /* خيارات الإجابة وزر الفكرة التالية: بني دافي بدل الأسود، والخيار المختار بدرجة مختلفة */
 html[data-theme="dark"]:not([data-dark-native]) :is([class*="__optionLabel"], [class*="__option "], [class$="__option"], .pager-btn) {
   background-color: #CDBFAE !important;

@@ -1,7 +1,12 @@
 /* src/components/questions/QuestionRenderer.module.css */
 
+/* المربع الكبير: نفس الورقة المربعة في الأسئلة الإضافية */
 .questionCard {
-  background: #ffffff;
+  background-color: #fffdf6;
+  background-image:
+    linear-gradient(rgba(176, 118, 74, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(176, 118, 74, 0.09) 1px, transparent 1px);
+  background-size: 26px 26px;
   border: 1px solid #e6dec5;
   border-radius: 12px;
   padding: 20px;
@@ -11,8 +16,12 @@
 
 .questionHeader {
   margin-bottom: 16px;
-  border-bottom: 1px solid #e6dec5;
-  padding-bottom: 12px;
+}
+
+.questionHeader :global(.katex-display) {
+  margin: 8px 0 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .questionTitle {
@@ -88,8 +97,6 @@
 }
 
 .actionArea {
-  border-top: 1px solid #e6dec5;
-  padding-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;

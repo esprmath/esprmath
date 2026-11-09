@@ -167,8 +167,8 @@ export default function QuestionRenderer({
       `}</style>
 
       {/* رأس السؤال الرئيسي ونصه */}
-      <div className={styles.questionHeader} style={{ marginBottom: '16px' }}>
-        <h3 className={styles.questionTitle} style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#2C3531' }}>
+      <div className={styles.questionHeader}>
+        <h3 className={styles.questionTitle} style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#2C3531', margin: 0 }}>
           {question.questionText}
         </h3>
         {question.mathExpression && question.kind !== 'group' && <Tex math={question.mathExpression} block />}
