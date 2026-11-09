@@ -116,6 +116,10 @@ export default function SignupPage() {
                     <PasswordInput id="confirm" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
                 </div>
 
+                <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: '#4A5550', textAlign: 'center', lineHeight: 1.7 }}>
+                    بإنشاء حسابك فأنت توافق على <Link href="/terms" target="_blank" style={linkStyle}>الشروط والأحكام</Link>
+                </p>
+
                 <button type="submit" disabled={loading} style={submitStyle(loading)}>
                     {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
                 </button>

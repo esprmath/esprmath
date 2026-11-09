@@ -3,9 +3,21 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import 'katex/dist/katex.min.css'
 
+const SITE_TITLE = 'EsprMath | شرح وتدريب الرياضيات الجامعية'
+const SITE_DESCRIPTION = 'شرح مبسط لمقررات الرياضيات الجامعية، مع تدريبات تفاعلية واختبارات ومعلم ذكي يساعدك خطوة بخطوة.'
+
 export const metadata: Metadata = {
-    title: 'EsprMath | شرح وتدريب الرياضيات الجامعية',
-    description: 'شرح مبسط لمقررات الرياضيات الجامعية، مع تدريبات تفاعلية واختبارات ومعلم ذكي يساعدك خطوة بخطوة.',
+    metadataBase: new URL('https://esprmath.com'),
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    openGraph: {
+        type: 'website',
+        url: '/',
+        siteName: 'EsprMath',
+        title: SITE_TITLE,
+        description: SITE_DESCRIPTION,
+        locale: 'ar_SA',
+    },
     manifest: '/manifest.json',
     appleWebApp: {
         capable: true,
@@ -15,8 +27,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-    // لون شريط حالة الجوال بلون الصفحة، حتى يبان الشريط البني بنفس المسافة فوق الأزرار وتحتها
-    themeColor: '#FFF9E2',
+    // لون شريط حالة الجوال وما فوق الصفحة عند السحب لتحت بلون النافبار
+    themeColor: '#8B5E3C',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

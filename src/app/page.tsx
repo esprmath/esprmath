@@ -536,6 +536,9 @@ export default function HomePage() {
                         </div>
                     )
                 })}
+                <div style={{ display: 'flex', alignItems: 'flex-end', marginInlineStart: 'auto' }}>
+                    <Link href="/terms" style={{ color: PRIMARY, fontSize: '0.85rem', fontWeight: 'bold' }}>الشروط والأحكام</Link>
+                </div>
             </footer>
 
             {showAlertModal && (
