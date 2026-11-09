@@ -62,8 +62,9 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
     // مكان اللمبة يُقاس من حرف I في YIC حتى يبدأ السلك منه بالضبط في كل مقاس
     const navLogoRef = useRef<HTMLDivElement>(null)
     const yicIRef = useRef<HTMLSpanElement>(null)
-    const [lampPos, setLampPos] = useState<{ left: number; top: number } | null>(null)
+    const [lampPos, setLampPos] = useState<{ left: number; top: number; tilt: number } | null>(null)
     useEffect(() => {
+        const lampRef = { current: null as HTMLElement | null }
         const measure = () => {
             const logo = navLogoRef.current
             const iEl = yicIRef.current
@@ -82,13 +83,48 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
             }
             // رفعة بسيطة حتى يبان رأس السلك على نفس مستوى رؤوس Y و C بالعين
             const lift = parseFloat(cs.fontSize) * 0.2
-            setLampPos({ left: r.left - l.left + (r.width - spacing) / 2, top: r.top - l.top + capOffset - lift })
+            const left = r.left - l.left + (r.width - spacing) / 2
+            const top = r.top - l.top + capOffset - lift
+
+            // إذا تحت اللمبة زر أو رابط، تميل وتسند عليه وهي معلقة بالسلك (لليمين، ولليسار إذا ما فيه مكان)
+            lampRef.current = lampRef.current ?? logo.querySelector<HTMLElement>('.nav-lamp')
+            const lamp = lampRef.current
+            const H = lamp?.offsetHeight || 70
+            const W = lamp?.offsetWidth || 24
+            const pivotX = l.left + left
+            const pivotY = l.top + top
+            let obstacleTop = Infinity
+            document.querySelectorAll<HTMLElement>('a, button, [role="button"], input, select').forEach((el) => {
+                if (el.closest('nav')) return
+                const b = el.getBoundingClientRect()
+                if (b.width === 0 || b.height === 0) return
+                const overlapsX = b.left < pivotX + W / 2 && b.right > pivotX - W / 2
+                if (overlapsX && b.top > pivotY && b.top < pivotY + H) obstacleTop = Math.min(obstacleTop, b.top)
+            })
+            // السلك ثابت نازل، والرأس (من نهاية السلك لأسفل الزجاجة) يدور حول نهاية السلك حتى يلمس الزر
+            let tilt = 0
+            if (obstacleTop !== Infinity) {
+                const cordEnd = pivotY + H * (30 / 76)
+                const headLen = H * (46 / 76)
+                const ratio = Math.min(Math.max((obstacleTop - cordEnd - 2) / headLen, 0), 1)
+                const angle = (Math.acos(ratio) * 180) / Math.PI
+                const reach = Math.sin((angle * Math.PI) / 180) * headLen + W / 2
+                tilt = pivotX + reach < window.innerWidth - 4 ? -angle : angle
+            }
+            setLampPos({ left, top, tilt })
         }
         measure()
         document.fonts?.ready.then(measure)
+        // المحتوى أحياناً يتأخر بالتحميل، فنعيد القياس بعد شوي
+        const t1 = window.setTimeout(measure, 400)
+        const t2 = window.setTimeout(measure, 1500)
         window.addEventListener('resize', measure)
-        return () => window.removeEventListener('resize', measure)
-    }, [])
+        return () => {
+            window.removeEventListener('resize', measure)
+            window.clearTimeout(t1)
+            window.clearTimeout(t2)
+        }
+    }, [pathname])
     const toggleTheme = () => {
         setIsDark((d) => {
             const next = !d
@@ -526,6 +562,12 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                     height: 100%;
                     overflow: visible;
                 }
+                /* رأس اللمبة يدور حول نهاية السلك */
+                .lamp-head {
+                    transform-box: view-box;
+                    transform-origin: 15px 30px;
+                    transition: transform 0.45s ease;
+                }
                 /* بنفس لون وعرض حرف I تقريباً */
                 .lamp-cord {
                     stroke: #8B5E3C;
@@ -725,10 +767,11 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                                         <stop offset="1" stopColor="#f0a43a" stopOpacity="0.9" />
                                     </radialGradient>
                                 </defs>
-                                <g>
-                                    {/* السلك يبدأ مكان حرف I في YIC وبنفس عرضه ولونه، وعليه خطوط مايلة تعطي شكل الفتلة */}
-                                    <line x1="15" y1="0" x2="15" y2="30" className="lamp-cord" />
-                                    <path className="lamp-twist" d={Array.from({ length: 7 }, (_, i) => `M14 ${1.5 + i * 4}l2 2`).join('')} />
+                                {/* السلك يبدأ مكان حرف I في YIC وبنفس عرضه ولونه، وعليه خطوط مايلة تعطي شكل الفتلة. يبقى نازل على طول */}
+                                <line x1="15" y1="0" x2="15" y2="30" className="lamp-cord" />
+                                <path className="lamp-twist" d={Array.from({ length: 7 }, (_, i) => `M14 ${1.5 + i * 4}l2 2`).join('')} />
+                                {/* رأس اللمبة: هو اللي يميل ويسند على الزر إذا فيه زر تحته */}
+                                <g className="lamp-head" style={{ transform: `rotate(${lampPos?.tilt ?? 0}deg)` }}>
                                     {/* قاعدة نحاسية بأسنان */}
                                     <rect x="10" y="29" width="10" height="12" rx="1.5" fill="url(#lampBrass)" />
                                     <path d="M10 33h10M10 36.5h10" className="lamp-thread" />

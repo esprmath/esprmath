@@ -476,4 +476,29 @@ html[data-theme="dark"]:not([data-dark-native]) body {
 html[data-theme="dark"]:not([data-dark-native]) :is(img, video, canvas, iframe, .nav-container) {
   filter: invert(1) hue-rotate(180deg);
 }
+/* المربعات (الكورسات والشباتر والمودلات والأسئلة) بدرجة أفتح من الخلفية حتى تبان.
+   اللون هنا قبل الفلتر، وبعد العكس يطلع بني غامق دافي */
+html[data-theme="dark"]:not([data-dark-native]) :is(
+  .chapter-card, .idea-card,
+  [class*="__card "], [class$="__card"],
+  [class*="__panel "], [class$="__panel"],
+  [class*="__midCard "], [class$="__midCard"],
+  [class*="__finalBox "], [class$="__finalBox"],
+  [class*="__questionCard "], [class$="__questionCard"],
+  [class*="__sheet "], [class$="__sheet"],
+  [class*="__graphCard "], [class$="__graphCard"],
+  [class*="__mathCard "], [class$="__mathCard"]
+) {
+  background-color: #D9CDBF !important;
+}
+/* المربعات البيضاء المكتوب لونها داخل الصفحة نفسها (مثل بطاقة الدخول ومربعات صفحات الدروس) بنفس الدرجة.
+   النافبار مستثنى لأنه يظهر بألوانه الحقيقية */
+html[data-theme="dark"]:not([data-dark-native]) :is(
+  [style*="background-color:#ffffff" i], [style*="background:#ffffff" i],
+  [style*="background-color:#fff;" i], [style*="background:#fff;" i],
+  [style*="background-color: rgb(255, 255, 255)"], [style*="background: rgb(255, 255, 255)"],
+  [style*="background-color:white" i], [style*="background:white" i]
+):not(.nav-container *) {
+  background-color: #D9CDBF !important;
+}
 /* ===== الوضع الليلي: نهاية ===== */
