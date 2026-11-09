@@ -501,4 +501,31 @@ html[data-theme="dark"]:not([data-dark-native]) :is(
 ):not(.nav-container *) {
   background-color: #D9CDBF !important;
 }
+/* أزرار الإجراءات (تحقق من الإجابة، صفحة الحل، ابدأ...) تبقى بألوانها الحقيقية حتى تكون واضحة والإيموجي سليم */
+html[data-theme="dark"]:not([data-dark-native]) :is(
+  [class*="__checkBtn"], [class*="__primaryBtn"], [class*="__canvasBtn"], [class*="__regen"],
+  [class*="__startBtn"], [class*="__finalBtn"], [class*="__examsBtn"]
+) {
+  filter: invert(1) hue-rotate(180deg);
+}
+/* خيارات الإجابة وزر الفكرة التالية: بني دافي بدل الأسود، والخيار المختار بدرجة مختلفة */
+html[data-theme="dark"]:not([data-dark-native]) :is([class*="__optionLabel"], [class*="__option "], [class$="__option"], .pager-btn) {
+  background-color: #CDBFAE !important;
+  border-color: #B3A18B !important;
+}
+html[data-theme="dark"]:not([data-dark-native]) :is([class*="__optionLabel"][class*="selected"], [class*="__optionSelected"]) {
+  background-color: #B79F84 !important;
+  border-color: #6E4A28 !important;
+}
+/* مربعات ملخص الفكرة داخل الدرس: أفتح شوي من المربع اللي حولها، والكلام أوضح */
+html[data-theme="dark"]:not([data-dark-native]) .idea-step {
+  background-color: #C9BAA8 !important;
+  border-color: #B3A18B !important;
+}
+html[data-theme="dark"]:not([data-dark-native]) .idea-step-title {
+  color: #5E3410 !important;
+}
+html[data-theme="dark"]:not([data-dark-native]) .idea-step-text {
+  color: #0B0D0C !important;
+}
 /* ===== الوضع الليلي: نهاية ===== */

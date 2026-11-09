@@ -117,9 +117,20 @@
   cursor: not-allowed;
 }
 
+/* صف «سبورة الحل» و«سؤال جديد» جنب بعض في كل الشاشات */
+.toolRow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+}
+.toolRow:empty {
+  display: none;
+}
+
 /* ✅ زر السبورة الجديد */
 .canvasBtn {
-  margin-top: 8px;
+  white-space: nowrap;
   background: #FEECD0;
   color: #8c5521;
   border: 1px solid #DCA27B;

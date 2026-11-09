@@ -60,9 +60,16 @@ export default function IdeaQuestions({ idea, stableKey, onQuestionResult, onOpe
   // ✅ التحقق الذكي: هل توجد أسئلة ديناميكية (قوالب) في هذه الفكرة؟
   const hasTemplates = items.some((i) => 'templateId' in i);
 
+  // زر «سؤال جديد» يظهر فقط إذا فيه أسئلة ديناميكية، وينحط جنب «سبورة الحل» في آخر سؤال
+  const regenButton = hasTemplates ? (
+    <button type="button" className={s.regen} onClick={regenerate}>
+      سؤال جديد 🔄
+    </button>
+  ) : null;
+
   return (
     <div className={s.list}>
-      {questions.map((q) => (
+      {questions.map((q, i) => (
         <div key={q.stableId} className={s.questionWrapper}>
           <QuestionRenderer
             question={q}
@@ -74,20 +81,10 @@ export default function IdeaQuestions({ idea, stableKey, onQuestionResult, onOpe
             canCheck={canCheck}
             onOpenCanvas={onOpenCanvas}
             onTutorContext={onTutorContext}
+            extraAction={i === questions.length - 1 ? regenButton : undefined}
           />
         </div>
       ))}
-
-      {/* ✅ زر التوليد يظهر فقط إذا كانت هناك أسئلة ديناميكية */}
-      {hasTemplates && (
-        <button
-          type="button"
-          className={s.regen}
-          onClick={regenerate}
-        >
-          🔄 توليد أسئلة جديدة
-        </button>
-      )}
     </div>
   );
 }

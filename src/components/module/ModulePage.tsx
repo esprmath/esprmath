@@ -778,9 +778,9 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                             <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📖 ملخص الفكرة:</h3>
                                             <div style={{ display: 'grid', gap: '12px' }}>
                                                 {currentIdeaObj.theoreticalSteps.map((step, idx) => (
-                                                    <div key={idx} style={{ background: '#FFF9E2', border: '1px solid #e6dec5', padding: '14px', borderRadius: '10px' }}>
-                                                        <div style={{ fontWeight: 'bold', color: '#8c5521', marginBottom: '6px', fontSize: '0.95rem' }}>{step.stepTitle}</div>
-                                                        <div style={{ color: '#2C3531', fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}><StepText text={step.stepDescription} /></div>
+                                                    <div key={idx} className="idea-step" style={{ background: '#FFF9E2', border: '1px solid #e6dec5', padding: '14px', borderRadius: '10px' }}>
+                                                        <div className="idea-step-title" style={{ fontWeight: 'bold', color: '#8c5521', marginBottom: '6px', fontSize: '0.95rem' }}>{step.stepTitle}</div>
+                                                        <div className="idea-step-text" style={{ color: '#2C3531', fontSize: '0.9rem', whiteSpace: 'pre-line', lineHeight: '1.5' }}><StepText text={step.stepDescription} /></div>
                                                     </div>
                                                 ))}
                                             </div>

@@ -1,7 +1,7 @@
 // src/components/questions/QuestionRenderer.tsx
 'use client';
 
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, type ReactNode } from 'react';
 import { describeQuestionForTutor } from '@/lib/questions/tutorContext';
 import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -23,6 +23,8 @@ interface QuestionRendererProps {
   canCheck: (q: Question) => boolean;
   onOpenCanvas?: (image?: string, math?: string, storageKey?: string) => void;
   onTutorContext?: (context: string) => void;
+  /** زر إضافي يظهر جنب «سبورة الحل» في نفس الصف، مثل «سؤال جديد» */
+  extraAction?: ReactNode;
 }
 
 export default function QuestionRenderer({
@@ -35,6 +37,7 @@ export default function QuestionRenderer({
   canCheck,
   onOpenCanvas,
   onTutorContext,
+  extraAction,
 }: QuestionRendererProps) {
   const [activePartIndex, setActivePartIndex] = useState(0);
 
@@ -105,7 +108,7 @@ export default function QuestionRenderer({
         className={styles.canvasBtn}
         onClick={() => onOpenCanvas(question.graphImage, customMath ?? question.mathExpression, storageKey)}
       >
-        ✍️ افتح صفحة الحل والرسم
+        سبورة الحل ✍️
       </button>
     );
   };
@@ -242,7 +245,10 @@ export default function QuestionRenderer({
                         تحقق من إجابة الجزئية ✅
                       </button>
 
-                      {renderCanvasButton(part as Question, `q_${part.stableId}`, part.mathExpression)}
+                      <div className={styles.toolRow}>
+                        {renderCanvasButton(part as Question, `q_${part.stableId}`, part.mathExpression)}
+                        {extraAction}
+                      </div>
                     </div>
 
                     {partIsAttempted && partIsCorrect && part.steps && (
@@ -304,7 +310,11 @@ export default function QuestionRenderer({
                 تحقق من الإجابة ✅
               </button>
 
-              {renderCanvasButton(question, `q_${question.stableId}`, question.mathExpression)}
+              {/* سبورة الحل وسؤال جديد جنب بعض في كل الشاشات */}
+              <div className={styles.toolRow}>
+                {renderCanvasButton(question, `q_${question.stableId}`, question.mathExpression)}
+                {extraAction}
+              </div>
 
               {isAttempted && isCorrect && (
                 <div className={`${styles.feedback} ${styles.correctFeedback}`}>

@@ -149,6 +149,23 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
             window.clearTimeout(t2)
         }
     }, [pathname])
+    // عرض أزرار اليسار (يتغير حسب تسجيل الدخول وموعد الاختبار) حتى تبدأ «نصيب» بعدها
+    const navRef = useRef<HTMLElement>(null)
+    const leftGroupRef = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        const nav = navRef.current
+        const group = leftGroupRef.current
+        if (!nav || !group) return
+        const update = () => {
+            const w = group.getBoundingClientRect().right - nav.getBoundingClientRect().left
+            nav.style.setProperty('--nav-left-w', `${Math.round(w)}px`)
+        }
+        update()
+        const ro = new ResizeObserver(update)
+        ro.observe(group)
+        ro.observe(nav)
+        return () => ro.disconnect()
+    }, [])
     const toggleTheme = () => {
         setIsDark((d) => {
             const next = !d
@@ -521,9 +538,9 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                 .nav-gap {
                     flex-basis: 0;
                 }
-                /* نصيب تبدأ بعد زر الدخول */
+                /* نصيب تبدأ بعد أزرار اليسار مهما كان عرضها (العرض يُقاس في الكود) */
                 .gap-before-naseeb {
-                    min-width: 70px;
+                    min-width: calc(var(--nav-left-w, 130px) - 25px);
                 }
                 .nav-letters :global(span) {
                     flex-shrink: 0;
@@ -746,7 +763,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                 }
             `}</style>
 
-            <nav className="nav-container">
+            <nav className="nav-container" ref={navRef}>
                 {/* 1. الشعار أقصى اليمين */}
                 <div className="nav-logo" ref={navLogoRef}>
                     {/* Espr صغيرة ومرفوعة مثل الأس، وMath أكبر وتحتها YIC */}
@@ -841,7 +858,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                 </div>
 
                 {/* 2. مجموعة اليسار: موعد الاختبار (بجانب الملف الشخصي مباشرة) + الملف الشخصي */}
-                <div className="nav-left-group">
+                <div className="nav-left-group" ref={leftGroupRef}>
                     {/* زر موعد الاختبار يأتي يمين الملف الشخصي مباشرة */}
                     {mobileAction && <div className="mobile-action">{mobileAction}</div>}
 

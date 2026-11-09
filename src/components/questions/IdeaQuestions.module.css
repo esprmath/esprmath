@@ -28,14 +28,15 @@
   background: #7a4a1d;
 }
 
+/* بنفس شكل «سبورة الحل» لأنه جنبه في نفس الصف */
 .regen {
-  align-self: flex-start;
+  white-space: nowrap;
   background: #feecd0;
   border: 1px solid #dca27b;
   color: #8c5521;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
