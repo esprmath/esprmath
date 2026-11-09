@@ -33,8 +33,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="ar" dir="rtl">
+        <html lang="ar" dir="rtl" suppressHydrationWarning>
             <body>
+                {/* الوضع الليلي: يطبقه قبل ما تنرسم الصفحة حتى ما تومض بالفاتح (يُحذف مع إلغاء الوضع الليلي) */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: "try{if(localStorage.getItem('theme')==='dark'){var r=document.documentElement;r.setAttribute('data-theme','dark');if(location.pathname==='/')r.setAttribute('data-dark-native','')}}catch(e){}",
+                    }}
+                />
                 {children}
                 <SpeedInsights />
             </body>

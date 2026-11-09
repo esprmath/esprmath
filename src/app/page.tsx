@@ -17,7 +17,7 @@ interface Course {
     requires_approval: boolean
 }
 
-const PRIMARY = '#8c5521'
+const PRIMARY = 'var(--home-primary, #8c5521)'
 
 const FEATURES = [
     {
@@ -50,8 +50,8 @@ const CONTACT_LINKS = [
 
 const sectionStyle: React.CSSProperties = { maxWidth: '1100px', margin: '0 auto 40px auto', padding: '0 20px', width: '100%' }
 const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px' }
-const boxStyle: React.CSSProperties = { background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '22px', textAlign: 'center' }
-const sectionTitleStyle: React.CSSProperties = { fontSize: '1.4rem', color: '#2C3531', fontWeight: 'bold', textAlign: 'center', margin: '0 0 18px 0' }
+const boxStyle: React.CSSProperties = { background: 'var(--home-card, #ffffff)', border: '1px solid var(--home-border, #e6dec5)', borderRadius: '16px', padding: '22px', textAlign: 'center' }
+const sectionTitleStyle: React.CSSProperties = { fontSize: '1.4rem', color: 'var(--home-text, #2C3531)', fontWeight: 'bold', textAlign: 'center', margin: '0 0 18px 0' }
 
 export default function HomePage() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -336,8 +336,8 @@ export default function HomePage() {
                     <button
                         onClick={() => handleRequestCourse(courseId)}
                         style={{
-                            background: '#ffffff',
-                            color: PRIMARY,
+                            background: 'var(--home-card, #ffffff)',
+                            color: 'var(--home-accent, #8c5521)',
                             border: `1px solid ${PRIMARY}`,
                             padding: '9px 20px',
                             borderRadius: '8px',
@@ -357,8 +357,8 @@ export default function HomePage() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            background: '#FEECD0',
-                            color: '#8c5521',
+                            background: 'var(--home-chip, #FEECD0)',
+                            color: 'var(--home-accent, #8c5521)',
                             padding: '8px 12px',
                             borderRadius: '8px',
                             fontSize: '0.85rem',
@@ -396,7 +396,7 @@ export default function HomePage() {
 
     return (
         // سكرول الصفحة العادي، وشريط التواصل ينزل لآخر الشاشة إذا كان المحتوى قصير
-        <div style={{ backgroundColor: '#FFF9E2', minHeight: '100dvh', display: 'flex', flexDirection: 'column', color: '#2C3531', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
+        <div style={{ backgroundColor: 'var(--home-bg, #FFF9E2)', minHeight: '100dvh', display: 'flex', flexDirection: 'column', color: 'var(--home-text, #2C3531)', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
             <Navbar isLoggedIn={isLoggedIn} />
 
             {/* قسم الترحيب: مرفوع للأعلى، بالنص تماماً، وبحجم أكبر */}
@@ -404,22 +404,22 @@ export default function HomePage() {
                 {/* زر لوحة التحكم للمشرف فقط */}
                 {isAdmin && (
                     <div style={{ marginBottom: '10px' }}>
-                        <Link href="/admin" style={{ display: 'inline-block', background: '#ffffff', color: PRIMARY, border: '1px solid #dccfb2', padding: '6px 14px', borderRadius: '999px', fontWeight: 'bold', fontSize: '0.85rem', textDecoration: 'none' }}>
+                        <Link href="/admin" style={{ display: 'inline-block', background: 'var(--home-card, #ffffff)', color: 'var(--home-accent, #8c5521)', border: '1px solid var(--home-border, #dccfb2)', padding: '6px 14px', borderRadius: '999px', fontWeight: 'bold', fontSize: '0.85rem', textDecoration: 'none' }}>
                             ⚙️ لوحة التحكم
                         </Link>
                     </div>
                 )}
 
                 {isLoggedIn && (
-                    <h2 style={{ fontSize: '1.2rem', color: PRIMARY, fontWeight: 'bold', marginBottom: '6px', marginTop: '4px', textAlign: 'center' }}>
+                    <h2 style={{ fontSize: '1.2rem', color: 'var(--home-accent, #8c5521)', fontWeight: 'bold', marginBottom: '6px', marginTop: '4px', textAlign: 'center' }}>
                         مرحباً {userName || 'طالبنا العزيز'} 👋
                     </h2>
                 )}
 
-                <h1 className="hero-title" style={{ fontSize: '2.2rem', fontWeight: 'bold', color: '#2C3531', marginBottom: '6px', marginTop: isLoggedIn ? '0' : '4px', textAlign: 'center' }}>
+                <h1 className="hero-title" style={{ fontSize: '2.2rem', fontWeight: 'bold', color: 'var(--home-text, #2C3531)', marginBottom: '6px', marginTop: isLoggedIn ? '0' : '4px', textAlign: 'center' }}>
                     {isLoggedIn ? 'رحلتك للـ A+ 🚀' : 'تبي الـ A+ ؟'}
                 </h1>
-                <p className="hero-subtitle" style={{ fontSize: '1.05rem', color: '#4A5550', margin: 0, textAlign: 'center', maxWidth: '600px' }}>
+                <p className="hero-subtitle" style={{ fontSize: '1.05rem', color: 'var(--home-muted, #4A5550)', margin: 0, textAlign: 'center', maxWidth: '600px' }}>
                     هنا اضمن لك تفهم كل سؤال يمر عليك بدون ما تضيع بالمصادر
                 </p>
             </header>
@@ -427,13 +427,13 @@ export default function HomePage() {
             {/* قسم الكورسات: بمكان ثابت ومنفصل مع مسافة فاصلة أوسع */}
             <section className="courses-section" style={{ maxWidth: '1100px', margin: '22px auto 30px auto', padding: '0 20px', width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', margin: 0 }}>
+                    <h3 style={{ fontSize: '1.3rem', color: 'var(--home-text, #2C3531)', fontWeight: 'bold', margin: 0 }}>
                         📚 كورساتك المتاحة
                     </h3>
                 </div>
 
                 {coursesLoading && (
-                    <p style={{ textAlign: 'center', color: '#4A5550', fontWeight: 'bold', padding: '30px 0' }}>جاري تحميل الكورسات... ⏳</p>
+                    <p style={{ textAlign: 'center', color: 'var(--home-muted, #4A5550)', fontWeight: 'bold', padding: '30px 0' }}>جاري تحميل الكورسات... ⏳</p>
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px' }}>
@@ -443,8 +443,8 @@ export default function HomePage() {
                                 key={course.id}
                                 className="course-card"
                                 style={{
-                                    background: '#ffffff',
-                                    border: '1px solid #e6dec5',
+                                    background: 'var(--home-card, #ffffff)',
+                                    border: '1px solid var(--home-border, #e6dec5)',
                                     borderRadius: '16px',
                                     padding: '20px',
                                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)',
@@ -455,11 +455,11 @@ export default function HomePage() {
                             >
                                 <div>
                                     <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#2C3531' }}>{course.title}</h3>
+                                        <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--home-text, #2C3531)' }}>{course.title}</h3>
 
                                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                             {!course.is_active && (
-                                                <span style={{ background: '#FEECD0', color: '#8c5521', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                                <span style={{ background: 'var(--home-chip, #FEECD0)', color: 'var(--home-accent, #8c5521)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                                                     مخفي عن الطلاب 🔒
                                                 </span>
                                             )}
@@ -470,7 +470,7 @@ export default function HomePage() {
                                         </div>
                                     </div>
 
-                                    <p className="course-description" style={{ color: '#4A5550', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
+                                    <p className="course-description" style={{ color: 'var(--home-muted, #4A5550)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
                                         {course.description}
                                     </p>
                                 </div>
@@ -486,11 +486,11 @@ export default function HomePage() {
 
             {/* قسم قريباً في المنصة */}
             <section style={{ maxWidth: '1100px', margin: '0 auto 40px auto', padding: '0 20px', width: '100%' }}>
-                <div style={{ background: '#ffffff', border: '1px solid #e6dec5', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
-                    <h3 style={{ fontSize: '1.3rem', color: '#2C3531', fontWeight: 'bold', marginBottom: '8px' }}>
+                <div style={{ background: 'var(--home-card, #ffffff)', border: '1px solid var(--home-border, #e6dec5)', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
+                    <h3 style={{ fontSize: '1.3rem', color: 'var(--home-text, #2C3531)', fontWeight: 'bold', marginBottom: '8px' }}>
                         🚀 قريباً في <BrandName black />
                     </h3>
-                    <p style={{ color: '#4A5550', fontSize: '0.95rem', margin: 0 }}>
+                    <p style={{ color: 'var(--home-muted, #4A5550)', fontSize: '0.95rem', margin: 0 }}>
                         كورسات جديدة قادمة قريباً بإذن الله ✨
                     </p>
                 </div>
@@ -503,8 +503,8 @@ export default function HomePage() {
                     {FEATURES.map((f) => (
                         <div key={f.title} style={boxStyle}>
                             <div style={{ fontSize: '34px', marginBottom: '10px' }}>{f.icon}</div>
-                            <h3 style={{ fontSize: '1.05rem', color: PRIMARY, fontWeight: 'bold', margin: '0 0 8px 0' }}>{f.title}</h3>
-                            <p style={{ color: '#4A5550', fontSize: '0.92rem', lineHeight: 1.7, margin: 0 }}>{f.text}</p>
+                            <h3 style={{ fontSize: '1.05rem', color: 'var(--home-accent, #8c5521)', fontWeight: 'bold', margin: '0 0 8px 0' }}>{f.title}</h3>
+                            <p style={{ color: 'var(--home-muted, #4A5550)', fontSize: '0.92rem', lineHeight: 1.7, margin: 0 }}>{f.text}</p>
                         </div>
                     ))}
                 </div>
@@ -516,16 +516,16 @@ export default function HomePage() {
             <footer dir="rtl" style={{ padding: '20px 24px 28px', display: 'flex', justifyContent: 'flex-start', gap: '28px', flexWrap: 'wrap' }}>
                 {CONTACT_LINKS.map((c) => {
                     const circle = (
-                        <span style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#ffffff', border: '2px solid #DCA27B', boxShadow: '0 2px 6px rgba(140,85,33,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--home-card, #ffffff)', border: '2px solid #DCA27B', boxShadow: '0 2px 6px rgba(140,85,33,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {/* سهم الرسالة مثل شعار تيليقرام بلون الموقع */}
-                            <svg width="26" height="26" viewBox="3 4 18.5 16" fill={PRIMARY} aria-hidden="true" style={{ display: 'block' }}>
+                            <svg width="26" height="26" viewBox="3 4 18.5 16" aria-hidden="true" style={{ display: 'block', fill: PRIMARY }}>
                                 <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
                             </svg>
                         </span>
                     )
                     return (
                         <div key={c.title} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px' }}>
-                            <span style={{ color: PRIMARY, fontWeight: 'bold', fontSize: '0.85rem' }}>{c.title}</span>
+                            <span style={{ color: 'var(--home-accent, #8c5521)', fontWeight: 'bold', fontSize: '0.85rem' }}>{c.title}</span>
                             {c.href ? (
                                 <a href={c.href} target="_blank" rel="noopener noreferrer" aria-label={`${c.title} على تيليقرام`}>
                                     {circle}
@@ -537,16 +537,16 @@ export default function HomePage() {
                     )
                 })}
                 <div style={{ display: 'flex', alignItems: 'flex-end', marginInlineStart: 'auto' }}>
-                    <Link href="/terms" style={{ color: PRIMARY, fontSize: '0.85rem', fontWeight: 'bold' }}>الشروط والأحكام</Link>
+                    <Link href="/terms" style={{ color: 'var(--home-accent, #8c5521)', fontSize: '0.85rem', fontWeight: 'bold' }}>الشروط والأحكام</Link>
                 </div>
             </footer>
 
             {showAlertModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }}>
-                    <div style={{ backgroundColor: '#FFF9E2', border: '1px solid #d8dfb8', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', textAlign: 'center', color: '#2C3531' }}>
+                    <div style={{ backgroundColor: 'var(--home-bg, #FFF9E2)', border: '1px solid var(--home-border, #d8dfb8)', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', textAlign: 'center', color: 'var(--home-text, #2C3531)' }}>
                         <div style={{ fontSize: '36px', marginBottom: '12px' }}>📬</div>
                         <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>حالة الطلب</h3>
-                        <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#4A5550', lineHeight: '1.5' }}>{alertMessage}</p>
+                        <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--home-muted, #4A5550)', lineHeight: '1.5' }}>{alertMessage}</p>
                         <button type="button" onClick={() => setShowAlertModal(false)} style={{ width: '100%', padding: '10px 16px', backgroundColor: PRIMARY, color: '#ffffff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                             حسناً، فهمت 👍
                         </button>

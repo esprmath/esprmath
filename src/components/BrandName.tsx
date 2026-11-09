@@ -11,8 +11,8 @@ const font: React.CSSProperties = {
 export default function BrandName({ onDark = false, black = false }: { onDark?: boolean; black?: boolean }) {
     return (
         <span dir="ltr" style={{ unicodeBidi: 'isolate', whiteSpace: 'nowrap' }}>
-            <span style={{ ...font, color: onDark ? '#DCA27B' : black ? '#2C3531' : '#8B5E3C' }}>Espr</span>
-            <span style={{ ...font, color: onDark ? '#FFF9E2' : '#2C3531' }}>Math</span>
+            <span style={{ ...font, color: onDark ? '#DCA27B' : black ? 'var(--home-text, #2C3531)' : 'var(--home-espr, #8B5E3C)' }}>Espr</span>
+            <span style={{ ...font, color: onDark ? '#FFF9E2' : 'var(--home-text, #2C3531)' }}>Math</span>
         </span>
     );
 }

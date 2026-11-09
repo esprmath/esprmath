@@ -27,6 +27,9 @@ const letter = (ch: keyof typeof NAV_LETTERS) => {
 // فراغ يتمدد حسب عرض الشاشة، والرقم وزنه من المساحة الفاضية
 const gap = (w: number) => <i className="nav-gap" style={{ flexGrow: w }} />
 
+// صفحات ألوانها الليلية جاهزة (الباقي يتعتم بالفلتر العام في globals.css)
+const DARK_NATIVE_PAGES = ['/']
+
 interface NavbarProps {
     isLoggedIn: boolean;
     /** زر يظهر في الجوال فقط مكان زر موعد الاختبار، مثل زر «الاختبارات» في صفحة الكورس */
@@ -39,6 +42,60 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
     const isHomePage = pathname === '/'
     // «لكل مجتهد نصيب» داخل صفحات الدروس فقط (workspace/الكورس/الموديول وأعمق)
     const showMotto = /^\/workspace\/[^/]+\/[^/]+/.test(pathname ?? '')
+
+    // ===== الوضع الليلي (لإلغائه: احذف هذا القسم وقسم اللمبة، وبلوك الوضع الليلي في globals.css، والسكربت في layout.tsx) =====
+    // الاختيار محفوظ في المتصفح ويطبق على كل الصفحات.
+    // الصفحات اللي ألوانها الليلية جاهزة (DARK_NATIVE_PAGES) تاخذ ألوانها الحقيقية، والباقي يتعتم بفلتر عام لين نجهزها
+    const [isDark, setIsDark] = useState(false)
+    useEffect(() => {
+        let saved: string | null = null
+        try { saved = localStorage.getItem('theme') } catch {}
+        setIsDark(saved === 'dark')
+    }, [])
+    useEffect(() => {
+        const root = document.documentElement
+        if (isDark) root.setAttribute('data-theme', 'dark')
+        else root.removeAttribute('data-theme')
+        if (DARK_NATIVE_PAGES.includes(pathname ?? '')) root.setAttribute('data-dark-native', '')
+        else root.removeAttribute('data-dark-native')
+    }, [isDark, pathname])
+    // مكان اللمبة يُقاس من حرف I في YIC حتى يبدأ السلك منه بالضبط في كل مقاس
+    const navLogoRef = useRef<HTMLDivElement>(null)
+    const yicIRef = useRef<HTMLSpanElement>(null)
+    const [lampPos, setLampPos] = useState<{ left: number; top: number } | null>(null)
+    useEffect(() => {
+        const measure = () => {
+            const logo = navLogoRef.current
+            const iEl = yicIRef.current
+            if (!logo || !iEl) return
+            const l = logo.getBoundingClientRect()
+            const r = iEl.getBoundingClientRect()
+            const cs = getComputedStyle(iEl)
+            const spacing = parseFloat(cs.letterSpacing) || 0
+            // بداية السلك عند رأس الحروف بالضبط: ارتفاع الخط ناقص ارتفاع حرف I من مقاييس الخط نفسه
+            let capOffset = r.height * 0.22
+            const ctx = document.createElement('canvas').getContext('2d')
+            if (ctx) {
+                ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`
+                const m = ctx.measureText('I')
+                if (m.fontBoundingBoxAscent) capOffset = m.fontBoundingBoxAscent - m.actualBoundingBoxAscent
+            }
+            // رفعة بسيطة حتى يبان رأس السلك على نفس مستوى رؤوس Y و C بالعين
+            const lift = parseFloat(cs.fontSize) * 0.2
+            setLampPos({ left: r.left - l.left + (r.width - spacing) / 2, top: r.top - l.top + capOffset - lift })
+        }
+        measure()
+        document.fonts?.ready.then(measure)
+        window.addEventListener('resize', measure)
+        return () => window.removeEventListener('resize', measure)
+    }, [])
+    const toggleTheme = () => {
+        setIsDark((d) => {
+            const next = !d
+            try { localStorage.setItem('theme', next ? 'dark' : 'light') } catch {}
+            return next
+        })
+    }
 
     const [userName, setUserName] = useState<string | null>(null)
     const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -446,6 +503,84 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                 .nav-logo {
                     flex-shrink: 0;
                 }
+                /* اللمبة نازلة بسلك يبدأ مكان حرف I في YIC (المكان يُحسب في الكود) */
+                .nav-lamp {
+                    position: absolute;
+                    transform: translateX(-50%);
+                    width: 24px;
+                    height: 70px;
+                    padding: 0;
+                    border: none;
+                    background: none;
+                    cursor: pointer;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                .nav-lamp:focus-visible {
+                    outline: 2px solid #DCA27B;
+                    outline-offset: 2px;
+                    border-radius: 6px;
+                }
+                .nav-lamp svg {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    overflow: visible;
+                }
+                /* بنفس لون وعرض حرف I تقريباً */
+                .lamp-cord {
+                    stroke: #8B5E3C;
+                    stroke-width: 2.6;
+                }
+                .lamp-twist {
+                    stroke: #b88a5f;
+                    stroke-width: 0.7;
+                    stroke-linecap: round;
+                    fill: none;
+                }
+                .lamp-thread {
+                    stroke: #4f3a1a;
+                    stroke-width: 0.8;
+                    opacity: 0.7;
+                }
+                .lamp-glass {
+                    fill: url(#lampGlassOff);
+                    stroke: rgba(110, 90, 70, 0.55);
+                    stroke-width: 0.8;
+                    transition: filter 0.3s;
+                }
+                .lamp-wires {
+                    stroke: #8f8478;
+                    stroke-width: 0.5;
+                    fill: none;
+                }
+                .lamp-filament {
+                    stroke: #7d6a55;
+                    stroke-width: 0.7;
+                    fill: none;
+                    stroke-linejoin: round;
+                }
+                .lamp-shine {
+                    fill: #ffffff;
+                    opacity: 0.65;
+                }
+                .nav-lamp.is-on .lamp-glass {
+                    fill: url(#lampGlassOn);
+                    stroke: rgba(240, 170, 70, 0.8);
+                    filter: drop-shadow(0 0 5px rgba(255, 210, 100, 0.95)) drop-shadow(0 0 18px rgba(255, 185, 70, 0.6)) drop-shadow(0 0 34px rgba(255, 170, 60, 0.35));
+                }
+                .nav-lamp.is-on .lamp-filament {
+                    stroke: #fff6d0;
+                    stroke-width: 0.9;
+                }
+                .nav-lamp.is-on .lamp-shine {
+                    opacity: 0.35;
+                }
+                @media (max-width: 768px) {
+                    .nav-lamp {
+                        width: 19px;
+                        height: 56px;
+                    }
+                }
                 .nav-logo :global(.logo) {
                     display: inline-flex;
                     align-items: flex-start;
@@ -549,15 +684,64 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
 
             <nav className="nav-container">
                 {/* 1. الشعار أقصى اليمين */}
-                <div className="nav-logo">
+                <div className="nav-logo" ref={navLogoRef}>
                     {/* Espr صغيرة ومرفوعة مثل الأس، وMath أكبر وتحتها YIC */}
                     <Link href="/" dir="ltr" aria-label="EsprMath" className="logo">
                         <span className="logo-espr">Espr</span>
                         <span className="logo-bottom">
                             <span className="logo-math">Math</span>
-                            <span className="logo-yic">YIC</span>
+                            {/* في الرئيسية حرف I يختفي ويبقى مكانه، ويبدأ منه سلك اللمبة */}
+                            <span className="logo-yic">
+                                Y<span ref={yicIRef} style={{ color: 'transparent' }}>I</span>C
+                            </span>
                         </span>
                     </Link>
+                    {/* الوضع الليلي: لمبة معلقة بسلك من YIC، تشغيلها يحول الموقع لليلي */}
+                    {(
+                        <button
+                            type="button"
+                            className={`nav-lamp${isDark ? ' is-on' : ''}`}
+                            style={lampPos ? { left: lampPos.left, top: lampPos.top } : { visibility: 'hidden' }}
+                            onClick={toggleTheme}
+                            aria-label={isDark ? 'الثيم النهاري' : 'الثيم الليلي'}
+                            aria-pressed={isDark}
+                        >
+                            <svg viewBox="0 0 30 76" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="lampBrass" x1="0" x2="1">
+                                        <stop offset="0" stopColor="#5e4520" />
+                                        <stop offset="0.35" stopColor="#e2bd68" />
+                                        <stop offset="0.6" stopColor="#b48a3c" />
+                                        <stop offset="1" stopColor="#4f3a1a" />
+                                    </linearGradient>
+                                    <radialGradient id="lampGlassOff" cx="0.42" cy="0.45" r="0.65">
+                                        <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+                                        <stop offset="0.7" stopColor="#e9e3d8" stopOpacity="0.45" />
+                                        <stop offset="1" stopColor="#bfb4a3" stopOpacity="0.6" />
+                                    </radialGradient>
+                                    <radialGradient id="lampGlassOn" cx="0.5" cy="0.5" r="0.6">
+                                        <stop offset="0" stopColor="#fffdf0" />
+                                        <stop offset="0.45" stopColor="#ffe08a" />
+                                        <stop offset="1" stopColor="#f0a43a" stopOpacity="0.9" />
+                                    </radialGradient>
+                                </defs>
+                                <g>
+                                    {/* السلك يبدأ مكان حرف I في YIC وبنفس عرضه ولونه، وعليه خطوط مايلة تعطي شكل الفتلة */}
+                                    <line x1="15" y1="0" x2="15" y2="30" className="lamp-cord" />
+                                    <path className="lamp-twist" d={Array.from({ length: 7 }, (_, i) => `M14 ${1.5 + i * 4}l2 2`).join('')} />
+                                    {/* قاعدة نحاسية بأسنان */}
+                                    <rect x="10" y="29" width="10" height="12" rx="1.5" fill="url(#lampBrass)" />
+                                    <path d="M10 33h10M10 36.5h10" className="lamp-thread" />
+                                    <rect x="11.5" y="40.5" width="7" height="2.5" rx="1" fill="#3a2a16" />
+                                    {/* زجاجة مدورة والفتيل */}
+                                    <path className="lamp-glass" d="M12 43c0 3-8.5 5.5-8.5 17a11.5 11.5 0 0 0 23 0c0-11.5-8.5-14-8.5-17z" />
+                                    <path className="lamp-wires" d="M13 43v14M17 43v14" />
+                                    <path className="lamp-filament" d="M12.6 57l.9-2.2.9 2.2.9-2.2.9 2.2.9-2.2.9 2.2" />
+                                    <ellipse cx="9" cy="59" rx="1.8" ry="5" className="lamp-shine" />
+                                </g>
+                            </svg>
+                        </button>
+                    )}
                 </div>
 
                 <div className="nav-letters" dir="ltr" aria-hidden="true">

@@ -441,3 +441,39 @@ body {
   font-weight: bold;
   cursor: pointer;
 }
+
+
+/* ===== الوضع الليلي: بداية (لإلغائه احذف لين «نهاية الوضع الليلي»، وقسمه في Navbar.tsx والسكربت في layout.tsx) ===== */
+/* الألوان الليلية الحقيقية: الصفحات الجاهزة تقرأها مع ألوان النهار كاحتياط */
+html[data-theme="dark"] {
+  --home-bg: #1D1814;
+  --home-text: #F3E9DC;
+  --home-muted: #C9B8A6;
+  --home-card: #2A231D;
+  --home-border: #4A3B2E;
+  --home-chip: #3D2C1D;
+  --home-accent: #E3B48C;
+  --home-espr: #D49A66;
+  --home-primary: #9A6A40;
+  --nav-bar: #4A3426;
+  --nav-ink: #3A281C;
+  color-scheme: dark;
+}
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background-color: #1D1814;
+}
+
+/* الصفحات اللي ما تجهزت ألوانها الليلية: فلتر يعكس الألوان ويحافظ على درجاتها (البني يبقى بني).
+   الصور والفيديو والرسومات والنافبار ترجع لطبيعتها بعكس الفلتر مرة ثانية */
+html[data-theme="dark"]:not([data-dark-native]) {
+  filter: invert(1) hue-rotate(180deg);
+}
+html[data-theme="dark"]:not([data-dark-native]),
+html[data-theme="dark"]:not([data-dark-native]) body {
+  background-color: #FFF9E2;
+}
+html[data-theme="dark"]:not([data-dark-native]) :is(img, video, canvas, iframe, .nav-container) {
+  filter: invert(1) hue-rotate(180deg);
+}
+/* ===== الوضع الليلي: نهاية ===== */
