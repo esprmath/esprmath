@@ -7,6 +7,26 @@ import { supabase } from '@/lib/supabase'
 import { TOUR_EVENTS } from '@/components/OnboardingTour'
 import { authErrorText, MIN_PASSWORD } from '@/lib/authErrors'
 
+// حروف الخلفية بأحجام وارتفاعات وميلان مختلفة
+const NAV_LETTERS = {
+    E: { size: '1.7rem', y: -8, rotate: -14 },
+    S: { size: '1.25rem', y: 6, rotate: 9 },
+    P: { size: '0.9rem', y: -11, rotate: 18 },
+    R: { size: '1.5rem', y: 10, rotate: -7 },
+    M: { size: '1rem', y: -6, rotate: -18 },
+    A: { size: '1.75rem', y: 9, rotate: 11 },
+    T: { size: '1.1rem', y: -10, rotate: -4 },
+    H: { size: '1.4rem', y: 4, rotate: 14 },
+}
+
+const letter = (ch: keyof typeof NAV_LETTERS) => {
+    const l = NAV_LETTERS[ch]
+    return <span style={{ fontSize: l.size, transform: `translateY(${l.y}px) rotate(${l.rotate}deg)` }}>{ch}</span>
+}
+
+// فراغ يتمدد حسب عرض الشاشة، والرقم وزنه من المساحة الفاضية
+const gap = (w: number) => <i className="nav-gap" style={{ flexGrow: w }} />
+
 interface NavbarProps {
     isLoggedIn: boolean;
     /** زر يظهر في الجوال فقط مكان زر موعد الاختبار، مثل زر «الاختبارات» في صفحة الكورس */
@@ -17,6 +37,8 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
     const router = useRouter()
     const pathname = usePathname()
     const isHomePage = pathname === '/'
+    // «لكل مجتهد نصيب» داخل صفحات الدروس فقط (workspace/الكورس/الموديول وأعمق)
+    const showMotto = /^\/workspace\/[^/]+\/[^/]+/.test(pathname ?? '')
 
     const [userName, setUserName] = useState<string | null>(null)
     const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -358,10 +380,63 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                     bottom: 0;
                     left: 0;
                     right: 175px;
-                    background: #8B5E3C;
+                    background: var(--nav-bar, #8B5E3C);
                     /* طرف منحني: يبدأ من فوق عند الشعار وينزل مايل لين يلتف لتحت */
                     border-radius: 0 0 90px 0 / 0 0 100% 0;
                     z-index: 0;
+                }
+                /* حروف ESPRMATH مبعثرة فوق الشريط البني، بنفس حدوده وأغمق منه بشوي */
+                /* على الشاشات الكبيرة تمتد على الشريط كله من أقصى اليسار لين قبل المنحنى، والأزرار فوقها */
+                /* الطبقة توقف قبل منحنى الشريط، وكل حرف وكلمة مكانه بنسبة من عرضها */
+                .nav-letters {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 240px;
+                    z-index: 0;
+                    display: flex;
+                    align-items: center;
+                    overflow: hidden;
+                    pointer-events: none;
+                    user-select: none;
+                }
+                .nav-gap {
+                    flex-basis: 0;
+                }
+                /* نصيب تبدأ بعد زر الدخول */
+                .gap-before-naseeb {
+                    min-width: 70px;
+                }
+                .nav-letters :global(span) {
+                    flex-shrink: 0;
+                    font-family: 'Playfair Display', Georgia, serif;
+                    font-style: italic;
+                    font-weight: 700;
+                    line-height: 1;
+                    color: var(--nav-ink, #74492B);
+                }
+                /* كلمات العبارة تكبر وتصغر مع الشاشة */
+                .nav-word {
+                    flex-shrink: 0;
+                    height: clamp(28px, 3.2vw, 50px);
+                    width: auto;
+                    fill: var(--nav-ink, #74492B);
+                }
+                .word-lkl {
+                    transform: translateY(-3px) rotate(-7deg);
+                }
+                .word-mjtahid {
+                    transform: translateY(3px) rotate(4deg);
+                }
+                .word-naseeb {
+                    transform: rotate(-5deg);
+                }
+                /* الإطار بلون الشريط ينحف حروف الرقعة بدون ما يصغرها */
+                .nav-word text {
+                    font-family: 'Aref Ruqaa', serif;
+                    stroke: var(--nav-bar, #8B5E3C);
+                    stroke-width: 0.8px;
                 }
                 .nav-logo,
                 .nav-left-group {
@@ -386,7 +461,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                 }
                 .logo-espr {
                     font-size: 1.2rem;
-                    color: #8B5E3C;
+                    color: var(--home-espr, #8B5E3C);
                     margin-right: -3px;
                 }
                 .logo-bottom {
@@ -397,7 +472,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                 }
                 .logo-math {
                     font-size: 1.75rem;
-                    color: #2C3531;
+                    color: var(--home-text, #2C3531);
                 }
                 .logo-yic {
                     margin-top: -1px;
@@ -427,6 +502,13 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                     .mobile-action {
                         display: flex;
                     }
+                    /* الجوال فقط: العبارة تختفي والحروف تتوزع بالتساوي على الشريط */
+                    .nav-word {
+                        display: none;
+                    }
+                    .gap-before-naseeb {
+                        min-width: 0;
+                    }
                 }
 
                 @media (max-width: 768px) {
@@ -439,6 +521,13 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                     }
                     .nav-container::before {
                         right: 130px;
+                    }
+                    /* الجوال: نفس الامتداد على الشريط كله، والزر فوقها */
+                    .nav-letters {
+                        right: 176px;
+                    }
+                    .nav-letters :global(span) {
+                        scale: 0.75;
                     }
                     .logo-espr {
                         font-size: 0.9rem;
@@ -469,6 +558,35 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                             <span className="logo-yic">YIC</span>
                         </span>
                     </Link>
+                </div>
+
+                <div className="nav-letters" dir="ltr" aria-hidden="true">
+                    {/* من اليسار: نصيب، ثم مجتهد بالنص، ثم لكل قرب اليمين، والحروف في الفراغات بينها.
+                        الكلمات تختفي في الجوال فقط */}
+                    {gap(0.4)}{letter('E')}{gap(1)}{letter('S')}
+                    <i className={`nav-gap${showMotto ? ' gap-before-naseeb' : ''}`} style={{ flexGrow: 1.6 }} />
+                    {showMotto && (
+                        <svg className="nav-word word-naseeb" viewBox="0 0 230 72" style={{ aspectRatio: '230 / 72' }}>
+                            <text x="205" y="40" textAnchor="middle" style={{ fontSize: 40 }}>”</text>
+                            <text x="115" y="54" textAnchor="middle" direction="rtl" style={{ fontSize: 50 }}>نَصِيبٌ</text>
+                            <text x="25" y="40" textAnchor="middle" style={{ fontSize: 40 }}>“</text>
+                        </svg>
+                    )}
+                    {gap(1.3)}{letter('P')}{gap(0.8)}{letter('R')}{gap(1.3)}
+                    {showMotto && (
+                        <svg className="nav-word word-mjtahid" viewBox="0 0 210 64" style={{ aspectRatio: '210 / 64' }}>
+                            <rect x="8" y="34" width="7" height="7" transform="rotate(45 11.5 37.5)" />
+                            <text x="105" y="46" textAnchor="middle" direction="rtl" style={{ fontSize: 38 }}>مُجْتَهِدٍ</text>
+                            <rect x="195" y="34" width="7" height="7" transform="rotate(45 198.5 37.5)" />
+                        </svg>
+                    )}
+                    {gap(1.3)}{letter('M')}{gap(0.8)}{letter('A')}{gap(0.8)}{letter('T')}{gap(1.3)}
+                    {showMotto && (
+                        <svg className="nav-word word-lkl" viewBox="0 0 110 64" style={{ aspectRatio: '110 / 64' }}>
+                            <text x="55" y="46" textAnchor="middle" direction="rtl" style={{ fontSize: 36 }}>لِكُلِّ</text>
+                        </svg>
+                    )}
+                    {gap(1.4)}{letter('H')}{gap(0.4)}
                 </div>
 
                 {/* 2. مجموعة اليسار: موعد الاختبار (بجانب الملف الشخصي مباشرة) + الملف الشخصي */}
