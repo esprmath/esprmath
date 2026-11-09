@@ -174,6 +174,150 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
         })
     }
 
+    // ===== سحب اللمبة (الشاشات الكبيرة فقط) =====
+    // g = مكان مركز الزجاجة بالنسبة لرأس السلك. taut: السلك مشدود والرأس باتجاهه، hang: معلقة عمودية
+    const [drag, setDrag] = useState<{ gx: number; gy: number; mode: 'taut' | 'hang' } | null>(null)
+    const dragRef = useRef<{ startX: number; startY: number; px: number; py: number; moved: boolean } | null>(null)
+    const suppressClickRef = useRef(false)
+    const fallRaf = useRef<number | null>(null)
+    useEffect(() => {
+        setDrag(null)
+        return () => { if (fallRaf.current) cancelAnimationFrame(fallRaf.current) }
+    }, [pathname])
+    const isBigScreen = () => window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches
+    const lampPivot = () => {
+        const logo = navLogoRef.current
+        if (!logo || !lampPos) return null
+        const l = logo.getBoundingClientRect()
+        return { x: l.left + lampPos.left, y: l.top + lampPos.top }
+    }
+    const onLampPointerDown = (e: React.PointerEvent<SVGGElement>) => {
+        if (!isBigScreen() || !lampPos) return
+        const p = lampPivot()
+        if (!p) return
+        if (fallRaf.current) cancelAnimationFrame(fallRaf.current)
+        e.currentTarget.setPointerCapture(e.pointerId)
+        dragRef.current = { startX: e.clientX, startY: e.clientY, px: p.x, py: p.y, moved: false }
+    }
+    const onLampPointerMove = (e: React.PointerEvent<SVGGElement>) => {
+        const d = dragRef.current
+        if (!d) return
+        if (!d.moved && Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 5) return
+        d.moved = true
+        setDrag({ gx: e.clientX - d.px, gy: e.clientY - d.py, mode: 'taut' })
+    }
+    const onLampPointerUp = (e: React.PointerEvent<SVGGElement>) => {
+        const d = dragRef.current
+        dragRef.current = null
+        if (!d || !d.moved || !lampPos) return
+        suppressClickRef.current = true // الضغطة اللي تجي بعد السحب ما تشغل الوضع الليلي
+        releaseLamp(e.clientX - d.px, e.clientY - d.py, d.px, d.py)
+    }
+    // بعد الإفلات: السلك يرجع لطوله الأصلي إذا كان ممدود، ثم تنزل بالجاذبية لين تسند على شي أو ينشد السلك
+    const releaseLamp = (gx0: number, gy0: number, px: number, py: number) => {
+        const s = lampPos!.shape.s
+        const head = 30 * s // من نهاية السلك لمركز الزجاجة
+        const L0 = 30 * s // طول السلك الأصلي
+        const R = 11.5 * s
+        const obstacles: DOMRect[] = []
+        document.querySelectorAll<HTMLElement>(
+            'button, a, input, select, textarea, img, video, iframe, [class*="card" i], [class*="panel" i], .idea-step, .pager-btn'
+        ).forEach((el) => {
+            if (el.closest('.nav-lamp')) return
+            const r = el.getBoundingClientRect()
+            if (r.width > 0 && r.height > 0) obstacles.push(r)
+        })
+        let gx = gx0
+        let gy = gy0
+        let vy = 0
+        let phase: 'retract' | 'fall' = 'retract'
+        const step = () => {
+            if (phase === 'retract') {
+                const dist = Math.hypot(gx, gy)
+                const maxDist = L0 + head
+                if (dist <= maxDist + 0.5) {
+                    phase = 'fall'
+                } else {
+                    const next = Math.max(maxDist, dist - Math.max(6, (dist - maxDist) * 0.25))
+                    gx *= next / dist
+                    gy *= next / dist
+                    setDrag({ gx, gy, mode: 'taut' })
+                    fallRaf.current = requestAnimationFrame(step)
+                    return
+                }
+            }
+            // نزول عمودي: نهاية السلك فوق مركز الزجاجة بمسافة head
+            vy = Math.min(vy + 0.9, 18)
+            let ny = gy + vy
+            let done = false
+            let mode: 'taut' | 'hang' = 'hang'
+            // السلك ما يطول أكثر من L0
+            const ex = gx
+            if (Math.abs(ex) >= L0) {
+                done = true
+                mode = 'taut'
+                ny = gy
+            } else {
+                const maxEy = Math.sqrt(L0 * L0 - ex * ex)
+                if (ny - head >= maxEy) {
+                    ny = maxEy + head
+                    done = true
+                    mode = Math.abs(ex) > 2 ? 'taut' : 'hang'
+                }
+            }
+            // تسند على أي شي تحتها
+            const bottomBefore = py + gy + R
+            const bottomAfter = py + ny + R
+            const x = px + gx
+            for (const r of obstacles) {
+                if (x + R * 0.6 < r.left || x - R * 0.6 > r.right) continue
+                if (r.top >= bottomBefore - 1 && r.top <= bottomAfter) {
+                    ny = r.top - py - R
+                    done = true
+                    mode = 'hang'
+                }
+            }
+            gy = ny
+            if (mode === 'taut') {
+                // ينشد السلك: الرأس باتجاه السلك على طوله الأصلي
+                const ang = Math.atan2(gx, gy)
+                const len = L0 + head
+                gx = Math.sin(ang) * len
+                gy = Math.cos(ang) * len
+            }
+            setDrag({ gx, gy, mode })
+            if (!done) fallRaf.current = requestAnimationFrame(step)
+        }
+        fallRaf.current = requestAnimationFrame(step)
+    }
+    const onLampClick = () => {
+        if (suppressClickRef.current) {
+            suppressClickRef.current = false
+            return
+        }
+        toggleTheme()
+    }
+    // شكل اللمبة وقت السحب أو بعده
+    const dragShape = (s: number): LampShape | null => {
+        if (!drag) return null
+        const { gx, gy, mode } = drag
+        const head = 30 * s
+        const L0 = 30 * s
+        if (mode === 'taut') {
+            const len = Math.hypot(gx, gy) || 1
+            const ax = gx / len
+            const ay = gy / len
+            const ex = gx - ax * head
+            const ey = gy - ay * head
+            return { s, ex, ey, theta: (Math.atan2(-ax, ay) * 180) / Math.PI, cx: ex / 2, cy: ey / 2 }
+        }
+        // معلقة: الرأس عمودي، والسلك مرتخي بانحناءة حسب الطول الزايد
+        const ex = gx
+        const ey = gy - head
+        const slack = Math.sqrt(Math.max(0, L0 * L0 - (ex * ex + ey * ey)))
+        return { s, ex, ey, theta: 0, cx: ex / 2, cy: ey / 2 + slack * 0.6 }
+    }
+
     const [userName, setUserName] = useState<string | null>(null)
     const [userEmail, setUserEmail] = useState<string | null>(null)
     const [studentId, setStudentId] = useState<string | null>(null)
@@ -608,6 +752,16 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                     pointer-events: visiblePainted;
                     cursor: pointer;
                 }
+                /* الشاشات الكبيرة: اللمبة تنسحب */
+                @media (min-width: 1024px) and (pointer: fine) {
+                    .lamp-head {
+                        cursor: grab;
+                        touch-action: none;
+                    }
+                    .lamp-head:active {
+                        cursor: grabbing;
+                    }
+                }
                 /* بنفس لون حرف I وعرضه تقريباً */
                 .lamp-cord {
                     stroke: #8B5E3C;
@@ -778,12 +932,12 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                         </span>
                     </Link>
                     {/* الوضع الليلي: لمبة معلقة بسلك من YIC، تشغيلها يحول الموقع لليلي */}
-                    {(() => { const lamp = lampPos?.shape ?? { s: 0.8, ex: 0, ey: 24, theta: 0, cx: 0, cy: 12 }; return (
+                    {(() => { const base = lampPos?.shape ?? { s: 0.8, ex: 0, ey: 24, theta: 0, cx: 0, cy: 12 }; const lamp = dragShape(base.s) ?? base; return (
                         <button
                             type="button"
                             className={`nav-lamp${isDark ? ' is-on' : ''}`}
                             style={lampPos ? { left: lampPos.left, top: lampPos.top } : { visibility: 'hidden' }}
-                            onClick={toggleTheme}
+                            onClick={onLampClick}
                             aria-label={isDark ? 'الثيم النهاري' : 'الثيم الليلي'}
                             aria-pressed={isDark}
                         >
@@ -812,7 +966,13 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                                 <path className="lamp-cord" d={`M0 0Q${lamp.cx} ${lamp.cy} ${lamp.ex} ${lamp.ey}`} style={{ strokeWidth: 2.6 * lamp.s }} />
                                 <path className="lamp-twist" d={`M0 0Q${lamp.cx} ${lamp.cy} ${lamp.ex} ${lamp.ey}`} style={{ strokeWidth: 1.6 * lamp.s, strokeDasharray: `${1.3 * lamp.s} ${2.4 * lamp.s}` }} />
                                 {/* رأس اللمبة (القاعدة والزجاجة): يتعلق بنهاية السلك ويميل باتجاهه */}
-                                <g className="lamp-head" transform={`translate(${lamp.ex} ${lamp.ey}) rotate(${lamp.theta}) scale(${lamp.s}) translate(-15 -30)`}>
+                                <g
+                                    className="lamp-head"
+                                    onPointerDown={onLampPointerDown}
+                                    onPointerMove={onLampPointerMove}
+                                    onPointerUp={onLampPointerUp}
+                                    onPointerCancel={() => { dragRef.current = null }}
+                                    transform={`translate(${lamp.ex} ${lamp.ey}) rotate(${lamp.theta}) scale(${lamp.s}) translate(-15 -30)`}>
                                     {/* قاعدة نحاسية بأسنان */}
                                     <rect x="10" y="29" width="10" height="12" rx="1.5" fill="url(#lampBrass)" />
                                     <path d="M10 33h10M10 36.5h10" className="lamp-thread" />
