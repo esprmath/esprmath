@@ -30,6 +30,9 @@ const gap = (w: number) => <i className="nav-gap" style={{ flexGrow: w }} />
 // صفحات ألوانها الليلية جاهزة (الباقي يتعتم بالفلتر العام في globals.css)
 const DARK_NATIVE_PAGES = ['/']
 
+// شكل اللمبة: نهاية السلك (ex, ey)، نقطة انحناء السلك (cx, cy)، ميلان الرأس theta، وحجمه s
+type LampShape = { s: number; ex: number; ey: number; theta: number; cx: number; cy: number }
+
 interface NavbarProps {
     isLoggedIn: boolean;
     /** زر يظهر في الجوال فقط مكان زر موعد الاختبار، مثل زر «الاختبارات» في صفحة الكورس */
@@ -62,7 +65,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
     // مكان اللمبة يُقاس من حرف I في YIC حتى يبدأ السلك منه بالضبط في كل مقاس
     const navLogoRef = useRef<HTMLDivElement>(null)
     const yicIRef = useRef<HTMLSpanElement>(null)
-    const [lampPos, setLampPos] = useState<{ left: number; top: number; tilt: number } | null>(null)
+    const [lampPos, setLampPos] = useState<{ left: number; top: number; shape: LampShape } | null>(null)
     useEffect(() => {
         const lampRef = { current: null as HTMLElement | null }
         const measure = () => {
@@ -93,25 +96,46 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
             const W = lamp?.offsetWidth || 24
             const pivotX = l.left + left
             const pivotY = l.top + top
-            let obstacleTop = Infinity
+            let obstacle: DOMRect | null = null
             document.querySelectorAll<HTMLElement>('a, button, [role="button"], input, select').forEach((el) => {
                 if (el.closest('nav')) return
                 const b = el.getBoundingClientRect()
                 if (b.width === 0 || b.height === 0) return
                 const overlapsX = b.left < pivotX + W / 2 && b.right > pivotX - W / 2
-                if (overlapsX && b.top > pivotY && b.top < pivotY + H) obstacleTop = Math.min(obstacleTop, b.top)
+                if (overlapsX && b.top > pivotY && b.top < pivotY + H && (!obstacle || b.top < obstacle.top)) obstacle = b
             })
-            // السلك ثابت نازل، والرأس (من نهاية السلك لأسفل الزجاجة) يدور حول نهاية السلك حتى يلمس الزر
-            let tilt = 0
-            if (obstacleTop !== Infinity) {
-                const cordEnd = pivotY + H * (30 / 76)
-                const headLen = H * (46 / 76)
-                const ratio = Math.min(Math.max((obstacleTop - cordEnd - 2) / headLen, 0), 1)
-                const angle = (Math.acos(ratio) * 180) / Math.PI
-                const reach = Math.sin((angle * Math.PI) / 180) * headLen + W / 2
-                tilt = pivotX + reach < window.innerWidth - 4 ? -angle : angle
+
+            // الرسم بالبكسل وأصله رأس السلك. s = حجم الرأس بالنسبة لتصميمه الأصلي (عرض 30)
+            const s = W / 30
+            const R = 11.5 * s // نص قطر الزجاجة
+            let shape: LampShape = { s, ex: 0, ey: 30 * s, theta: 0, cx: 0, cy: 15 * s }
+            const btn = obstacle as DOMRect | null
+            if (btn) {
+                // الأفضل: السلك يمتد لليمين واللمبة تسند على زاوية الزر اليمنى من برا، فما تغطي الزر
+                const theta = -28
+                const rad = (theta * Math.PI) / 180
+                const axis = { x: -Math.sin(rad), y: Math.cos(rad) } // اتجاه الرأس من نهاية السلك لتحت
+                const cornerX = btn.right - pivotX
+                const cornerY = btn.top - pivotY
+                const gx = cornerX + R * 0.8 // مركز الزجاجة: ملاصق لحافة الزر من اليمين
+                const gy = cornerY + R * 0.35
+                const ex = gx - axis.x * 30 * s
+                const ey = gy - axis.y * 30 * s
+                const fitsRight = pivotX + gx + R + 1 <= window.innerWidth
+                if (fitsRight && ey > 6 * s) {
+                    // السلك ينزل أول مستقيم (ما يلمس حرف C) ثم ينحني لليمين من ثقل اللمبة
+                    shape = { s, ex, ey, theta, cx: ex * 0.08, cy: ey * 0.85 }
+                } else {
+                    // ما فيه مكان يمين الزر: السلك نازل والرأس يميل ويسند على سطح الزر
+                    const cordEnd = 30 * s
+                    const headLen = 46 * s
+                    const ratio = Math.min(Math.max((cornerY - cordEnd - 2) / headLen, 0), 1)
+                    const angle = (Math.acos(ratio) * 180) / Math.PI
+                    const reach = Math.sin((angle * Math.PI) / 180) * headLen + W / 2
+                    shape = { s, ex: 0, ey: cordEnd, theta: pivotX + reach < window.innerWidth - 4 ? -angle : angle, cx: 0, cy: cordEnd / 2 }
+                }
             }
-            setLampPos({ left, top, tilt })
+            setLampPos({ left, top, shape })
         }
         measure()
         document.fonts?.ready.then(measure)
@@ -548,35 +572,33 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                     padding: 0;
                     border: none;
                     background: none;
-                    cursor: pointer;
                     -webkit-tap-highlight-color: transparent;
+                    /* مربع الزر ما ينضغط حتى ما يغطي الأزرار اللي تحته، والضغط على اللمبة نفسها بس */
+                    pointer-events: none;
                 }
                 .nav-lamp:focus-visible {
                     outline: 2px solid #DCA27B;
                     outline-offset: 2px;
                     border-radius: 6px;
                 }
-                .nav-lamp svg {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
+                .lamp-svg {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
                     overflow: visible;
                 }
-                /* رأس اللمبة يدور حول نهاية السلك */
                 .lamp-head {
-                    transform-box: view-box;
-                    transform-origin: 15px 30px;
-                    transition: transform 0.45s ease;
+                    pointer-events: visiblePainted;
+                    cursor: pointer;
                 }
-                /* بنفس لون وعرض حرف I تقريباً */
+                /* بنفس لون حرف I وعرضه تقريباً */
                 .lamp-cord {
                     stroke: #8B5E3C;
-                    stroke-width: 2.6;
+                    fill: none;
+                    stroke-linecap: round;
                 }
                 .lamp-twist {
                     stroke: #b88a5f;
-                    stroke-width: 0.7;
-                    stroke-linecap: round;
                     fill: none;
                 }
                 .lamp-thread {
@@ -739,7 +761,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                         </span>
                     </Link>
                     {/* الوضع الليلي: لمبة معلقة بسلك من YIC، تشغيلها يحول الموقع لليلي */}
-                    {(
+                    {(() => { const lamp = lampPos?.shape ?? { s: 0.8, ex: 0, ey: 24, theta: 0, cx: 0, cy: 12 }; return (
                         <button
                             type="button"
                             className={`nav-lamp${isDark ? ' is-on' : ''}`}
@@ -748,7 +770,8 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                             aria-label={isDark ? 'الثيم النهاري' : 'الثيم الليلي'}
                             aria-pressed={isDark}
                         >
-                            <svg viewBox="0 0 30 76" aria-hidden="true">
+                            {/* الرسم بالبكسل وأصله رأس السلك، والزر نفسه ما يستقبل الضغط: اللمبة بس هي اللي تنضغط */}
+                            <svg className="lamp-svg" width="1" height="1" aria-hidden="true">
                                 <defs>
                                     <linearGradient id="lampBrass" x1="0" x2="1">
                                         <stop offset="0" stopColor="#5e4520" />
@@ -767,11 +790,12 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                                         <stop offset="1" stopColor="#f0a43a" stopOpacity="0.9" />
                                     </radialGradient>
                                 </defs>
-                                {/* السلك يبدأ مكان حرف I في YIC وبنفس عرضه ولونه، وعليه خطوط مايلة تعطي شكل الفتلة. يبقى نازل على طول */}
-                                <line x1="15" y1="0" x2="15" y2="30" className="lamp-cord" />
-                                <path className="lamp-twist" d={Array.from({ length: 7 }, (_, i) => `M14 ${1.5 + i * 4}l2 2`).join('')} />
-                                {/* رأس اللمبة: هو اللي يميل ويسند على الزر إذا فيه زر تحته */}
-                                <g className="lamp-head" style={{ transform: `rotate(${lampPos?.tilt ?? 0}deg)` }}>
+                                {/* السلك يبدأ مكان حرف I في YIC وبنفس لونه وعرضه تقريباً، والخطوط المتقطعة فوقه تعطي شكل الفتلة.
+                                    عادي ينزل مستقيم، وإذا فيه زر تحته يمتد لليمين بانحناءة خفيفة */}
+                                <path className="lamp-cord" d={`M0 0Q${lamp.cx} ${lamp.cy} ${lamp.ex} ${lamp.ey}`} style={{ strokeWidth: 2.6 * lamp.s }} />
+                                <path className="lamp-twist" d={`M0 0Q${lamp.cx} ${lamp.cy} ${lamp.ex} ${lamp.ey}`} style={{ strokeWidth: 1.6 * lamp.s, strokeDasharray: `${1.3 * lamp.s} ${2.4 * lamp.s}` }} />
+                                {/* رأس اللمبة (القاعدة والزجاجة): يتعلق بنهاية السلك ويميل باتجاهه */}
+                                <g className="lamp-head" transform={`translate(${lamp.ex} ${lamp.ey}) rotate(${lamp.theta}) scale(${lamp.s}) translate(-15 -30)`}>
                                     {/* قاعدة نحاسية بأسنان */}
                                     <rect x="10" y="29" width="10" height="12" rx="1.5" fill="url(#lampBrass)" />
                                     <path d="M10 33h10M10 36.5h10" className="lamp-thread" />
@@ -784,7 +808,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
                                 </g>
                             </svg>
                         </button>
-                    )}
+                    )})()}
                 </div>
 
                 <div className="nav-letters" dir="ltr" aria-hidden="true">
