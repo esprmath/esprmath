@@ -19,7 +19,7 @@ const TABS: Array<{ id: TabId; label: string; icon: string; sub: string }> = [
     { id: 'overview', label: 'نظرة عامة', icon: '📊', sub: 'ملخص المنصة وطلبات الانضمام' },
     { id: 'students', label: 'الطلاب', icon: '🎓', sub: 'البحث والاعتماد وصلاحية فيكتور' },
     { id: 'courses', label: 'الكورسات', icon: '📚', sub: 'إنشاء الكورسات وتعديلها وحذفها' },
-    { id: 'exams', label: 'الاختبارات والموديولات', icon: '📝', sub: 'اختر الكورس، ثم افتح وأغلق وجدول موديولاته واختباراته' },
+    { id: 'exams', label: 'الاختبارات والـ Modules', icon: '📝', sub: 'اختر الكورس، ثم افتح وأغلق وجدول الـ Modules الخاصة به واختباراته' },
     { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },];
 
 const LOG_DAYS = 62;
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
                 badge_color: '#FEECD0',
                 badge_text_color: '#8c5521',
             }]).select('id'),
-            'تم إنشاء الكورس ✓ أضف موديولاته، وهو مخفي عن الطلاب حتى تظهره'
+            'تم إنشاء الكورس ✓ أضف الـ Modules الخاصة به، وهو مخفي عن الطلاب حتى تظهره'
         );
         setExamsCourseId(form.id);
         setTab('exams');
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
         }
         setConfirm({
             title: `حذف ${course.title}؟`,
-            text: 'سيُحذف الكورس وكل موديولاته واختباراته نهائيًا، ولا يمكن استرجاعها.',
+            text: 'سيُحذف الكورس وكل الـ Modules الخاصة به واختباراته نهائيًا، ولا يمكن استرجاعها.',
             label: 'حذف الكورس',
             danger: true,
             run: () => applyChange(async () => {
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
 
     const examsActions: ExamsActions = {
         toggleModule: (mod) => updateModule(mod, { is_open: !mod.is_open }, mod.is_open ? `تم إغلاق ${mod.title}` : `تم فتح ${mod.title}`),
-        toggleModuleFree: (mod) => updateModule(mod, { is_free: !mod.is_free }, mod.is_free ? 'الموديول صار يتطلب اعتمادًا' : 'الموديول صار مجانيًا'),
+        toggleModuleFree: (mod) => updateModule(mod, { is_free: !mod.is_free }, mod.is_free ? 'الـ Module صار يتطلب اعتمادًا' : 'الـ Module صار مجانيًا'),
         scheduleModule: (mod, opensAt, closesAt) => updateModule(mod, { opens_at: opensAt, closes_at: closesAt }, 'تم حفظ الموعد ✓'),
         saveModule: (form: ModuleForm, existing) => existing
             ? updateModule(existing, {
@@ -295,17 +295,17 @@ export default function AdminDashboard() {
                 title: form.title,
                 description: form.description,
                 chapters: form.chapters,
-            }, 'تم حفظ الموديول ✓')
+            }, 'تم حفظ الـ Module ✓')
             : applyChange(
                 () => supabase.from('course_modules').insert([{ ...form, course_id: examsCourseId }]).select('id'),
-                'تمت إضافة الموديول ✓'
+                'تمت إضافة الـ Module ✓'
             ),
         deleteModule: (mod) => setConfirm({
             title: `حذف ${mod.title}؟`,
-            text: 'سيختفي الموديول من صفحة الكورس. محتواه في ملفات الموقع لا يتأثر.',
-            label: 'حذف الموديول',
+            text: 'سيختفي الـ Module من صفحة الكورس. محتواه في ملفات الموقع لا يتأثر.',
+            label: 'حذف الـ Module',
             danger: true,
-            run: () => applyChange(() => supabase.from('course_modules').delete().eq('id', mod.id).select('id'), 'تم حذف الموديول'),
+            run: () => applyChange(() => supabase.from('course_modules').delete().eq('id', mod.id).select('id'), 'تم حذف الـ Module'),
         }),
         toggleQuiz: (quiz) => applyChange(
             () => supabase.from('quiz_settings').update({ is_open: !quiz.is_open }).eq('id', quiz.id).select('id'),

@@ -130,7 +130,7 @@ export function Courses({ courses, students, moduleCounts, busy, onToggle, onCre
                                     <div className={styles.stats}>
                                         <div><strong>{rows.filter((r) => r.is_approved === true).length}</strong>معتمد</div>
                                         <div><strong>{rows.filter((r) => r.is_approved === false).length}</strong>معلق</div>
-                                        <div><strong>{moduleCounts[course.id] ?? 0}</strong>موديول</div>
+                                        <div><strong>{moduleCounts[course.id] ?? 0}</strong>Module</div>
                                     </div>
                                     <div className={styles.setting}>
                                         <span>إظهار الكورس<span className={styles.settingHint}>يظهر في الصفحة الرئيسية للطلاب</span></span>
@@ -141,7 +141,7 @@ export function Courses({ courses, students, moduleCounts, busy, onToggle, onCre
                                         <Switch on={course.requires_approval} label="يتطلب موافقة" disabled={busy} onChange={() => onToggle(course, 'requires_approval', !course.requires_approval)} />
                                     </div>
                                     <div className={styles.formActions}>
-                                        <button type="button" className={styles.btn} onClick={() => onManage(course.id)}>الموديولات والاختبارات</button>
+                                        <button type="button" className={styles.btn} onClick={() => onManage(course.id)}>الـ Modules والاختبارات</button>
                                         <button type="button" className={cx(styles.btn, styles.btnGhost)} onClick={() => setEditingId(course.id)}>تعديل</button>
                                         <button type="button" className={cx(styles.btn, styles.btnDanger)} disabled={busy} onClick={() => onDelete(course, rows.length)}>حذف</button>
                                     </div>

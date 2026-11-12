@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/implicit-cubic.ts
-// شكلان من شابتر 2.6: Ex 2 (x³ + y³ = 6xy)، و Ex 1 (الاشتقاق ثم المماس للدائرة)
+// شكلان من Chapter 2.6: Ex 2 (x³ + y³ = 6xy)، و Ex 1 (الاشتقاق ثم المماس للدائرة)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { frac, uniqueExcept } from '../utils';
 import { monomial } from './helpers';

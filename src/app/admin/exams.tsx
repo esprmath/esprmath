@@ -19,7 +19,7 @@ const STATUS_VIEW: Record<WindowStatus, { label: string; tone: 'good' | 'warn' |
     closed: { label: 'مغلق', tone: 'muted' },
 };
 
-/** موعد الفتح والإغلاق، ويعمل مع الموديولات والاختبارات */
+/** موعد الفتح والإغلاق، ويعمل مع الـ Modules والاختبارات */
 function ScheduleEditor({ item, busy, onSave }: {
     item: { opens_at: string | null; closes_at: string | null };
     busy: boolean;
@@ -98,7 +98,7 @@ function ModuleEditor({ initial, takenNumbers, busy, onSave, onCancel }: {
                     <input type="number" min={1} className={styles.input} value={number} onChange={(e) => setNumber(e.target.value)} required />
                 </label>
                 <label className={styles.field} style={{ flex: '1 1 240px' }}>
-                    اسم الموديول
+                    اسم الـ Module
                     <input className={styles.input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Module 1 - Limits" required />
                 </label>
             </div>
@@ -107,10 +107,10 @@ function ModuleEditor({ initial, takenNumbers, busy, onSave, onCancel }: {
                 <textarea className={styles.input} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
             </label>
             <label className={styles.field}>
-                الشباتر (افصل بينها بفاصلة)
+                الـ Chapters (افصل بينها بفاصلة)
                 <input className={styles.input} dir="ltr" value={chapters} onChange={(e) => setChapters(e.target.value)} placeholder="1.5, 1.6, 2.1" />
             </label>
-            {numberTaken && <div className={styles.note}>هذا الرقم مستخدم لموديول آخر في الكورس.</div>}
+            {numberTaken && <div className={styles.note}>هذا الرقم مستخدم لـ Module آخر في الكورس.</div>}
             <div className={styles.formActions}>
                 <button type="button" className={cx(styles.btn, styles.btnGhost)} onClick={onCancel}>إلغاء</button>
                 <button type="submit" className={styles.btn} disabled={!isValid || busy}>حفظ</button>
@@ -159,7 +159,7 @@ function ModuleCard({ mod, takenNumbers, busy, actions }: {
 
                     <div className={styles.setting} style={{ marginTop: 8 }}>
                         <span>مجاني<span className={styles.settingHint}>يفتحه الطالب بدون اعتماد</span></span>
-                        <Switch on={mod.is_free} label="موديول مجاني" disabled={busy} onChange={() => actions.toggleModuleFree(mod)} />
+                        <Switch on={mod.is_free} label="Module مجاني" disabled={busy} onChange={() => actions.toggleModuleFree(mod)} />
                     </div>
 
                     <ScheduleEditor
@@ -345,21 +345,21 @@ export function ExamsAndModules({ courses, courseId, setCourseId, modules, quizz
             </div>
 
             <div className={styles.sectionHead}>
-                <h2 className={styles.cardTitle}>الموديولات ({courseModules.length})</h2>
+                <h2 className={styles.cardTitle}>الـ Modules ({courseModules.length})</h2>
                 <button type="button" className={styles.btn} disabled={!modulesReady} onClick={() => setAddingModule((v) => !v)}>
-                    ＋ موديول
+                    ＋ Module
                 </button>
             </div>
 
             {!modulesReady ? (
                 <div className={styles.note} style={{ marginBottom: 14 }}>
-                    إدارة الموديولات تعمل بعد تشغيل ملف SQL في Supabase.
+                    إدارة الـ Modules تعمل بعد تشغيل ملف SQL في Supabase.
                 </div>
             ) : (
                 <div className={styles.courseGrid} style={{ marginBottom: 18, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 360px), 1fr))' }}>
                     {addingModule && (
                         <section className={styles.card}>
-                            <h3 className={styles.quizName} style={{ marginBottom: 8 }}>موديول جديد</h3>
+                            <h3 className={styles.quizName} style={{ marginBottom: 8 }}>Module جديد</h3>
                             <ModuleEditor
                                 initial={{ module_number: nextNumber, title: `Module ${nextNumber} - `, description: '', chapters: [] }}
                                 takenNumbers={takenNumbers}
@@ -376,7 +376,7 @@ export function ExamsAndModules({ courses, courseId, setCourseId, modules, quizz
                         <ModuleCard key={mod.id} mod={mod} takenNumbers={takenNumbers} busy={busy} actions={actions} />
                     ))}
                     {courseModules.length === 0 && !addingModule && (
-                        <div className={styles.card}><div className={styles.empty}>لا توجد موديولات في هذا الكورس بعد.</div></div>
+                        <div className={styles.card}><div className={styles.empty}>لا توجد Modules في هذا الكورس بعد.</div></div>
                     )}
                 </div>
             )}

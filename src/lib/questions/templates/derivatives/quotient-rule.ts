@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/quotient-rule.ts
-// ثلاثة أشكال من شابتر 2.3: Q-35 (خطي على خطي) و Q-40 (جذور) و Q-51 (كسر داخل كسر)
+// ثلاثة أشكال من Chapter 2.3: Q-35 (خطي على خطي) و Q-40 (جذور) و Q-51 (كسر داخل كسر)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { linear, uniqueExcept } from '../utils';
 

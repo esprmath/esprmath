@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { buildSystemPrompt, cleanMessages, clip } from '@/lib/tutorPrompt'
 import { getRequestUser } from '@/lib/serverAuth'
+import { DEMO_AI_PROMPTS, isDemoCourse } from '@/lib/courseAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
         const courseId = clip(String(body?.courseId ?? DEFAULT_COURSE), 20)
         const moduleNumber = Number(body?.currentModule) || 1
 
-        // 2) صلاحية فيكتور: المعتمد في الكورس، أو أي طالب داخل الموديول المجاني.
+        // 2) صلاحية فيكتور: المعتمد في الكورس، أو أي طالب داخل الـ Module المجاني.
         // طلب الانضمام المعلّق لا يفتح فيكتور، والمشرف يقدر يوقفه لأي طالب.
         const [{ data: enrollment }, { data: mod }] = await Promise.all([
             supabase
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
                 .maybeSingle(),
         ])
 
-        // نفس قاعدة بوابة الصفحات: بدون إعداد في اللوحة يكون الموديول الأول هو المجاني
+        // نفس قاعدة بوابة الصفحات: بدون إعداد في اللوحة يكون Module 1 هو المجاني
         const isFreeModule = mod ? mod.is_free === true : moduleNumber === 1
         const isAllowed = enrollment?.is_ai_allowed !== false && (enrollment?.is_approved === true || isFreeModule)
         if (!isAllowed) return reply('ميزة فيكتور غير مفعلة في حسابك حاليًا.', 403)
@@ -77,9 +78,18 @@ export async function POST(req: Request) {
         }
 
         // 4) تجهيز الطلب
-        const messages = cleanMessages(body?.messages)
+        let messages = cleanMessages(body?.messages)
         if (messages[messages.length - 1]?.role !== 'user') {
             return reply('اكتب سؤالك أولًا.', 400)
+        }
+
+        // الكورس النموذجي: الرسائل الجاهزة فقط، بدون محادثة سابقة
+        if (isDemoCourse(courseId)) {
+            const last = messages[messages.length - 1]
+            if (!Object.values(DEMO_AI_PROMPTS).includes(last.content as never)) {
+                return reply('في الكورس النموذجي تقدر ترسل الرسائل الجاهزة فقط.', 403)
+            }
+            messages = [last]
         }
 
         const openai = new OpenAI({ apiKey })

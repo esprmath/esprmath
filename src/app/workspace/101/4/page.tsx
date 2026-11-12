@@ -13,7 +13,7 @@ export default function Module4Page() {
     const chapterParam = searchParams.get('chapter') as '6.8' | '3.1' | '3.8' | null
     const ideaParam = searchParams.get('idea')
 
-    // بدون chapter في الرابط = صفحة Module 1 الرئيسية التي تعرض كل الشباتر.
+    // بدون chapter في الرابط = صفحة Module 1 الرئيسية التي تعرض كل الـ Chapters.
     // مع ?chapter=1.5 مثلاً = نفس الصفحة تعرض Chapter 1.5 فقط.
     const [activeChapter, setActiveChapter] = useState<'6.8' | '3.1' | '3.8'>(chapterParam || '6.8')
     const [activeIdea, setActiveIdea] = useState('idea-1')
@@ -33,7 +33,7 @@ export default function Module4Page() {
     const [userId, setUserId] = useState<string | null>(null)
     const [isAiAllowed, setIsAiAllowed] = useState(false)
 
-    // الشباتر والأفكار الخاصة بـ Module 4
+    // الـ Chapters والأفكار الخاصة بـ Module 4
     const chaptersData = {
         '6.8': {
             title: '6.8 صيغ عدم التعيين وقاعدة لوبيتال (L\'Hospital\'s Rule)',
@@ -247,14 +247,14 @@ export default function Module4Page() {
                         <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#DCA27B' }}>
                           📘 Module 4 (تقدم المقرر الإجمالي: {totalModuleProgress}%)
                         </span>
-                        <span style={{ fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>3 شباتر رئيسية</span>
+                        <span style={{ fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>3 Chapters رئيسية</span>
                     </div>
                     <div style={{ background: '#f0ebdc', borderRadius: '20px', height: '10px', overflow: 'hidden' }}>
                         <div style={{ width: `${totalModuleProgress}%`, background: '#CDD4B1', height: '100%', transition: 'width 0.3s' }} />
                     </div>
                 </div>
 
-                {/* صفحة Module 4 الرئيسية: تعرض الشباتر فقط */}
+                {/* صفحة Module 4 الرئيسية: تعرض الـ Chapters فقط */}
                 {!isChapterView && (
                     <div style={{
                         display: 'grid',
@@ -300,7 +300,7 @@ export default function Module4Page() {
                                         />
                                     </div>
                                     <div style={{ marginTop: '14px', color: '#DCA27B', fontWeight: 'bold', fontSize: '13px' }}>
-                                        فتح الشابتر ←
+                                        فتح الـ Chapter ←
                                     </div>
                                 </button>
                             )
@@ -308,7 +308,7 @@ export default function Module4Page() {
                     </div>
                 )}
 
-                {/* داخل الشابتر: لا نعرض بقية الشباتر، فقط أفكار الشابتر الحالي */}
+                {/* داخل الـ Chapter: لا نعرض بقية الـ Chapters، فقط أفكار الـ Chapter الحالي */}
                 {isChapterView && (
                     <>
                         <div style={{ marginBottom: '16px' }}>
@@ -397,7 +397,7 @@ export default function Module4Page() {
                                     </li>
                                     <li style={{ marginBottom: '10px' }}>
                                         <strong>Step 2: تطبيق القوانين والقواعد الجبرية (Rule Application)</strong><br />
-                                        استخدام النظريات المعتمدة في هذا الشابتر للوصول إلى الخطوة قبل الأخيرة.
+                                        استخدام النظريات المعتمدة في هذا الـ Chapter للوصول إلى الخطوة قبل الأخيرة.
                                     </li>
                                     <li style={{ marginBottom: '10px' }}>
                                         <strong>Step 3: استنتاج النتيجة النهائية (Final Solution)</strong><br />

@@ -43,7 +43,7 @@ export default function Navbar({ isLoggedIn, mobileAction }: NavbarProps) {
     const router = useRouter()
     const pathname = usePathname()
     const isHomePage = pathname === '/'
-    // «لكل مجتهد نصيب» داخل صفحات الدروس فقط (workspace/الكورس/الموديول وأعمق)
+    // «لكل مجتهد نصيب» داخل صفحات الدروس فقط (workspace/الكورس/الـ Module وأعمق)
     const showMotto = /^\/workspace\/[^/]+\/[^/]+/.test(pathname ?? '')
 
     // ===== الوضع الليلي (لإلغائه: احذف هذا القسم وقسم اللمبة، وبلوك الوضع الليلي في globals.css، والسكربت في layout.tsx) =====

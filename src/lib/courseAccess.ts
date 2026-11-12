@@ -27,6 +27,7 @@ export function windowStatus(item: { is_open: boolean; opens_at: string | null; 
 // الاختبارات التي لها صفحة جاهزة في الموقع
 const QUIZ_PAGES: Record<string, string[]> = {
     '101': ['quiz-1', 'final-review'],
+    demo: ['quiz-1'],
 };
 
 export const hasQuizPage = (courseId: string, quizId: string) => QUIZ_PAGES[courseId]?.includes(quizId) ?? false;
@@ -47,3 +48,44 @@ export const FALLBACK_MODULES: Record<string, Omit<CourseModule, 'id' | 'course_
         { module_number: 2, title: 'Module 2: Partial Derivatives', description: 'Limits, continuity, and chain rule.', chapters: [], is_open: false, is_free: false },
     ],
 };
+
+// ─────────── الكورس النموذجي ───────────
+// كورس توضيحي ثابت في الكود (ليس في قاعدة البيانات) يعرض شكل الكورسات من الداخل.
+
+/** true: الكورسات الحقيقية مخفية ومقفلة عن الطلاب، ويظهر الكورس النموذجي فقط. المشرف يشوف كل شي */
+export const COURSES_LOCKED = true;
+
+export const DEMO_COURSE_ID = 'demo';
+export const isDemoCourse = (courseId: string | number | undefined) => String(courseId) === DEMO_COURSE_ID;
+
+export const DEMO_COURSE = {
+    id: DEMO_COURSE_ID,
+    title: 'كورس نموذجي 👀',
+    description: 'جولة توضيحية تشوف فيها شكل الكورسات من الداخل: Module و Chapter مفتوح، فكرة بشرحها ومقطعها وسؤالها، والأسئلة الإضافية، وتجربة محدودة لفيكتور.',
+    badge_color: '#FEECD0',
+    badge_text_color: '#8c5521',
+    is_active: true,
+    requires_approval: false,
+};
+
+export const DEMO_MODULES: CourseModule[] = [
+    { id: -1, course_id: DEMO_COURSE_ID, module_number: 1, title: 'Module 1 - Limits (نموذج)', description: 'Module مفتوح فيه أكثر من Chapter، والمفتوح منها للتجربة Chapter 1.6.', chapters: ['1.6', '1.8', '2.1', '3.4'], is_open: true, is_free: true, opens_at: null, closes_at: null },
+    { id: -2, course_id: DEMO_COURSE_ID, module_number: 2, title: 'Module 2 - Applications', description: 'في الكورس الفعلي تُفتح بقية الـ Modules بالترتيب.', chapters: ['2.3', '2.4'], is_open: false, is_free: false, opens_at: null, closes_at: null },
+];
+
+/** اختبارات الكورس النموذجي: كلها مقفلة، و Quiz 1 نموذج مفتوح للتجربة */
+export const DEMO_QUIZZES = [
+    { quiz_id: 'quiz-1', title: 'Quiz 1 - نموذج', is_open: true, opens_at: null, closes_at: null },
+    { quiz_id: 'quiz-2', title: 'Quiz 2', is_open: false, opens_at: null, closes_at: null },
+    { quiz_id: 'quiz-3', title: 'Quiz 3', is_open: false, opens_at: null, closes_at: null },
+    { quiz_id: 'quiz-4', title: 'Quiz 4', is_open: false, opens_at: null, closes_at: null },
+    { quiz_id: 'mid-1', title: 'Midterm', is_open: false, opens_at: null, closes_at: null },
+    { quiz_id: 'final-review', title: 'مراجعة الفاينل', is_open: false, opens_at: null, closes_at: null },
+];
+
+/** رسائل فيكتور الجاهزة في الكورس النموذجي: كل رسالة مرة وحدة، وبدون كتابة */
+export const DEMO_AI_PROMPTS = {
+    summary: 'أعطني مختصر هذه الفكرة',
+    hint: 'أعطني تلميحًا لهذا السؤال بدون الحل',
+    steps: 'اشرح لي حل هذا السؤال خطوة خطوة',
+} as const;

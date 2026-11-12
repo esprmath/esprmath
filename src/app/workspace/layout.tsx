@@ -5,18 +5,30 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { checkIsAdmin } from '@/lib/admin';
-import { windowStatus } from '@/lib/courseAccess';
+import { COURSES_LOCKED, isDemoCourse, windowStatus } from '@/lib/courseAccess';
 
 type GateResult = { allowed: true } | { allowed: false; message: string; courseId: string };
 
 const NOT_APPROVED = 'هذا المحتوى يتطلب اعتماد الكورس. اطلب الانضمام من الصفحة الرئيسية.';
 const NOT_OPEN = 'هذا المحتوى غير متاح حاليًا، وسيُفتح في الوقت المحدد.';
+const COURSES_CLOSED = 'الكورسات مقفلة حاليًا، وتقدر تشوف شكلها من الكورس النموذجي في الصفحة الرئيسية.';
 
 async function checkAccess(pathname: string, userId: string, email?: string): Promise<GateResult> {
     const [, , courseId = '', section = '', item = ''] = pathname.split('/');
 
-    // صفحة الكورس نفسها متاحة لكل مسجل، وهي تعرض حالة كل موديول
-    if (!section || (await checkIsAdmin(email))) return { allowed: true };
+    // الكورس النموذجي: الصفحة و Module 1 فقط، والبقية مقفلة للتوضيح
+    if (isDemoCourse(courseId)) {
+        const isDemoOpen = !section || section === '1' || (section === 'quizzes' && item === 'quiz-1');
+        return isDemoOpen ? { allowed: true } : { allowed: false, message: NOT_OPEN, courseId };
+    }
+
+    if (await checkIsAdmin(email)) return { allowed: true };
+
+    // الكورسات الحقيقية مقفلة حاليًا عن الطلاب
+    if (COURSES_LOCKED) return { allowed: false, message: COURSES_CLOSED, courseId: '' };
+
+    // صفحة الكورس نفسها متاحة لكل مسجل، وهي تعرض حالة كل Module
+    if (!section) return { allowed: true };
 
     const isModule = /^\d+$/.test(section);
     const quizId = section === 'final-review' ? 'final-review' : section === 'quizzes' || section === 'exam-leaks' ? item : '';
@@ -48,9 +60,9 @@ async function checkAccess(pathname: string, userId: string, email?: string): Pr
     ]);
     const isApproved = enrollment?.is_approved === true;
 
-    // موديول: /workspace/101/2
+    // Module: /workspace/101/2
     if (isModule) {
-        // الكورسات التي لم تُضف موديولاتها في اللوحة: الأول مجاني والباقي بالاعتماد
+        // الكورسات التي لم تُضف الـ Modules الخاصة بها في اللوحة: الأول مجاني والباقي بالاعتماد
         if (!mod) {
             return section === '1' || isApproved ? { allowed: true } : { allowed: false, message: NOT_APPROVED, courseId };
         }
@@ -114,9 +126,15 @@ function CourseGate({ children }: { children: React.ReactNode }) {
             <div style={screenStyle}>
                 <div style={{ fontSize: 42 }}>🔒</div>
                 <div style={{ maxWidth: 420, lineHeight: 1.6 }}>{checked.result.message}</div>
-                <Link href={`/workspace/${checked.result.courseId}`} style={{ color: '#8c5521' }}>
-                    → الرجوع لصفحة الكورس
-                </Link>
+                {checked.result.courseId ? (
+                    <Link href={`/workspace/${checked.result.courseId}`} style={{ color: '#8c5521' }}>
+                        → الرجوع للـ Workspace
+                    </Link>
+                ) : (
+                    <Link href="/" style={{ color: '#8c5521' }}>
+                        → الرجوع للصفحة الرئيسية
+                    </Link>
+                )}
             </div>
         );
     }

@@ -416,12 +416,12 @@ export default function AdditionalQuestionsView({
                         الأسئلة الإضافية{chapterQuestions.length > 0 && ` · حللت ${solvedCount} من ${chapterQuestions.length} في هذه الجلسة`}
                     </div>
                     <div className={styles.title} dir="auto">
-                        {activeChapterData?.chapterTitle || 'اختر شابتر'}
+                        {activeChapterData?.chapterTitle || 'اختر Chapter'}
                     </div>
                 </div>
                 <div className={styles.topActions}>
-                    <button type="button" onClick={backToModule} className={styles.ghostBtn}>→ الشباتر</button>
-                    <button type="button" onClick={() => router.push(coursePath)} className={styles.ghostBtn}>→ الكورس</button>
+                    <button type="button" onClick={backToModule} className={styles.ghostBtn}>→ الـ Chapters</button>
+                    <button type="button" onClick={() => router.push(coursePath)} className={styles.ghostBtn}>→ الـ Workspace</button>
                 </div>
             </div>
 
@@ -480,7 +480,7 @@ export default function AdditionalQuestionsView({
                 {expandedQuestion ? (
                     renderQuestion(expandedQuestion, expandedQuestionIndex)
                 ) : (
-                    <div className={styles.empty}>لا توجد أسئلة إضافية في هذا الشابتر بعد</div>
+                    <div className={styles.empty}>لا توجد أسئلة إضافية في هذا الـ Chapter بعد</div>
                 )}
             </div>
         </div>

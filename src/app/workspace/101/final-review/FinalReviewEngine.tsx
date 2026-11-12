@@ -905,7 +905,7 @@ ${idea.checkQuestion}`}
                             fontWeight: 'bold'
                         }}
                     >
-                        ← صفحة الكورس
+                        ← الـ Workspace
                     </Link>
                 </div>
 

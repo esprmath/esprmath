@@ -16,7 +16,7 @@ export type IdeaStatus = 'new' | 'practicing' | 'mastered';
 
 const storageKey = (courseId: string) => `math${courseId}_idea_progress`;
 
-/** مفتاح نسبة الموديول. كورس 101 يبقى على اسمه القديم حتى لا يفقد الطلاب تقدمهم */
+/** مفتاح نسبة الـ Module. كورس 101 يبقى على اسمه القديم حتى لا يفقد الطلاب تقدمهم */
 export const moduleProgressKey = (courseId: string, moduleNumber: number | string) =>
     courseId === '101' ? `module_${moduleNumber}_progress` : `math${courseId}_module_${moduleNumber}_progress`;
 

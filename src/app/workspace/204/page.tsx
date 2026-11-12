@@ -67,12 +67,12 @@ export default function WorkspacePage() {
 
     // دالة محكمة لمنع الدخول وإيقاف الـ propagation والـ default behavior نهائياً
     const handleModuleClick = (e: React.MouseEvent, modId: number) => {
-        if (modId === 1) return // الموديول الأول متاح دائماً
+        if (modId === 1) return // Module 1 متاح دائماً
 
         if (!isAuthorized) {
             e.preventDefault()
             e.stopPropagation()
-            setAlertMessage('🔒 هذا الموديول مقفل! الموديول الأول فقط متاح للتجربة المجانية. لفتح كامل الموديولات، يرجى طلب انضمام للكورس من الصفحة الرئيسية بانتظار موافقة المشرف.')
+            setAlertMessage('🔒 هذا الـ Module مقفل! Module 1 فقط متاح للتجربة المجانية. لفتح كامل الـ Modules، يرجى طلب انضمام للكورس من الصفحة الرئيسية بانتظار موافقة المشرف.')
             setShowAlertModal(true)
             return false
         }
@@ -106,11 +106,11 @@ export default function WorkspacePage() {
                         📚 Course Modules - Math 204
                     </h1>
                     <p style={{ color: '#4A5550', fontSize: '15px' }}>
-                        اختر أي Module لبدء استعراض الشباتر، الأفكار، والتدريبات التفاعلية.
+                        اختر أي Module لبدء استعراض الـ Chapters، الأفكار، والتدريبات التفاعلية.
                     </p>
 
                     <div style={{ marginTop: '15px', padding: '10px 14px', borderRadius: '8px', background: isAuthorized ? '#CDD4B1' : '#FEECD0', color: isAuthorized ? '#2C3531' : '#8c5521', fontSize: '0.9rem', fontWeight: 'bold', display: 'inline-block', border: '1px solid #e6dec5' }}>
-                        {isAuthorized ? '✅ حسابك معتمد، فالك التوفيق' : '🎁 المعاينة المجانية مفعلة: الموديول الأول متاح، وباقي الموديولات تتطلب موافقة المشرف.'}
+                        {isAuthorized ? '✅ حسابك معتمد، فالك التوفيق' : '🎁 المعاينة المجانية مفعلة: Module 1 متاح، وباقي الـ Modules تتطلب موافقة المشرف.'}
                     </div>
                 </div>
 
@@ -141,7 +141,7 @@ export default function WorkspacePage() {
                                 بنك الأسئلة الشامل
                             </h3>
                             <p style={{ margin: 0, fontSize: '13px', color: '#4A5550' }}>
-                                تدرب على أسئلة متنوعة ومتوسطة وصعبة لجميع الشباتر.
+                                تدرب على أسئلة متنوعة ومتوسطة وصعبة لجميع الـ Chapters.
                             </p>
                         </div>
                     </Link>
@@ -306,7 +306,7 @@ export default function WorkspacePage() {
                         )
                     })}
 
-                    {/* 🌟 قسم الفاينل: مراجعة، تدريب وتسريبات (بعد الموديول السابع) */}
+                    {/* 🌟 قسم الفاينل: مراجعة، تدريب وتسريبات (بعد الـ Module السابع) */}
                     <div
                         style={{
                             background: !isAuthorized ? '#f5f2e6' : '#ffffff',
@@ -362,7 +362,7 @@ export default function WorkspacePage() {
                             </h2>
 
                             <p style={{ margin: '0 0 12px 0', color: '#4A5550', fontSize: '14px' }}>
-                                ملخصات ذهبية شاملة لكل الشباتر، أسئلة تدريبية متقدمة، وتسريبات اختبارات الفاينل السابقة مع الحلول النموذجية.
+                                ملخصات ذهبية شاملة لكل الـ Chapters، أسئلة تدريبية متقدمة، وتسريبات اختبارات الفاينل السابقة مع الحلول النموذجية.
                             </p>
                         </div>
 

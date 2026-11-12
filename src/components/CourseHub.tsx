@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import OnboardingTour from '@/components/OnboardingTour';
 import { supabase } from '@/lib/supabase';
-import { FALLBACK_MODULES, hasQuizPage, quizPath, windowStatus, type CourseModule } from '@/lib/courseAccess';
+import { DEMO_MODULES, DEMO_QUIZZES,FALLBACK_MODULES, hasQuizPage, isDemoCourse, quizPath, windowStatus, type CourseModule } from '@/lib/courseAccess';
 import { moduleProgressKey } from '@/lib/questions/mastery';
 import styles from './CourseHub.module.css';
 
@@ -53,7 +53,7 @@ function writeHubCache(courseId: string, cache: HubCache) {
     }
 }
 
-/** صفحة الكورس: موديولاته واختباراته تأتي من لوحة التحكم */
+/** صفحة الكورس: الـ Modules الخاصة به واختباراته تأتي من لوحة التحكم */
 export default function CourseHub({ courseId }: { courseId: string }) {
     const router = useRouter();
     const [modules, setModules] = useState<CourseModule[]>([]);
@@ -71,6 +71,16 @@ export default function CourseHub({ courseId }: { courseId: string }) {
         let cancelled = false;
 
         async function load() {
+            // الكورس النموذجي ثابت في الكود، فلا يحتاج قاعدة البيانات
+            if (isDemoCourse(courseId)) {
+                setModules(DEMO_MODULES);
+                setQuizzes(DEMO_QUIZZES);
+                // يفتح الاختبار النموذجي، والبقية مقفلة بإعداداتها
+                setIsAuthorized(true);
+                setLoading(false);
+                return;
+            }
+
             // نعرض آخر نسخة فورًا، ثم نحدّثها من قاعدة البيانات في الخلفية
             const cached = readHubCache(courseId);
             if (cached) {
@@ -150,7 +160,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
         return <div className={styles.loading}>جاري تحميل محتوى الكورس... ⏳</div>;
     }
 
-    // جولة أول دخول تشير لأول موديول يقدر الطالب يفتحه
+    // جولة أول دخول تشير لأول Module يقدر الطالب يفتحه
     const firstOpenModuleId = modules.find((mod) => {
         const isAvailable = windowStatus(mod) === 'open';
         return isAvailable && (mod.is_free || isAuthorized);
@@ -251,12 +261,18 @@ export default function CourseHub({ courseId }: { courseId: string }) {
 
             <div className={styles.grid}>
                 <header className={styles.header}>
-                    <h1 className={styles.title}>📚 Course Modules - Math {courseId}</h1>
-                    <p className={styles.subtitle}>اختر أي Module لبدء استعراض الشباتر، الأفكار، والتدريبات التفاعلية.</p>
+                    <h1 className={styles.title}>{isDemoCourse(courseId) ? '👀 كورس نموذجي' : `📚 Course Modules - Math ${courseId}`}</h1>
+                    <p className={styles.subtitle}>
+                        {isDemoCourse(courseId)
+                            ? 'هذا مثال توضيحي لشكل الكورسات من الداخل. افتح Module 1 وجرّب الفكرة والسؤال والأسئلة الإضافية.'
+                            : 'اختر أي Module لبدء استعراض الـ Chapters، الأفكار، والتدريبات التفاعلية.'}
+                    </p>
                     <span className={cx(styles.status, isAuthorized ? styles.statusApproved : styles.statusTrial)}>
-                        {isAuthorized
-                            ? '✓ حسابك معتمد، فالك التوفيق'
-                            : '🎁 الموديولات المجانية متاحة، والباقي يتطلب موافقة المشرف'}
+                        {isDemoCourse(courseId)
+                            ? '🎁 كورس للتجربة: Module و Chapter واحد مفتوحين'
+                            : isAuthorized
+                                ? '✓ حسابك معتمد، فالك التوفيق'
+                                : '🎁 الـ Modules المجانية متاحة، والباقي يتطلب موافقة المشرف'}
                     </span>
                 </header>
 
@@ -292,7 +308,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
                                         remember();
                                         router.push(modulePath);
                                     } else if (isLocked) {
-                                        setAlertMessage('🔒 هذا الموديول مقفل. لفتحه اطلب الانضمام للكورس من الصفحة الرئيسية.');
+                                        setAlertMessage('🔒 هذا الـ Module مقفل. لفتحه اطلب الانضمام للكورس من الصفحة الرئيسية.');
                                     }
                                 }}
                             >
@@ -337,7 +353,7 @@ export default function CourseHub({ courseId }: { courseId: string }) {
                                         </div>
                                     )}
 
-                                    {isOpen && courseId === '101' && (
+                                    {isOpen && (courseId === '101' || isDemoCourse(courseId)) && (
                                         <div className={styles.progress}>
                                             <span className={styles.progressTrack}>
                                                 <span className={styles.progressFill} style={{ width: `${progress}%` }} />

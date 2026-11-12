@@ -220,7 +220,7 @@ export default function QuestionBank101Page() {
                                 fontSize: '13px'
                             }}
                         >
-                            {ch === 'all' ? 'جميع الشباتر' : `Ch ${ch}`}
+                            {ch === 'all' ? 'جميع الـ Chapters' : `Ch ${ch}`}
                         </button>
                     ))}
                 </div>

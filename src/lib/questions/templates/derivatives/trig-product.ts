@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/trig-product.ts
-// خمسة أشكال من شابتر 2.4: Q-1 (جمع)، Q-5 (ضرب)، Q-9 (قوس في sin)، Q-15 و Q-17 (قسمة)
+// خمسة أشكال من Chapter 2.4: Q-1 (جمع)، Q-5 (ضرب)، Q-9 (قوس في sin)، Q-15 و Q-17 (قسمة)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { monomial } from './helpers';

@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/power-rules.ts
-// ثلاثة أشكال من شابتر 2.3: Q-1 (4x + 7)، و Q-7 (قوى كسرية وسالبة)، و Q-13 (كسر وجذر)
+// ثلاثة أشكال من Chapter 2.3: Q-1 (4x + 7)، و Q-7 (قوى كسرية وسالبة)، و Q-13 (كسر وجذر)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { frac, uniqueExcept } from '../utils';
 import { coefText, monomial } from './helpers';

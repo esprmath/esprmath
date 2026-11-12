@@ -4,6 +4,19 @@ import { useState, useRef, useEffect } from 'react'
 import { BlockMath, InlineMath } from 'react-katex'
 import 'katex/dist/katex.min.css'
 import { supabase } from '@/lib/supabase'
+import { DEMO_AI_PROMPTS, isDemoCourse } from '@/lib/courseAccess'
+
+// الكورس النموذجي: كل رسالة جاهزة تُستخدم مرة وحدة فقط في كامل الكورس
+const DEMO_USED_KEY = 'demo_ai_used'
+
+function readDemoUsed(): string[] {
+    try {
+        const saved = JSON.parse(localStorage.getItem(DEMO_USED_KEY) ?? '[]')
+        return Array.isArray(saved) ? saved : []
+    } catch {
+        return []
+    }
+}
 
 interface GlobalTutorProps {
     courseId?: string | number
@@ -17,7 +30,7 @@ interface GlobalTutorProps {
     mode?: 'floating' | 'inline'
     // عند تمريره تبقى المحادثة محفوظة في نفس التبويب، مثل الانتقال لصفحة الحل والرجوع
     chatKey?: string
-    // شرح الفكرة في الدرس. عند تمريره يظهر زر "مختصر الفكرة" (داخل الشابتر فقط)
+    // شرح الفكرة في الدرس. عند تمريره يظهر زر "مختصر الفكرة" (داخل الـ Chapter فقط)
     ideaNotes?: string
 }
 
@@ -93,8 +106,34 @@ export default function GlobalTutor({
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
+    const isDemo = isDemoCourse(courseId)
+    const [demoUsed, setDemoUsed] = useState<string[]>([])
+
+    useEffect(() => {
+        if (isDemo) setDemoUsed(readDemoUsed())
+    }, [isDemo])
+
+    const saveDemoUsed = (next: string[]) => {
+        try {
+            localStorage.setItem(DEMO_USED_KEY, JSON.stringify(next))
+        } catch {
+            // تبقى في الصفحة الحالية حتى لو تعذر حفظها
+        }
+        setDemoUsed(next)
+    }
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const floatingRef = useRef<HTMLDivElement>(null)
+
+    // الشات العائم يتقفل إذا ضغط الطالب في أي مكان خارجه
+    useEffect(() => {
+        if (mode !== 'floating' || !isChatOpen) return
+        const closeOnOutside = (e: PointerEvent) => {
+            if (floatingRef.current && !floatingRef.current.contains(e.target as Node)) setIsChatOpen(false)
+        }
+        document.addEventListener('pointerdown', closeOnOutside)
+        return () => document.removeEventListener('pointerdown', closeOnOutside)
+    }, [mode, isChatOpen])
     const storageKey = chatKey ? `vector_chat_${courseId}_${chatKey}` : null
     const [loadedKey, setLoadedKey] = useState<string | null>(null)
 
@@ -134,7 +173,20 @@ export default function GlobalTutor({
             return
         }
 
+        // في النموذج: الرسائل الجاهزة فقط، وكل وحدة مرة وحدة
+        if (isDemo) {
+            const used = readDemoUsed()
+            if (!Object.values(DEMO_AI_PROMPTS).includes(promptText as never) || used.includes(promptText)) return
+            saveDemoUsed([...used, promptText])
+        }
+        // إذا فشل الرد ترجع الرسالة متاحة، حتى لا تضيع المحاولة الوحيدة
+        const refundDemo = () => {
+            if (isDemo) saveDemoUsed(readDemoUsed().filter((p) => p !== promptText))
+        }
+
         const history = [...messages, { role: 'user' as const, text: promptText }]
+        // النموذج يرسل الرسالة الجاهزة وحدها بدون المحادثة السابقة
+        const sentHistory = isDemo ? history.slice(-1) : history
         setIsChatOpen(true)
         setMessages(history)
         setLoading(true)
@@ -155,7 +207,7 @@ export default function GlobalTutor({
                     currentQuestion,
                     currentIdea: ideaName,
                     ideaNotes,
-                    messages: history.map(m => ({
+                    messages: sentHistory.map(m => ({
                         role: m.role === 'ai' ? 'assistant' : 'user',
                         content: m.text
                     }))
@@ -164,8 +216,10 @@ export default function GlobalTutor({
 
             const data = await res.json()
             if (!data.reply) throw new Error('empty reply')
+            if (!res.ok) refundDemo()
             setMessages(prev => [...prev, { role: 'ai', text: data.reply }])
         } catch {
+            refundDemo()
             setMessages(prev => [...prev, { role: 'ai', text: 'تعذر الاتصال بفيكتور، تأكد من الإنترنت وحاول مرة ثانية.' }])
         } finally {
             setLoading(false)
@@ -193,21 +247,24 @@ export default function GlobalTutor({
         }
     }
 
-    const greeting = currentQuestion
-        ? 'أهلًا! أنا فيكتور، وشايف السؤال اللي قدامك. تبغى تلميح أو نحله خطوة خطوة؟'
-        : `أهلًا! أنا فيكتور، معلمك في Math ${courseId}. اسألني عن أي شي في الدرس.`
+    const greeting = isDemo
+        ? 'أهلًا! أنا فيكتور 👋 هذي نسخة تجريبية: تقدر ترسل كل رسالة من الرسائل الجاهزة تحت مرة وحدة.'
+        : currentQuestion
+            ? 'أهلًا! أنا فيكتور، وشايف السؤال اللي قدامك. تبغى تلميح أو نحله خطوة خطوة؟'
+            : `أهلًا! أنا فيكتور، معلمك في Math ${courseId}. اسألني عن أي شي في الدرس.`
 
-    const quickActions = !isAiAllowed
+    const quickActions = (!isAiAllowed
         ? []
         : [
-            ...(ideaNotes ? [{ label: '📝 مختصر الفكرة', prompt: 'أعطني مختصر هذه الفكرة' }] : []),
+            ...(ideaNotes ? [{ label: '📝 مختصر الفكرة', prompt: DEMO_AI_PROMPTS.summary }] : []),
             ...(currentQuestion
                 ? [
-                    { label: '💡 أعطني تلميح', prompt: 'أعطني تلميحًا لهذا السؤال بدون الحل' },
-                    { label: '🪜 حله خطوة خطوة', prompt: 'اشرح لي حل هذا السؤال خطوة خطوة' },
+                    { label: '💡 أعطني تلميح', prompt: DEMO_AI_PROMPTS.hint },
+                    { label: '🪜 حله خطوة خطوة', prompt: DEMO_AI_PROMPTS.steps },
                 ]
                 : []),
-        ]
+        ]).filter((action) => !isDemo || !demoUsed.includes(action.prompt))
+    const demoAllUsed = isDemo && Object.values(DEMO_AI_PROMPTS).every((p) => demoUsed.includes(p))
 
     const bubbleStyle = (isAi: boolean): React.CSSProperties => ({
         margin: '8px 0',
@@ -370,6 +427,23 @@ export default function GlobalTutor({
                 </div>
             )}
 
+            {isDemo ? (
+                <div
+                    style={{
+                        padding: '10px 12px',
+                        borderTop: quickActions.length > 0 && !loading ? 'none' : '1px solid #e6dec5',
+                        backgroundColor: '#ffffff',
+                        color: '#8c5521',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        lineHeight: 1.6,
+                        textAlign: 'center'
+                    }}
+                >
+                    {demoAllUsed ? 'خلصت رسائل التجربة. ' : ''}
+                    في الكورس الفعلي تقدر تسأل فيكتور اللي تبي وتكتب سؤالك بنفسك ✨
+                </div>
+            ) : (
             <div
                 style={{
                     padding: '10px',
@@ -419,6 +493,7 @@ export default function GlobalTutor({
                     إرسال
                 </button>
             </div>
+            )}
         </div>
     )
 
@@ -427,7 +502,8 @@ export default function GlobalTutor({
     }
 
     return (
-        <>
+        // كل الشات داخل هذا العنصر، والضغط خارجه يقفل الشات
+        <div ref={floatingRef}>
             <div
                 style={{
                     position: 'fixed',
@@ -464,6 +540,6 @@ export default function GlobalTutor({
             </div>
 
             {isChatOpen && chatBox}
-        </>
+        </div>
     )
 }

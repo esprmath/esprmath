@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 
-/** موديول أُضيف من لوحة التحكم ولم تُجهَّز صفحة محتواه بعد */
+/** Module أُضيف من لوحة التحكم ولم تُجهَّز صفحة محتواه بعد */
 export default function ModulePlaceholderPage() {
     const params = useParams();
     const courseId = params.courseId as string;
@@ -17,9 +17,9 @@ export default function ModulePlaceholderPage() {
                 <h1 style={{ fontSize: 22, fontWeight: 900, margin: '10px 0 6px' }}>
                     Module {params.moduleId as string} قيد التجهيز
                 </h1>
-                <p style={{ color: '#5f5a4c', marginBottom: 18 }}>نجهز محتوى هذا الموديول، وسيكون متاحًا قريبًا.</p>
+                <p style={{ color: '#5f5a4c', marginBottom: 18 }}>نجهز محتوى هذا الـ Module، وسيكون متاحًا قريبًا.</p>
                 <Link href={`/workspace/${courseId}`} style={{ color: '#8c5521', fontWeight: 800 }}>
-                    → الرجوع للكورس
+                    → الرجوع للـ Workspace
                 </Link>
             </div>
         </div>

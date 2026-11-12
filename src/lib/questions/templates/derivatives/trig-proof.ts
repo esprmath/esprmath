@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/trig-proof.ts
-// مثل Q-25 في شابتر 2.4: إثبات مشتقة cot x بقاعدة القسمة
+// مثل Q-25 في Chapter 2.4: إثبات مشتقة cot x بقاعدة القسمة
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 

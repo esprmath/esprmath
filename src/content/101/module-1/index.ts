@@ -1,6 +1,6 @@
 // ════════════════════════════════════════════════════════════
-// Math 101 · الموديول 1
-// هذا الملف يجمع شباتر الموديول. ترتيب القائمة هو ترتيب ظهورها للطالب.
+// Math 101 · الـ Module 1
+// هذا الملف يجمع Chapters الـ Module. ترتيب القائمة هو ترتيب ظهورها للطالب.
 // ════════════════════════════════════════════════════════════
 import type { ModuleContent } from '@/types/math';
 import { chapter1_5Data } from './chapter-1.5';
@@ -13,7 +13,7 @@ import { extraQuestions } from './extra-questions';
 export const module1: ModuleContent = {
     courseId: '101',
     moduleNumber: '1',
-    title: 'الموديول الأول',
+    title: 'Module 1',
     chapters: [chapter1_5Data, chapter1_6Data, chapter2_1Data, chapter1_8Data, chapter3_4Data],
     extraQuestions,
 };

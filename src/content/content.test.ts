@@ -6,9 +6,10 @@ import { toEmbedUrl } from '../lib/video';
 import { hasTemplate } from '../lib/questions/templates/registry';
 import { module1 as math101Module1 } from './101/module-1';
 import { module2 as math101Module2 } from './101/module-2';
+import { demoModule1 } from './demo/module-1';
 
 /** عند إضافة موديول جديد، أضفه هنا */
-const ALL_MODULES = [math101Module1, math101Module2];
+const ALL_MODULES = [math101Module1, math101Module2, demoModule1];
 
 // مقطع مؤقت استُخدم سابقًا مكان الروابط الحقيقية
 const PLACEHOLDER_VIDEO = 'dQw4w9WgXcQ';

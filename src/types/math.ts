@@ -59,18 +59,20 @@ export interface QuizContent {
     title: string;
     chapters: ChapterData[];
     extraQuestions: ExtraQuestion[];
-    /** أفكار جاءت في اختبارات سابقة، بصيغة "رقم الشابتر-رقم الفكرة" مثل "1.5-1.2" */
+    /** أفكار جاءت في اختبارات سابقة، بصيغة "رقم الـ Chapter-رقم الفكرة" مثل "1.5-1.2" */
     pastExamIdeas: string[];
     pastExamVideoUrl?: string;
     mockQuestionCount: number;
     mockMinutes: number;
 }
 
-/** كل ما يحتاجه قالب الموديول لعرض موديول كامل */
+/** كل ما يحتاجه قالب الـ Module لعرض Module كامل */
 export interface ModuleContent {
     courseId: string;
     moduleNumber: string;
     title: string;
     chapters: ChapterData[];
     extraQuestions: ExtraQuestion[];
+    /** Chapters تظهر بطاقاتها مقفلة بدون محتوى، مثل الكورس النموذجي */
+    lockedChapters?: { chapterNumber: string; chapterTitle: string }[];
 }

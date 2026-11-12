@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/electric-current.ts
-// مثل Q-19 في شابتر 2.7: Q(t) = t³ - 2t² + 6t + 2
+// مثل Q-19 في Chapter 2.7: Q(t) = t³ - 2t² + 6t + 2
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { frac, uniqueExcept } from '../utils';
 import { poly } from './helpers';

@@ -14,6 +14,7 @@ import type { ModuleContent } from '@/types/math';
 import { buildAdditionalQuestions } from '@/lib/questions/additional';
 import { MASTERY_TARGET, getIdeaStatus, loadIdeaProgress, moduleProgressKey, recordIdeaResult, type IdeaProgressMap } from '@/lib/questions/mastery';
 import { toEmbedUrl } from '@/lib/video';
+import { isDemoCourse } from '@/lib/courseAccess';
 import { useAiAllowed } from '@/components/useAiAllowed';
 
 const ADDITIONAL_VIEW = 'additional-questions';
@@ -43,7 +44,7 @@ function StepText({ text }: { text: string }) {
 }
 
 /**
- * قالب صفحة الموديول لكل الكورسات. يعرض قائمة الشباتر، وصفحة الفكرة، والأسئلة الإضافية.
+ * قالب صفحة الـ Module لكل الكورسات. يعرض قائمة الـ Chapters، وصفحة الفكرة، والأسئلة الإضافية.
  * المحتوى يصله من src/content، والصفحة المعروضة تتحدد من رابط الصفحة.
  */
 export default function ModulePage({ content }: { content: ModuleContent }) {
@@ -70,7 +71,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
 
     const isAiAllowed = useAiAllowed(courseId);
 
-    // ما يعرضه فيكتور: السؤال الحالي في الشابتر، أو السؤال المفتوح في الأسئلة الإضافية
+    // ما يعرضه فيكتور: السؤال الحالي في الـ Chapter، أو السؤال المفتوح في الأسئلة الإضافية
     const [chapterTutorQuestion, setChapterTutorQuestion] = useState('');
     const [additionalTutor, setAdditionalTutor] = useState<{ chapter: string; ideaName: string; question: string } | null>(null);
 
@@ -85,7 +86,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
         setIdeaProgress(loadIdeaProgress(courseId));
     }, [courseId]);
 
-    // نسبة إتقان الموديول تظهر في صفحة الكورس. نحفظها بعد كل نتيجة، والحساب نفسه يحدّثها عند فتح الموديول
+    // نسبة إتقان الـ Module تظهر في صفحة الكورس. نحفظها بعد كل نتيجة، والحساب نفسه يحدّثها عند فتح الـ Module
     useEffect(() => {
         const progress = loadIdeaProgress(courseId);
         const allIdeas = chapters.flatMap((chapter) => chapter.ideas.map((idea) => `${chapter.chapterNumber}-${idea.id}`));
@@ -105,7 +106,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
     const openIdea = (chapterKey: string, ideaId: string, scroll?: ScrollBehavior) =>
         navigate(`chapter=${encodeURIComponent(chapterKey)}&idea=${encodeURIComponent(ideaId)}`, scroll);
 
-    // التنقل بين أفكار الشابتر
+    // التنقل بين أفكار الـ Chapter
     const ideaPosition = currentChapterData && currentIdeaObj ? currentChapterData.ideas.indexOf(currentIdeaObj) : 0;
     const previousIdea = currentChapterData?.ideas[ideaPosition - 1];
     const nextIdea = currentChapterData?.ideas[ideaPosition + 1];
@@ -120,7 +121,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
     const tutorChapter = isAdditionalView ? additionalTutor?.chapter ?? '' : activeChapter;
     const tutorQuestion = isAdditionalView ? additionalTutor?.question ?? '' : chapterTutorQuestion;
     const tutorChatKey = isAdditionalView ? ADDITIONAL_VIEW : `${activeChapter}-${activeIdeaId}`;
-    // شرح الفكرة يصل لفيكتور داخل الشابتر فقط، ومعه يظهر زر "مختصر الفكرة"
+    // شرح الفكرة يصل لفيكتور داخل الـ Chapter فقط، ومعه يظهر زر "مختصر الفكرة"
     const tutorIdeaNotes = isAdditionalView
         ? ''
         : (currentIdeaObj?.theoreticalSteps ?? []).map((step) => `${step.stepTitle}: ${step.stepDescription}`).join('\n');
@@ -215,7 +216,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                     font-size: 13px;
                 }
 
-                /* زر الرجوع فوق، وتحته اسم الموديول، والاثنين على اليمين */
+                /* زر الرجوع فوق، وتحته اسم الـ Module، والاثنين على اليمين */
                 .page-heading {
                     display: flex;
                     flex-direction: column;
@@ -623,7 +624,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                         <>
                             <div className="page-heading">
                                 <Link href={coursePath} className="back-link">
-                                    → الكورس
+                                    → الـ Workspace
                                 </Link>
                                 <h1 className="page-title">Module {moduleNumber}</h1>
                             </div>
@@ -657,11 +658,33 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                                 />
                                             </span>
                                             <div className="chapter-cta">
-                                                فتح الشابتر والدخول للأفكار ←
+                                                فتح الـ Chapter والدخول للأفكار ←
                                             </div>
                                         </button>
                                     );
                                 })}
+
+                                {content.lockedChapters?.map((ch) => (
+                                    <div
+                                        key={ch.chapterNumber}
+                                        className="chapter-card"
+                                        aria-disabled="true"
+                                        style={{ opacity: 0.55, cursor: 'not-allowed' }}
+                                    >
+                                        <div className="chapter-badge">
+                                            Chapter {ch.chapterNumber} 🔒
+                                        </div>
+                                        <div className="chapter-title">
+                                            {ch.chapterTitle}
+                                        </div>
+                                        <div className="chapter-meta">
+                                            مقفل في الكورس النموذجي
+                                        </div>
+                                        <div className="chapter-cta">
+                                            يفتح في الكورس الفعلي
+                                        </div>
+                                    </div>
+                                ))}
 
                                 <button
                                     type="button"
@@ -676,7 +699,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                         الأسئلة الإضافية للمقرر
                                     </div>
                                     <div className="chapter-meta">
-                                        تدرب على أسئلة إضافية مرتبطة بأفكار الشباتر.
+                                        تدرب على أسئلة إضافية مرتبطة بأفكار الـ Chapters.
                                     </div>
                                     <div className="chapter-cta" style={{ color: '#8c5521' }}>
                                         فتح صفحة الأسئلة الإضافية ←
@@ -705,10 +728,10 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                             <div className="navigation-row">
                                 <div className="back-buttons">
                                     <Link href={coursePath} className="back-link">
-                                        → الكورس
+                                        → الـ Workspace
                                     </Link>
                                     <button type="button" onClick={backToModule} className="back-link">
-                                        → الشباتر
+                                        → الـ Chapters
                                     </button>
                                 </div>
                                 <div className="ideas-container">
@@ -772,7 +795,7 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                         );
                                     })()}
 
-                                    <div className={`idea-layout ${currentVideoUrl ? '' : 'idea-layout-no-video'}`}>
+                                    <div className={`idea-layout ${currentVideoUrl || isDemoCourse(courseId) ? '' : 'idea-layout-no-video'}`}>
 
                                         <div className="theory-section">
                                             <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📖 ملخص الفكرة:</h3>
@@ -786,7 +809,21 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                             </div>
                                         </div>
 
-                                        {currentVideoUrl && (
+                                        {/* الكورس النموذجي: مكان الفيديو فقط بدون مقطع */}
+                                        {isDemoCourse(courseId) && (
+                                            <div className="video-section">
+                                                <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📹 فيديو الشرح:</h3>
+                                                <div className="video-frame">
+                                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#FEECD0', border: '2px dashed #DCA27B', borderRadius: 'inherit', color: '#8c5521', fontWeight: 'bold', textAlign: 'center', padding: '16px' }}>
+                                                        <span style={{ fontSize: '2.2rem' }}>🎬</span>
+                                                        <span>هنا يكون فيديو شرح الفكرة</span>
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 'normal' }}>يظهر في الكورس الفعلي</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {currentVideoUrl && !isDemoCourse(courseId) && (
                                             <div className="video-section">
                                                 <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📹 فيديو الشرح:</h3>
                                                 <div className="video-frame">
@@ -830,10 +867,10 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                                     <span style={{ fontSize: '20px' }}>➕</span>
                                                     <div>
 <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#8c5521' }}>
-                                                            أسئلة إضافية للشابتر {currentChapterData.chapterNumber}
+                                                            أسئلة إضافية للـ Chapter {currentChapterData.chapterNumber}
                                                         </div>
                                                         <div style={{ fontSize: '12px', color: '#2C3531', marginTop: '2px' }}>
-                                                            انتقل مباشرة لتدريبات هذا الشابتر واختبر فهمك
+                                                            انتقل مباشرة لتدريبات هذا الـ Chapter واختبر فهمك
                                                         </div>
                                                     </div>
                                                 </div>

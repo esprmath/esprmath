@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/torricelli.ts
-// شكلان من Q-18 في شابتر 2.7: المعدل عند زمن معين، ومتى يكون الأسرع والأبطأ
+// شكلان من Q-18 في Chapter 2.7: المعدل عند زمن معين، ومتى يكون الأسرع والأبطأ
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { round2 } from './helpers';

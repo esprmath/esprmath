@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 
-// الأفكار المستخرجة موزعة على الأقسام الثلاثة مع بيانات المودل والشابتر واسم الفكرة
+// الأفكار المستخرجة موزعة على الأقسام الثلاثة مع بيانات المودل والـ Chapter واسم الفكرة
 const reviewSections = {
     firstReview: [
         {
@@ -136,7 +136,7 @@ export default function Quiz1HubPage() {
         }
     }
 
-    // شاشة عرض تفاصيل الفكرة الخاطئة المختارة من ملخص الأخطاء النهائي مع خيار "العودة للشابتر"
+    // شاشة عرض تفاصيل الفكرة الخاطئة المختارة من ملخص الأخطاء النهائي مع خيار "العودة للـ Chapter"
     if (viewingErrorItem) {
         return (
             <div style={{ backgroundColor: '#FFF9E2', minHeight: '100vh', fontFamily: 'sans-serif', margin: 0, padding: 0, paddingBottom: '60px' }}>
@@ -164,7 +164,7 @@ export default function Quiz1HubPage() {
                                 href={viewingErrorItem.chapterLink}
                                 style={{ background: '#CDD4B1', padding: '10px 20px', borderRadius: '8px', color: '#2C3531', textDecoration: 'none', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center' }}
                             >
-                                العودة للشابتر ➔
+                                العودة للـ Chapter ➔
                             </Link>
                         </div>
                     </div>
@@ -208,7 +208,7 @@ export default function Quiz1HubPage() {
                                                 href={item.chapterLink}
                                                 style={{ background: '#CDD4B1', color: '#2C3531', textDecoration: 'none', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center' }}
                                             >
-                                                العودة للشابتر ➔
+                                                العودة للـ Chapter ➔
                                             </Link>
                                         </div>
                                     </div>

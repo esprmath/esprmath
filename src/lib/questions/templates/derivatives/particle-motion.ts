@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/particle-motion.ts
-// شكلان من Example 1 في شابتر 2.7: s = t³ - 6t² + 9t
+// شكلان من Example 1 في Chapter 2.7: s = t³ - 6t² + 9t
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { poly } from './helpers';

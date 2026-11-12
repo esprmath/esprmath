@@ -63,7 +63,7 @@ export default function QuizHome({
         <div className={s.card}>
             <div className={s.sessionHead}>
                 <h1 className={s.heading}>🎯 {title}</h1>
-                <Link href={coursePath} className={s.ghostBtn}>→ الكورس</Link>
+                <Link href={coursePath} className={s.ghostBtn}>→ الـ Workspace</Link>
             </div>
 
             <div className={s.progressLabel}>أتقنت {masteredCount} من {ideas.length} فكرة</div>

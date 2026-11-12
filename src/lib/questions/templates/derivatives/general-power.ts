@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/general-power.ts
-// ثلاثة أشكال من شابتر 2.5: Ex 3 (قوة)، و Ex 1 (جذر)، و Ex 5 (كسر مرفوع لقوة)
+// ثلاثة أشكال من Chapter 2.5: Ex 3 (قوة)، و Ex 1 (جذر)، و Ex 5 (كسر مرفوع لقوة)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { monomial } from './helpers';

@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/product-rule.ts
-// شكلان من شابتر 2.3: Q-30 (كثيرتا حدود) و Q-32 (جذور)
+// شكلان من Chapter 2.3: Q-30 (كثيرتا حدود) و Q-32 (جذور)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { poly } from './helpers';

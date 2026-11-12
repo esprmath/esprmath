@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/implicit-trig.ts
-// مثل Q-11 و Example 3 و Q-22 في شابتر 2.6
+// مثل Q-11 و Example 3 و Q-22 في Chapter 2.6
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { monomial } from './helpers';

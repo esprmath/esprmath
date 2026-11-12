@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/sum-difference.ts
-// شكلان من شابتر 2.3: Q-17 (كسر مقامه x) و Q-15 (فك القوس ثم الاشتقاق)
+// شكلان من Chapter 2.3: Q-17 (كسر مقامه x) و Q-15 (فك القوس ثم الاشتقاق)
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 import { poly } from './helpers';

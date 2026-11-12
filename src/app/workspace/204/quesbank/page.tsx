@@ -245,7 +245,7 @@ export default function QuestionBankPage() {
                 <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <div>
                         <h1 style={{ fontSize: '26px', fontWeight: 'bold', marginBottom: '6px' }}>❓ بنك الأسئلة الشامل</h1>
-                        <p style={{ color: '#4A5550', fontSize: '14px' }}>تدرب على أسئلة متنوعة مصنفة حسب الشباتر ومستويات الصعوبة.</p>
+                        <p style={{ color: '#4A5550', fontSize: '14px' }}>تدرب على أسئلة متنوعة مصنفة حسب الـ Chapters ومستويات الصعوبة.</p>
                     </div>
                     <Link href="/workspace/204" style={{ textDecoration: 'none', background: '#CDD4B1', color: '#2C3531', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold' }}>
                         ← عودة للكورس
@@ -268,7 +268,7 @@ export default function QuestionBankPage() {
                                 fontSize: '13px'
                             }}
                         >
-                            {ch === 'all' ? 'جميع الشباتر' : ch}
+                            {ch === 'all' ? 'جميع الـ Chapters' : ch}
                         </button>
                     ))}
                 </div>

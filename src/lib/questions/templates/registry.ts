@@ -9,7 +9,7 @@ import { directSubstitutionTemplate } from './limits/direct-substitution';
 import { unknownFunctionTemplate } from './limits/unknown-function';
 import { piecewiseEvalTemplate } from './limits/piecewise-eval';
 import { verticalAsymptoteTemplate } from './limits/vertical-asymptote';
-// 🆕 إضافات جديدة لشابتر 3.4
+// 🆕 إضافات جديدة لChapter 3.4
 import { infinityReciprocalTemplate } from './limits/infinity-reciprocal';
 import { rationalInfinityTemplate } from './limits/rational-infinity';
 import { conjugateInfinityTemplate } from './limits/conjugate-infinity';
@@ -25,7 +25,7 @@ import { unknownValueTemplate } from './continuity/unknown-value';
 import { tangentLimitTemplate } from './derivatives/tangent-limit';
 import { instantaneousVelocityTemplate } from './derivatives/instantaneous-velocity';
 
-// === الموديول الثاني ===
+// === Module 2 ===
 import { powerRulesTemplate } from './derivatives/power-rules';
 import { sumDifferenceTemplate } from './derivatives/sum-difference';
 import { productRuleTemplate } from './derivatives/product-rule';

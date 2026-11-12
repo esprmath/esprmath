@@ -1,15 +1,15 @@
 // ════════════════════════════════════════════════════════════
-// Math 101 · الموديول 2 · الشابتر 2.7
+// Math 101 · الـ Module 2 · الـ Chapter 2.7
 // هذا الملف للمحتوى فقط. تصميم الصفحة في components/module/ModulePage.tsx
 // ════════════════════════════════════════════════════════════
 import type { ChapterData } from '@/types/math';
 
 export const chapter2_7Data: ChapterData = {
-    // رقم الموديول، ورقم الشابتر، واسمه كما يظهر في بطاقة الشابتر
+    // رقم الـ Module، ورقم الـ Chapter، واسمه كما يظهر في بطاقة الـ Chapter
     moduleNumber: "2",
     chapterNumber: "2.7",
     chapterTitle: "Rates of Change in Natural and Social Sciences",
-    // أفكار الشابتر بالترتيب الذي تظهر به للطالب
+    // أفكار الـ Chapter بالترتيب الذي تظهر به للطالب
     ideas: [
         // ─────────── الفكرة 5.1 ───────────
         {

@@ -1,15 +1,15 @@
 // ════════════════════════════════════════════════════════════
-// Math 101 · الموديول 1 · الشابتر 1.6
+// Math 101 · الـ Module 1 · الـ Chapter 1.6
 // هذا الملف للمحتوى فقط. تصميم الصفحة في components/module/ModulePage.tsx
 // ════════════════════════════════════════════════════════════
 import type { ChapterData } from '@/types/math';
 
 export const chapter1_6Data: ChapterData = {
-    // رقم الموديول، ورقم الشابتر، واسمه كما يظهر في بطاقة الشابتر
+    // رقم الـ Module، ورقم الـ Chapter، واسمه كما يظهر في بطاقة الـ Chapter
     moduleNumber: "1",
     chapterNumber: "1.6",
     chapterTitle: "Calculating Limits Using Limit Laws and Algebraic Techniques",
-    // أفكار الشابتر بالترتيب الذي تظهر به للطالب
+    // أفكار الـ Chapter بالترتيب الذي تظهر به للطالب
     ideas: [
         // ─────────── الفكرة 2.1 ───────────
         {

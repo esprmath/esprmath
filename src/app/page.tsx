@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import BrandName from '@/components/BrandName'
 import { supabase } from '@/lib/supabase'
 import { checkIsAdmin } from '@/lib/admin'
+import { COURSES_LOCKED, DEMO_COURSE, isDemoCourse } from '@/lib/courseAccess'
 
 interface Course {
     id: string
@@ -76,7 +77,9 @@ export default function HomePage() {
         setCoursesLoading(false)
 
         if (!error && data) {
-            const visibleCourses = data.filter(course => admin || course.is_active === true)
+            // الكورسات المقفلة لا تظهر إلا للمشرف، والكورس النموذجي يظهر للجميع أولًا
+            const dbCourses = data.filter(course => admin || (!COURSES_LOCKED && course.is_active === true))
+            const visibleCourses: Course[] = [DEMO_COURSE, ...dbCourses]
 
             setCourses(visibleCourses)
             const initialStatuses: Record<string, string> = {}
@@ -231,7 +234,7 @@ export default function HomePage() {
             setAlertMessage('حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى.')
             setShowAlertModal(true)
         } else {
-            setAlertMessage('تم إرسال طلب الانضمام بنجاح! يمكنك تجربة الموديول الأول مجاناً الآن ⏳')
+            setAlertMessage('تم إرسال طلب الانضمام بنجاح! يمكنك تجربة Module 1 مجاناً الآن ⏳')
             setShowAlertModal(true)
 
             const updatedStatuses = { ...courseStatuses, [courseId]: 'pending' }
@@ -288,6 +291,27 @@ export default function HomePage() {
             )
         }
 
+        if (isDemoCourse(courseId)) {
+            return (
+                <Link href={`/workspace/${courseId}`} style={{ textDecoration: 'none' }}>
+                    <button
+                        style={{
+                            background: PRIMARY,
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '11px 20px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            width: '100%'
+                        }}
+                    >
+                        استكشف الكورس النموذجي 👀
+                    </button>
+                </Link>
+            )
+        }
+
         if (!course.requires_approval) {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -328,7 +352,7 @@ export default function HomePage() {
                             width: '100%'
                         }}
                     >
-                        {status === 'approved' ? 'دخول الكورس 🚀' : 'جرّب الموديول الأول مجانًا ✨'}
+                        {status === 'approved' ? 'دخول الكورس 🚀' : 'جرّب Module 1 مجانًا ✨'}
                     </button>
                 </Link>
 
@@ -465,7 +489,7 @@ export default function HomePage() {
                                             )}
 
                                             <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                                Math{course.id}
+                                                {isDemoCourse(course.id) ? 'نموذج' : `Math${course.id}`}
                                             </span>
                                         </div>
                                     </div>

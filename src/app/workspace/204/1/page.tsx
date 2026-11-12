@@ -507,7 +507,7 @@ export default function ModulePage() {
         : currentIdeaObj && currentChapterData
             ? {
                 id: currentIdeaObj.id,
-                name: `شابتر ${currentChapterData.chapterNumber} (${currentChapterData.chapterTitle}) - فكرة ${currentIdeaObj.ideaNumber}: ${currentIdeaObj.ideaName}`
+                name: `Chapter ${currentChapterData.chapterNumber} (${currentChapterData.chapterTitle}) - فكرة ${currentIdeaObj.ideaNumber}: ${currentIdeaObj.ideaName}`
             }
             : undefined;
 
@@ -663,7 +663,7 @@ export default function ModulePage() {
                         <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#DCA27B' }}>
                           📘 Module 1 (التقدم الإجمالي: {totalProgress}%)
                         </span>
-                        <span style={{ fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>جميع الشباتر متاحة</span>
+                        <span style={{ fontSize: '12px', color: '#8c5521', fontWeight: 'bold' }}>جميع الـ Chapters متاحة</span>
                     </div>
                     <div style={{ background: '#f0ebdc', borderRadius: '20px', height: '10px', overflow: 'hidden' }}>
                         <div style={{ width: `${totalProgress}%`, background: '#CDD4B1', height: '100%', transition: 'width 0.3s' }} />
@@ -697,7 +697,7 @@ export default function ModulePage() {
                                         <div style={{ width: `${chProgress}%`, background: '#CDD4B1', height: '100%' }} />
                                     </div>
                                     <div style={{ marginTop: '14px', color: '#DCA27B', fontWeight: 'bold', fontSize: '13px' }}>
-                                        فتح الشابتر والدخول للأفكار ←
+                                        فتح الـ Chapter والدخول للأفكار ←
                                     </div>
                                 </button>
                             );
@@ -715,7 +715,7 @@ export default function ModulePage() {
                                 ➕ الأسئلة الإضافية للمقرر
                             </div>
                             <div style={{ color: '#8c5521', fontSize: '12px', marginBottom: '26px' }}>
-                                تدرب على أسئلة إضافية مرتبطة بأفكار الشباتر مع الشرح الفوري.
+                                تدرب على أسئلة إضافية مرتبطة بأفكار الـ Chapters مع الشرح الفوري.
                             </div>
                             <div style={{ marginTop: '14px', color: '#8c5521', fontWeight: 'bold', fontSize: '13px' }}>
                                 فتح صفحة الأسئلة الإضافية ←
@@ -775,7 +775,7 @@ export default function ModulePage() {
                                                 fontWeight: 'bold', cursor: 'pointer', fontSize: '12px'
                                             }}
                                         >
-                                            شابتر {chData.chapterNumber} ({countForCh})
+                                            Chapter {chData.chapterNumber} ({countForCh})
                                         </button>
                                     );
                                 })}
@@ -783,7 +783,7 @@ export default function ModulePage() {
 
                             {filteredAdditionalQuestions.length === 0 ? (
                                 <div style={{ padding: '30px', textAlign: 'center', color: '#8c5521', background: '#FAFAFA', borderRadius: '12px' }}>
-                                    لا توجد أسئلة إضافية مضافة لهذا الشابتر حالياً.
+                                    لا توجد أسئلة إضافية مضافة لهذا الـ Chapter حالياً.
                                 </div>
                             ) : (
                                 filteredAdditionalQuestions.map((q, index) => {
@@ -802,7 +802,7 @@ export default function ModulePage() {
                                                 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
                                                         <span style={{ background: '#8c5521', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>
-                                                            شابتر {q.meta.chapterNumber}
+                                                            Chapter {q.meta.chapterNumber}
                                                         </span>
                                                         <span>
                                                             فكرة ({q.meta.ideaNumber}): {q.meta.ideaName}
@@ -1021,7 +1021,7 @@ export default function ModulePage() {
                                     borderRadius: '8px', fontWeight: 'bold', color: '#8c5521', fontSize: '13px', cursor: 'pointer'
                                 }}
                             >
-                                ⬅️ الرجوع لقائمة الشباتر
+                                ⬅️ الرجوع لقائمة الـ Chapters
                             </button>
                         </div>
 
@@ -1276,7 +1276,7 @@ export default function ModulePage() {
                                     )}
                                 </div>
 
-                                {/* مستطيل الانتقال للأسئلة الإضافية الخاصة بهذا الشابتر مع تمرير التاب الخاص به */}
+                                {/* مستطيل الانتقال للأسئلة الإضافية الخاصة بهذا الـ Chapter مع تمرير التاب الخاص به */}
                                 <div style={{ marginTop: '24px' }}>
                                     <button
                                         type="button"
@@ -1294,10 +1294,10 @@ export default function ModulePage() {
                                             <span style={{ fontSize: '20px' }}>➕</span>
                                             <div>
                                                 <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#8c5521' }}>
-                                                    أسئلة إضافية للشابتر {currentChapterData.chapterNumber}
+                                                    أسئلة إضافية للـ Chapter {currentChapterData.chapterNumber}
                                                 </div>
                                                 <div style={{ fontSize: '12px', color: '#2C3531', marginTop: '2px' }}>
-                                                    انتقل مباشرة لتدريبات هذا الشابتر واختبر فهمك
+                                                    انتقل مباشرة لتدريبات هذا الـ Chapter واختبر فهمك
                                                 </div>
                                             </div>
                                         </div>

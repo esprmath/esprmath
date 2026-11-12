@@ -1,15 +1,15 @@
 // ════════════════════════════════════════════════════════════
-// Math 101 · الموديول 2 · الشابتر 2.4
+// Math 101 · الـ Module 2 · الـ Chapter 2.4
 // هذا الملف للمحتوى فقط. تصميم الصفحة في components/module/ModulePage.tsx
 // ════════════════════════════════════════════════════════════
 import type { ChapterData } from '@/types/math';
 
 export const chapter2_4Data: ChapterData = {
-    // رقم الموديول، ورقم الشابتر، واسمه كما يظهر في بطاقة الشابتر
+    // رقم الـ Module، ورقم الـ Chapter، واسمه كما يظهر في بطاقة الـ Chapter
     moduleNumber: "2",
     chapterNumber: "2.4",
     chapterTitle: "Derivatives and Special Limits of Trigonometric Functions",
-    // أفكار الشابتر بالترتيب الذي تظهر به للطالب
+    // أفكار الـ Chapter بالترتيب الذي تظهر به للطالب
     ideas: [
         // ─────────── الفكرة 2.1 ───────────
         {

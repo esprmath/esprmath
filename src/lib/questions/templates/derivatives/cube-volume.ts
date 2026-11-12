@@ -1,5 +1,5 @@
 // src/lib/questions/templates/derivatives/cube-volume.ts
-// شكلان من Q-12 في شابتر 2.7: قيمة dV/dx ومعناها
+// شكلان من Q-12 في Chapter 2.7: قيمة dV/dx ومعناها
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { uniqueExcept } from '../utils';
 

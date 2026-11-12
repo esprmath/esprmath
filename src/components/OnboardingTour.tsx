@@ -52,14 +52,14 @@ const STEPS: Record<Exclude<Step, 'finished'>, StepConfig> = {
         target: '[data-tour="first-module"]',
         number: 2,
         title: 'ابدأ من هنا',
-        text: 'افتح الموديول الأول عشان تبدأ أول فكرة.',
+        text: 'افتح Module 1 عشان تبدأ أول فكرة.',
     },
     chapter: {
         page: ['moduleList'],
         target: '[data-tour="first-chapter"]',
         number: 3,
-        title: 'اختر الشابتر',
-        text: 'كل شابتر فيه مجموعة أفكار. ابدأ بأول شابتر.',
+        title: 'اختر الـ Chapter',
+        text: 'كل Chapter فيه مجموعة أفكار. ابدأ بأول Chapter.',
     },
     summary: {
         page: ['idea'],

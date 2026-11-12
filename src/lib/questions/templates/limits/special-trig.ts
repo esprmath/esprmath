@@ -1,5 +1,5 @@
 // src/lib/questions/templates/limits/special-trig.ts
-// ثلاثة أشكال من شابتر 2.4: Q-45 و Q-48 و Q-55
+// ثلاثة أشكال من Chapter 2.4: Q-45 و Q-48 و Q-55
 import type { QuestionTemplate, TemplateOutput, VariableDefinition } from '../../types';
 import { frac, uniqueExcept, DNE } from '../utils';
 

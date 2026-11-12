@@ -4,8 +4,8 @@ import type { ChapterData, ExtraQuestion } from '@/types/math';
 import { buildAdditionalQuestions, generateFromTemplate } from '../questions/additional';
 
 export interface QuizIdea {
-    key: string; // "رقم الشابتر-رقم الفكرة"
-    masteryKey: string; // مفتاح الإتقان: "رقم الشابتر-id الفكرة"
+    key: string; // "رقم الـ Chapter-رقم الفكرة"
+    masteryKey: string; // مفتاح الإتقان: "رقم الـ Chapter-id الفكرة"
     moduleNumber: string;
     chapter: string;
     ideaId: string;
@@ -105,7 +105,7 @@ function shuffle<T>(items: T[]): T[] {
     return result;
 }
 
-/** يختار أفكارًا مختلفة موزعة على الشباتر: فكرة من كل شابتر بالتناوب حتى يكتمل العدد */
+/** يختار أفكارًا مختلفة موزعة على الـ Chapters: فكرة من كل Chapter بالتناوب حتى يكتمل العدد */
 export function pickMockIdeas(ideas: QuizIdea[], count: number): QuizIdea[] {
     const groups = new Map<string, QuizIdea[]>();
     for (const idea of shuffle(ideas)) {
@@ -130,7 +130,7 @@ export function pickMockIdeas(ideas: QuizIdea[], count: number): QuizIdea[] {
 export const mistakesStorageKey = (courseId: string, quizId: string) =>
     `math${courseId}_${quizId.replace('-', '')}_saved_mistakes`;
 
-/** يقرأ الأخطاء المحفوظة. النسخة القديمة كانت تحفظ السؤال كاملًا، فنأخذ منه الشابتر والفكرة */
+/** يقرأ الأخطاء المحفوظة. النسخة القديمة كانت تحفظ السؤال كاملًا، فنأخذ منه الـ Chapter والفكرة */
 export function parseMistakes(saved: string | null): string[] {
     try {
         const items: unknown = JSON.parse(saved ?? '[]');
