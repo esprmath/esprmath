@@ -14,7 +14,7 @@ import s from './Quiz.module.css';
 type Screen =
     | { name: 'home' }
     | { name: 'practice'; title: string; ideas: QuizIdea[]; runId: number }
-    | { name: 'mock'; runId: number };
+    | { name: 'mock'; runId: number; quick: boolean };
 
 /** نظام الكويز لكل الكورسات. إعدادات كل كويز تصله من src/content */
 export default function QuizPage({ content }: { content: QuizContent }) {
@@ -77,10 +77,13 @@ export default function QuizPage({ content }: { content: QuizContent }) {
                         pastExamVideoUrl={content.pastExamVideoUrl}
                         mockQuestionCount={content.mockQuestionCount}
                         mockMinutes={content.mockMinutes}
+                        reviewParts={content.reviewParts}
+                        quickMock={content.quickMock}
+                        sideLayout={content.sideLayout}
                         onStartIdeas={startPractice}
                         onStartPastExam={() => startPractice('جاءت في اختبارات سابقة', pastExamIdeas)}
                         onStartMistakes={() => startPractice('راجع أخطائي', mistakeIdeas)}
-                        onStartMock={() => open({ name: 'mock', runId: ++runId.current })}
+                        onStartMock={(quick) => open({ name: 'mock', runId: ++runId.current, quick })}
                     />
                 )}
 
@@ -101,8 +104,8 @@ export default function QuizPage({ content }: { content: QuizContent }) {
                     <MockExam
                         key={screen.runId}
                         ideas={ideas}
-                        questionCount={content.mockQuestionCount}
-                        minutes={content.mockMinutes}
+                        questionCount={screen.quick && content.quickMock ? content.quickMock.questionCount : content.mockQuestionCount}
+                        minutes={screen.quick && content.quickMock ? content.quickMock.minutes : content.mockMinutes}
                         courseId={courseId}
                         onResult={handleResult}
                         onOpenMistakes={() => startPractice('راجع أخطائي', ideas.filter((idea) => mistakesRef.current.includes(idea.key)))}

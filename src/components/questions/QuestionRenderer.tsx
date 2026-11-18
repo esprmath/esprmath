@@ -6,6 +6,7 @@ import { describeQuestionForTutor } from '@/lib/questions/tutorContext';
 import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import styles from './QuestionRenderer.module.css';
+import AnswerCat from '@/components/AnswerCat';
 import type { Question, OptionId } from '@/lib/questions/types';
 import type { GradingResult, GroupGradingResult } from '@/lib/questions/engine/grader';
 
@@ -258,6 +259,7 @@ export default function QuestionRenderer({
                     )}
                     {partIsAttempted && !partIsCorrect && (
                       <div className={`${styles.partFeedback} ${styles.incorrectFeedback}`} style={{ marginTop: '12px', color: '#b91c1c', fontWeight: 'bold', background: '#fee2e2', padding: '10px', borderRadius: '8px' }}>
+                        <AnswerCat correct={false} trigger={partResult} />
                         ❌ إجابة خاطئة، حاول مرة أخرى!
                       </div>
                     )}
@@ -318,6 +320,7 @@ export default function QuestionRenderer({
 
               {isAttempted && isCorrect && (
                 <div className={`${styles.feedback} ${styles.correctFeedback}`}>
+                  <AnswerCat correct trigger={result} />
                   <div className={styles.feedbackTitle}>✅ إجابة صحيحة!</div>
                   {renderSteps(question.steps)}
                 </div>
@@ -325,6 +328,7 @@ export default function QuestionRenderer({
 
               {isAttempted && !isCorrect && (
                 <div className={`${styles.feedback} ${styles.incorrectFeedback}`}>
+                  <AnswerCat correct={false} trigger={result} />
                   <div className={styles.feedbackTitle}>❌ إجابة خاطئة، حاول مرة أخرى!</div>
                 </div>
               )}

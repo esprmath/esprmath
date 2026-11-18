@@ -530,6 +530,17 @@ html[data-theme="dark"]:not([data-dark-native]) :is([class*="__optionLabel"][cla
   background-color: #B79F84 !important;
   border-color: #6E4A28 !important;
 }
+/* شاشة الكويز: صفوف الفصول وأزرار الأفكار الثانوية بنفس بني الخيارات، ومؤشر الجاهزية بمسار بني بدل الأسود */
+html[data-theme="dark"]:not([data-dark-native]) :is(
+  [class*="__chapterRow"], [class*="__smallBtn"], [class$="__ready"]
+) {
+  background-color: #CDBFAE !important;
+  border-color: #B3A18B !important;
+}
+/* أزرار الأفكار الأصفر والأخضر تبقى بألوانها الحقيقية حتى يبان الفرق بينها */
+html[data-theme="dark"]:not([data-dark-native]) :is([class*="__chipPracticing"], [class*="__chipMastered"]) {
+  filter: invert(1) hue-rotate(180deg);
+}
 /* مربعات ملخص الفكرة داخل الدرس: أفتح شوي من المربع اللي حولها، والكلام أوضح */
 html[data-theme="dark"]:not([data-dark-native]) .idea-step {
   background-color: #C9BAA8 !important;
@@ -542,3 +553,35 @@ html[data-theme="dark"]:not([data-dark-native]) .idea-step-text {
   color: #0B0D0C !important;
 }
 /* ===== الوضع الليلي: نهاية ===== */
+
+/* ظل القطو. لا يوضع كـ style على الصورة، لأنه يمنع قاعدة رجوع ألوان الصور لطبيعتها بالوضع الليلي */
+.nudge-cat,
+.answer-cat {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+}
+/* الوضع الليلي: إشعارات القطو (الفقاعة والقطو) بنفس ألوانها بالضبط، لا تتغير بين الوضعين.
+   عكس مضاعف مع فلتر الصفحة يرجّعها لطبيعتها، والقطو داخلها لا ينعكس مرة ثالثة */
+html[data-theme="dark"]:not([data-dark-native]) .nudge-root {
+  filter: invert(1) hue-rotate(180deg);
+}
+html[data-theme="dark"]:not([data-dark-native]) .nudge-root .nudge-cat {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3)) !important;
+}
+/* قطو نتيجة الجواب بجنب الجواب: نفس الفكرة (عكس مضاعف مع فلتر الصفحة) */
+html[data-theme="dark"]:not([data-dark-native]) .answer-cat {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3)) invert(1) hue-rotate(180deg) !important;
+}
+
+/* قطو نتيجة الجواب: يظهر بحركة ويختفي بعد 3 ثواني */
+.answer-cat {
+  animation: answer-cat-toast 3s ease-out forwards;
+}
+@keyframes answer-cat-toast {
+  0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  10% { transform: scale(1) rotate(0); opacity: 1; }
+  85% { transform: scale(1) rotate(0); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .answer-cat { animation: none; }
+}

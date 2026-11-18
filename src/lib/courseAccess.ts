@@ -26,7 +26,7 @@ export function windowStatus(item: { is_open: boolean; opens_at: string | null; 
 
 // الاختبارات التي لها صفحة جاهزة في الموقع
 const QUIZ_PAGES: Record<string, string[]> = {
-    '101': ['quiz-1', 'final-review'],
+    '101': ['quiz-1', 'midterm', 'final-review'],
     demo: ['quiz-1'],
 };
 

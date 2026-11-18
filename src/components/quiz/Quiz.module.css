@@ -169,29 +169,522 @@
     transition: width 0.3s;
 }
 
-/* ===== خريطة الأفكار ===== */
-.chapters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 10px;
+/* ===== الخطوة التالية ===== */
+.nextCard {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: #8c5521;
+    color: #FFF9E2;
 }
 
-.chapter {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px;
-    border: 1px solid #e6dec5;
-    border-radius: 12px;
-    background: #FFFDF4;
-}
-
-.chapterHead {
+.nextRow {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+}
+
+.nextEyebrow {
+    font-size: 12px;
+    color: #f0ddbf;
+}
+
+.nextTitle {
+    margin: 4px 0;
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.5;
+}
+
+.heroBtn {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    border: 0;
+    border-radius: 8px;
+    background: #FFF9E2;
+    color: #6b4220;
+    font-family: inherit;
     font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.heroBar {
+    height: 6px;
+    margin-top: 14px;
+    border-radius: 3px;
+    background: rgba(255, 249, 226, 0.25);
+    overflow: hidden;
+}
+
+.heroBar span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: #FFF9E2;
+    transition: width 0.3s;
+}
+
+/* ===== طريق المراجعات ===== */
+.pathNote {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.path {
+    position: relative;
+    height: 190px;
+    margin: 6px 4px 26px;
+}
+
+.road {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.roadBase,
+.roadLine {
+    fill: none;
+    stroke-linecap: round;
+}
+
+.roadBase {
+    stroke: #eadfc8;
+    stroke-width: 18;
+}
+
+.roadLine {
+    stroke: #fffdf4;
+    stroke-width: 2.5;
+    stroke-dasharray: 7 9;
+}
+
+.pathNode {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    background: none;
+    left: var(--hx);
+    top: var(--hy);
+    transform: translate(-50%, -50%);
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.pathCircle {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #fffdf4;
+    border-radius: 50%;
+    background: #8c5521;
+    color: #fff9e2;
+    font-size: 20px;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(140, 85, 33, 0.35);
+    transition: transform 0.15s;
+}
+
+.pathNode:hover .pathCircle {
+    transform: scale(1.06);
+}
+
+.pathNodeActive .pathCircle {
+    background: #5e3410;
+    outline: 3px solid #e9b949;
+    outline-offset: 2px;
+}
+
+.pathInfo {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: #5f6a65;
+    line-height: 1.4;
+}
+
+.pathInfo strong {
+    font-size: 13px;
+    color: #2C3531;
+}
+
+.pathBadge {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e9b949;
+    color: #5e3410;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
+
+/* الطريق على اليسار وبطاقات الاختبارات على اليمين */
+.sideGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    direction: ltr;
+}
+
+.sideRoad,
+.sideTiles {
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sideTiles {
+    gap: 10px;
+}
+
+/* المراجعة المفتوحة: تحت العمودين بعرض كامل في الشاشات الكبيرة */
+.sideDetail {
+    grid-column: 1 / -1;
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sideDetail:empty {
+    display: none;
+}
+
+@media (max-width: 560px) {
+    .sideGrid {
+        grid-template-columns: 1fr;
+    }
+
+    /* الجوال: المراجعة المفتوحة تحت الطريق مباشرة، ثم البطاقات */
+    .sideRoad {
+        order: 1;
+    }
+
+    .sideDetail {
+        order: 2;
+    }
+
+    .sideTiles {
+        order: 3;
+    }
+}
+
+/* طريق مدمج (حجم الجوال) */
+.pathCompact {
+    height: 150px;
+    margin-bottom: 20px;
+}
+
+.pathCompact .roadBase {
+    stroke-width: 14;
+}
+
+.pathCompact .pathNode,
+.pathCompact .pathCircle {
+    width: 44px;
+    height: 44px;
+}
+
+.pathCompact .pathCircle {
+    font-size: 17px;
+}
+
+.pathCompact .pathInfo {
+    top: calc(100% + 4px);
+    width: 72px;
+    font-size: 10px;
+}
+
+.pathCompact .pathInfo strong {
+    font-size: 11px;
+}
+
+/* طريق عمودي (من فوق لتحت) للشاشات الكبيرة، مع الطريق الأفقي كبديل للجوال */
+.roadV {
+    display: none;
+}
+
+@media (min-width: 561px) {
+    .pathVert {
+        height: var(--vheight);
+        margin-bottom: 8px;
+    }
+
+    .pathVert .roadH {
+        display: none;
+    }
+
+    .pathVert .roadV {
+        display: block;
+    }
+
+    .pathVert .pathNode {
+        left: var(--vx);
+        top: var(--vy);
+    }
+
+    .pathVert .pathInfo {
+        top: 50%;
+        left: calc(100% + 10px);
+        width: max-content;
+        align-items: flex-start;
+        transform: translateY(-50%);
+    }
+
+    .pathVert .pathBadge {
+        bottom: auto;
+        top: 50%;
+        left: auto;
+        right: calc(100% + 8px);
+        transform: translateY(-50%);
+    }
+}
+
+/* الشاشات الصغيرة: كلام أصغر ومسافات أقل */
+@media (max-width: 560px) {
+    .heading {
+        font-size: 16px;
+    }
+
+    .sessionHead {
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .ghostBtn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .pathNote {
+        font-size: 12px;
+    }
+
+    .subheading {
+        font-size: 14px;
+    }
+
+    .track {
+        gap: 6px;
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .track .muted,
+    .readyNote {
+        font-size: 12px;
+    }
+
+    .partTitle,
+    .moduleLabel,
+    .moduleTitle {
+        font-size: 14px;
+    }
+
+    .chapterName {
+        font-size: 13px;
+    }
+}
+
+/* الجوال: طريق أصغر بدون أرقام الفصول */
+@media (max-width: 560px) {
+    .path {
+        height: 150px;
+        margin-bottom: 20px;
+    }
+
+    .roadBase {
+        stroke-width: 14;
+    }
+
+    .pathNode,
+    .pathCircle {
+        width: 44px;
+        height: 44px;
+    }
+
+    .pathCircle {
+        font-size: 17px;
+    }
+
+    .pathInfo {
+        top: calc(100% + 4px);
+        width: 72px;
+        font-size: 10px;
+    }
+
+    .pathInfo strong {
+        font-size: 11px;
+    }
+}
+
+.partHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #FEECD0;
+}
+
+.partTitle {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 900;
+    color: #8c5521;
+}
+
+/* ===== تجميع الفصول بحسب الـ Module ===== */
+.moduleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.moduleGroup + .moduleGroup {
+    margin-top: 10px;
+}
+
+.moduleHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 4px;
+}
+
+/* اسم الـ Module فقط، بدون أسهم أو أزرار (داخل المراجعات) */
+.moduleLabel {
+    padding: 2px 4px;
+    font-size: 15px;
+    font-weight: 900;
+    color: #8c5521;
+}
+
+.moduleToggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.moduleTitle {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 900;
+    color: #8c5521;
+}
+
+/* ===== قائمة الفصول ===== */
+.chapterList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chapterRow {
+    border: 1px solid #e6dec5;
+    border-radius: 12px;
+    background: #FFFDF4;
+    overflow: hidden;
+}
+
+.chapterTop {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-inline-end: 12px;
+}
+
+.chapterToggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: start;
+    cursor: pointer;
+}
+
+.chapterName {
+    flex: 1;
+}
+
+.chapterCount {
+    min-width: 30px;
+    font-size: 12px;
+    color: #5f6a65;
+    direction: ltr;
+}
+
+.caret {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0c9a6;
+    border-radius: 50%;
+    background: #FEECD0;
+    color: #8c5521;
+    transition: transform 0.2s;
+}
+
+/* سهم الفصول بدون دائرة */
+.caret.caretPlain {
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    background: none;
+}
+
+.caretOpen {
+    transform: rotate(180deg);
+}
+
+.ideaList {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-top: 1px solid #e6dec5;
 }
 
 .chips {
@@ -218,6 +711,7 @@
     background: #f5efe6;
 }
 
+/* أصفر: حُلّت مرة وحدة. أخضر: حُلّت مرتين (متقنة) */
 .chipPracticing {
     background: #fdf1cd;
     border-color: #e9b949;
@@ -234,25 +728,34 @@
     background: #57683a;
 }
 
-.legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
+/* مؤشر الجاهزية للاختبار التجريبي */
+.ready {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    margin-top: 2px;
+    border-radius: 3px;
+    background: #f5efe6;
+}
+
+.ready span {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    border-radius: 3px;
+    background: #b0764a;
+}
+
+.ready em {
+    position: absolute;
+    inset-block: -3px;
+    width: 2px;
+    background: #8c5521;
+}
+
+.readyNote {
     font-size: 12px;
     color: #5f6a65;
-}
-
-.legend span {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.legend i {
-    width: 12px;
-    height: 12px;
-    border: 1px solid #d9d0b5;
-    border-radius: 3px;
 }
 
 .tracks {

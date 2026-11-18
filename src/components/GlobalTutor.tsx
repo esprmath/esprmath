@@ -5,6 +5,7 @@ import { BlockMath, InlineMath } from 'react-katex'
 import 'katex/dist/katex.min.css'
 import { supabase } from '@/lib/supabase'
 import { DEMO_AI_PROMPTS, isDemoCourse } from '@/lib/courseAccess'
+import { THINKING_CAT } from '@/content/nudges'
 
 // الكورس النموذجي: كل رسالة جاهزة تُستخدم مرة وحدة فقط في كامل الكورس
 const DEMO_USED_KEY = 'demo_ai_used'
@@ -106,6 +107,8 @@ export default function GlobalTutor({
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [input, setInput] = useState('')
     const [loading, setLoading] = useState(false)
+    // true من أول كلمة توصل من الرد: القطو يختفي والرد يكمل ينكتب
+    const [typing, setTyping] = useState(false)
     const isDemo = isDemoCourse(courseId)
     const [demoUsed, setDemoUsed] = useState<string[]>([])
 
@@ -214,14 +217,41 @@ export default function GlobalTutor({
                 })
             })
 
-            const data = await res.json()
-            if (!data.reply) throw new Error('empty reply')
-            if (!res.ok) refundDemo()
-            setMessages(prev => [...prev, { role: 'ai', text: data.reply }])
+            if ((res.headers.get('content-type') ?? '').includes('application/json')) {
+                // رسالة خطأ من الخادم (غير مسموح، وصلت للحد...)
+                const data = await res.json()
+                if (!data.reply) throw new Error('empty reply')
+                if (!res.ok) refundDemo()
+                setMessages(prev => [...prev, { role: 'ai', text: data.reply }])
+            } else {
+                // الرد يوصل تدريجيًا وهو ينكتب
+                if (!res.ok || !res.body) throw new Error('bad response')
+                const reader = res.body.getReader()
+                const decoder = new TextDecoder()
+                let text = ''
+                let started = false
+
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    text += decoder.decode(value, { stream: true })
+                    if (!text) continue
+                    if (!started) {
+                        started = true
+                        setTyping(true)
+                        setMessages(prev => [...prev, { role: 'ai', text }])
+                    } else {
+                        const snapshot = text
+                        setMessages(prev => [...prev.slice(0, -1), { role: 'ai', text: snapshot }])
+                    }
+                }
+                if (!started) throw new Error('empty reply')
+            }
         } catch {
             refundDemo()
             setMessages(prev => [...prev, { role: 'ai', text: 'تعذر الاتصال بفيكتور، تأكد من الإنترنت وحاول مرة ثانية.' }])
         } finally {
+            setTyping(false)
             setLoading(false)
         }
     }
@@ -385,18 +415,22 @@ export default function GlobalTutor({
                     </div>
                 ))}
 
-                {loading && (
+                {loading && !typing && (
                     <div
                         style={{
                             fontSize: '13px',
                             color: '#4A5550',
-                            padding: '8px',
+                            padding: '8px 12px 8px 10px',
                             background: 'rgba(255,255,255,0.8)',
-                            borderRadius: '6px',
-                            display: 'inline-block'
+                            borderRadius: '10px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '10px'
                         }}
                     >
-                        فيكتور يفكر... ⏳
+                        {/* قطو القراءة: يظهر لين يجي رد فيكتور */}
+                        <img src={THINKING_CAT} alt="" height={56} style={{ height: '56px', width: 'auto' }} />
+                        خلك معي ثواني...
                     </div>
                 )}
 

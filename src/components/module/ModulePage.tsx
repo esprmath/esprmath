@@ -7,6 +7,8 @@ import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import OnboardingTour, { TOUR_EVENTS } from '@/components/OnboardingTour';
 import GlobalTutor from '@/components/GlobalTutor';
+import LessonNudge from '@/components/LessonNudge';
+import { lessonMinutes } from '@/lib/lessonTime';
 import FullScreenCanvasModal from '@/components/FullScreenCanvasModal';
 import AdditionalQuestionsView from '@/components/AdditionalQuestionsView';
 import IdeaQuestions from '@/components/questions/IdeaQuestions';
@@ -769,6 +771,10 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
 
                             {currentIdeaObj && (
                                 <div className="idea-card">
+                                    <LessonNudge
+                                        key={`${activeChapter}:${activeIdeaId}`}
+                                        limitMinutes={lessonMinutes(currentIdeaObj.videoUrl)}
+                                    />
                                     <div className="idea-eyebrow">
                                         Chapter {currentChapterData.chapterNumber} · فكرة {ideaPosition + 1} من {currentChapterData.ideas.length}
                                     </div>
@@ -840,6 +846,9 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
 
                                         <div className="question-section">
                                             <h3 style={{ fontSize: '1rem', color: '#8c5521', marginBottom: '12px' }}>✍️ السؤال التطبيقي:</h3>
+                                            <p style={{ fontSize: '0.78rem', opacity: 0.7, margin: '-6px 0 12px' }}>
+                                                لا تختار بشكل عشوائي، مو كل مرة تضبط معك.
+                                            </p>
                                             <IdeaQuestions
                                                 key={`${activeChapter}:${activeIdeaId}`}
                                                 idea={currentIdeaObj}

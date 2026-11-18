@@ -64,6 +64,12 @@ export interface QuizContent {
     pastExamVideoUrl?: string;
     mockQuestionCount: number;
     mockMinutes: number;
+    /** عدد المراجعات التي تُقسم عليها الأفكار بالتساوي (مثل 3). بدونه تظهر قائمة الفصول مباشرة */
+    reviewParts?: number;
+    /** تجريبي سريع لمن وقته ضيق، بجانب التجريبي الكامل */
+    quickMock?: { questionCount: number; minutes: number };
+    /** الطريق على اليسار وبطاقات الاختبارات على اليمين (للشاشات الكبيرة) */
+    sideLayout?: boolean;
 }
 
 /** كل ما يحتاجه قالب الـ Module لعرض Module كامل */

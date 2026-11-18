@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import IdleNudge from '@/components/IdleNudge';
 import { supabase } from '@/lib/supabase';
 import { checkIsAdmin } from '@/lib/admin';
 import { COURSES_LOCKED, isDemoCourse, windowStatus } from '@/lib/courseAccess';
@@ -139,7 +140,15 @@ function CourseGate({ children }: { children: React.ReactNode }) {
         );
     }
 
-    return <>{children}</>;
+    // قطو الخمول يطلع بكل صفحات الكورس إلا الدروس (/workspace/101/1)، لأن الطالب فيها ممكن يشوف المقطع أو يحل بدون حركة
+    const isLesson = /^\/workspace\/[^/]+\/\d+\/?$/.test(pathname);
+
+    return (
+        <>
+            {children}
+            {!isLesson && <IdleNudge />}
+        </>
+    );
 }
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
