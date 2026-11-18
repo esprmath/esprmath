@@ -43,6 +43,12 @@ const EXTRA_MINUTES = 7;
 /** وقت الفكرة التي ليس لها مقطع معروف المدة */
 const DEFAULT_MINUTES = 15;
 
+/** مدة المقطع بالثواني من رابطه، أو undefined إذا ما نعرفها */
+export function videoSecondsOf(videoUrl?: string): number | undefined {
+    const id = videoUrl?.match(/([\w-]{11})(?:[?&#].*)?$/)?.[1];
+    return id ? VIDEO_SECONDS[id] : undefined;
+}
+
 /** كم دقيقة يُفترض أن تأخذ هذه الفكرة، بحسب رابط مقطعها */
 export function lessonMinutes(videoUrl?: string): number {
     const id = videoUrl?.match(/([\w-]{11})(?:[?&#].*)?$/)?.[1];

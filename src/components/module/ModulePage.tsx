@@ -8,6 +8,8 @@ import Navbar from '@/components/Navbar';
 import OnboardingTour, { TOUR_EVENTS } from '@/components/OnboardingTour';
 import GlobalTutor from '@/components/GlobalTutor';
 import LessonNudge from '@/components/LessonNudge';
+import IdeaTracker from '@/components/IdeaTracker';
+import { attachVideo } from '@/lib/activity';
 import { lessonMinutes } from '@/lib/lessonTime';
 import FullScreenCanvasModal from '@/components/FullScreenCanvasModal';
 import AdditionalQuestionsView from '@/components/AdditionalQuestionsView';
@@ -775,6 +777,12 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                         key={`${activeChapter}:${activeIdeaId}`}
                                         limitMinutes={lessonMinutes(currentIdeaObj.videoUrl)}
                                     />
+                                    <IdeaTracker
+                                        key={`${activeChapter}:${activeIdeaId}`}
+                                        courseId={courseId}
+                                        ideaKey={`${activeChapter}-${currentIdeaObj.id}`}
+                                        videoUrl={currentIdeaObj.videoUrl}
+                                    />
                                     <div className="idea-eyebrow">
                                         Chapter {currentChapterData.chapterNumber} · فكرة {ideaPosition + 1} من {currentChapterData.ideas.length}
                                     </div>
@@ -834,7 +842,8 @@ export default function ModulePage({ content }: { content: ModuleContent }) {
                                                 <h3 style={{ fontSize: '1rem', color: '#2C3531', marginBottom: '12px' }}>📹 فيديو الشرح:</h3>
                                                 <div className="video-frame">
                                                     <iframe
-                                                        src={currentVideoUrl}
+                                                        src={`${currentVideoUrl}?enablejsapi=1`}
+                                                        onLoad={(event) => attachVideo(event.currentTarget)}
                                                         title="YouTube video"
                                                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
                                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

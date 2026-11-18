@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import ActivityTracker from '@/components/ActivityTracker';
 import IdleNudge from '@/components/IdleNudge';
 import { supabase } from '@/lib/supabase';
 import { checkIsAdmin } from '@/lib/admin';
@@ -146,6 +147,7 @@ function CourseGate({ children }: { children: React.ReactNode }) {
     return (
         <>
             {children}
+            <ActivityTracker />
             {!isLesson && <IdleNudge />}
         </>
     );

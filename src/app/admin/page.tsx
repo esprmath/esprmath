@@ -10,6 +10,7 @@ import type { CourseModule } from '@/lib/courseAccess';
 import { Courses, type CourseForm } from './courses';
 import { ExamsAndModules, type ExamsActions, type ModuleForm } from './exams';
 import { Admins } from './admins';
+import { ActivityStats } from './stats';
 import {
     AiPanel, Overview, Students, cx,
     type AiLog, type AiSummary, type Course, type Quiz, type StudentRow, type TabId,
@@ -20,6 +21,7 @@ const TABS: Array<{ id: TabId; label: string; icon: string; sub: string }> = [
     { id: 'students', label: 'الطلاب', icon: '🎓', sub: 'البحث والاعتماد وصلاحية فيكتور' },
     { id: 'courses', label: 'الكورسات', icon: '📚', sub: 'إنشاء الكورسات وتعديلها وحذفها' },
     { id: 'exams', label: 'الاختبارات والـ Modules', icon: '📝', sub: 'اختر الكورس، ثم افتح وأغلق وجدول الـ Modules الخاصة به واختباراته' },
+    { id: 'stats', label: 'الإحصائيات', icon: '📈', sub: 'وقت تفاعل الطلاب، ومتوسط إنهاء الدروس، والأخطاء' },
     { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },];
 
 const LOG_DAYS = 62;
@@ -493,6 +495,7 @@ export default function AdminDashboard() {
                                 actions={examsActions}
                             />
                         )}
+                        {tab === 'stats' && <ActivityStats key={refreshCount} courses={courses} />}
                         {tab === 'ai' && <AiPanel ai={ai} enabled={aiEnabled} busy={busy} onToggle={askToggleAi} />}                    </>
                 )}
             </main>

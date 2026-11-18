@@ -2,6 +2,8 @@
 // إتقان الأفكار: تُعد الفكرة متقنة بعد حل سؤالين مختلفين صح.
 // التقدم محفوظ في متصفح الطالب فقط (localStorage)، ولكل كورس سجله.
 
+import { trackAnswer } from '@/lib/activity';
+
 const LEGACY_KEY = 'module_1_completed_items';
 
 export const MASTERY_TARGET = 2;
@@ -61,6 +63,10 @@ export function recordIdeaResult(courseId: string, ideaKey: string, questionId: 
 
     const updated = { ...progress, [ideaKey]: { tried: true, solved } };
     writeStorage(courseId, updated);
+
+    // إحصائيات المشرف: كل إجابة، وهل أتقن الطالب الفكرة بهذي الإجابة (أول مرة)
+    const completedNow = current.solved.length < MASTERY_TARGET && solved.length >= MASTERY_TARGET;
+    trackAnswer(courseId, ideaKey, isCorrect, completedNow);
     return updated;
 }
 
