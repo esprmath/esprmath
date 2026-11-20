@@ -11,6 +11,7 @@ import { Courses, type CourseForm } from './courses';
 import { ExamsAndModules, type ExamsActions, type ModuleForm } from './exams';
 import { Admins } from './admins';
 import { ActivityStats } from './stats';
+import { Futures } from './futures';
 import {
     AiPanel, Overview, Students, cx,
     type AiLog, type AiSummary, type Course, type Quiz, type StudentRow, type TabId,
@@ -22,7 +23,9 @@ const TABS: Array<{ id: TabId; label: string; icon: string; sub: string }> = [
     { id: 'courses', label: 'الكورسات', icon: '📚', sub: 'إنشاء الكورسات وتعديلها وحذفها' },
     { id: 'exams', label: 'الاختبارات والـ Modules', icon: '📝', sub: 'اختر الكورس، ثم افتح وأغلق وجدول الـ Modules الخاصة به واختباراته' },
     { id: 'stats', label: 'الإحصائيات', icon: '📈', sub: 'وقت تفاعل الطلاب، ومتوسط إنهاء الدروس، والأخطاء' },
-    { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },];
+    { id: 'ai', label: 'فيكتور والتكلفة', icon: '🤖', sub: 'الاستخدام والتكلفة والتحكم' },
+    { id: 'futures', label: 'المستقبليات', icon: '🔮', sub: 'أدوات المشرف وملخصات للمستقبل' },
+];
 
 const LOG_DAYS = 62;
 
@@ -394,11 +397,6 @@ export default function AdminDashboard() {
                             )}
                         </button>
                     ))}
-                    {/* أداة الغياب مخفية عن الطلاب، وتفتح للمشرف من هنا فقط */}
-                    <Link href="/absence" className={styles.navBtn} style={{ textDecoration: 'none' }}>
-                        <span aria-hidden="true">📅</span>
-                        <span>الضمير الغائب</span>
-                    </Link>
                 </nav>
                 <div className={styles.sideFoot}>
                     <Link href="/" className={styles.backLink}>→ الرجوع للمنصة</Link>
@@ -496,7 +494,10 @@ export default function AdminDashboard() {
                             />
                         )}
                         {tab === 'stats' && <ActivityStats key={refreshCount} courses={courses} />}
-                        {tab === 'ai' && <AiPanel ai={ai} enabled={aiEnabled} busy={busy} onToggle={askToggleAi} />}                    </>
+                        {tab === 'ai' && <AiPanel ai={ai} enabled={aiEnabled} busy={busy} onToggle={askToggleAi} />}
+                        {/* أداة الغياب مخفية عن الطلاب، وتفتح للمشرف من داخل المستقبليات فقط */}
+                        {tab === 'futures' && <Futures />}
+                    </>
                 )}
             </main>
 

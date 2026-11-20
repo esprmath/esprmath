@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import GlobalTutor from '@/components/GlobalTutor';
-import AnswerCat from '@/components/AnswerCat';
 import { createQuestion, ideaHref, type QuizIdea, type QuizQuestion } from '@/lib/quiz/engine';
 import { describeQuestionForTutor } from '@/lib/questions/tutorContext';
 import { QuestionCard, Solution } from './QuestionCard';
@@ -112,7 +111,6 @@ export default function PracticeSession({ title, ideas, courseId, quizId, isAiAl
             ) : (
                 <>
                     <div className={isCorrect ? s.feedbackCorrect : s.feedbackWrong}>
-                        <AnswerCat correct={isCorrect} trigger={question} />
                         {isCorrect ? '✓ إجابة صحيحة' : '✕ إجابة خاطئة'}
                         {willRetry && <div className={s.feedbackNote}>بيرجع لك سؤال جديد على هذي الفكرة في آخر الجلسة.</div>}
                     </div>

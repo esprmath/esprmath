@@ -1161,3 +1161,224 @@ button.kpi:hover {
 .adminsHead .btn {
     padding: 4px 10px;
 }
+
+/* ===== المستقبليات ===== */
+.futWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.futAcc {
+    padding: 0;
+    overflow: hidden;
+}
+
+.futAccHead {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: right;
+    font-family: inherit;
+    color: var(--ink);
+}
+
+.futAccHead:hover {
+    background: #fdf9ec;
+}
+
+.futAccIcon {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-size: 21px;
+    background: var(--warn-bg);
+    border-radius: 12px;
+}
+
+.futAccText {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.futAccTitle {
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.futAccSub {
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.futChevron {
+    font-size: 20px;
+    color: var(--brand);
+    transition: transform 0.2s;
+}
+
+.futChevronOpen {
+    transform: rotate(180deg);
+}
+
+.futBody {
+    padding: 4px 18px 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.futBlock {
+    padding-top: 16px;
+}
+
+.futBlock + .futBlock {
+    border-top: 1px dashed var(--line);
+}
+
+.futBlockTitle {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--brand-dark);
+}
+
+.futSubTitle {
+    margin: 16px 0 8px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--brand);
+}
+
+.futText {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.9;
+}
+
+.futList {
+    margin: 0;
+    padding: 0 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.futTip {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    background: var(--warn-bg);
+    border-radius: 10px;
+    color: var(--warn);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.8;
+}
+
+.futCards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.futMini {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: #fdf9ec;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.futMini b {
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.futQuad {
+    display: grid;
+    grid-template-columns: 92px repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 10px 0 12px;
+}
+
+.futQuadHead {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--brand-dark);
+    background: var(--warn-bg);
+    border-radius: 10px;
+}
+
+.futQuadHead small {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.futQuadCell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.futQuadCell b {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.futQuadCell em {
+    font-style: normal;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.futQuadHot {
+    background: var(--good-bg);
+    border-color: #cfd9a8;
+}
+
+.futSource {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+}
+
+@media (max-width: 720px) {
+    .futCards {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

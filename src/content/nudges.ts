@@ -14,12 +14,6 @@ export interface NudgeStage {
     text?: string;
 }
 
-/** صورتا النتيجة بجنب الجواب: كرت أحمر للغلط، وموافقة للصح */
-export const ANSWER_CATS = {
-    wrong: '/characters/cat-red-card.png',
-    correct: '/characters/cat-approved.png',
-};
-
 /** قطو القراءة: يطلع بشات فيكتور وهو يجهّز الرد */
 export const THINKING_CAT = '/characters/cat-reading.png';
 

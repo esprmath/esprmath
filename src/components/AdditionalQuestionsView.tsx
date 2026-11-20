@@ -9,7 +9,6 @@ import { generateFromTemplate } from '@/lib/questions/additional';
 import { describeQuestionForTutor } from '@/lib/questions/tutorContext';
 import type { ChapterData } from '@/types/math';
 import styles from './AdditionalQuestionsView.module.css';
-import AnswerCat from '@/components/AnswerCat';
 
 interface AdditionalQuestionsViewProps {
     questions: any[];
@@ -358,7 +357,6 @@ export default function AdditionalQuestionsView({
                             {attempted && (
                                 <div ref={feedbackRef} className={cx(styles.feedback, isCorrect ? styles.feedbackCorrect : styles.feedbackWrong)}>
                                     <div className={styles.feedbackTitle}>
-                                        <AnswerCat correct={isCorrect} />
                                         {isCorrect ? '✓ إجابة صحيحة، كفو!' : '✕ إجابة خاطئة'}
                                     </div>
                                     {part.steps ? (
