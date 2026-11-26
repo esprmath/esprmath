@@ -1,0 +1,254 @@
+/* كرت «كورسك الحالي» المقلوب: الوجه الأمامي يحدد الحجم، والخلفي يغطيه بنفس المقاس */
+
+.scene {
+    perspective: 1400px;
+}
+
+.flip {
+    position: relative;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.flipped {
+    transform: rotateY(180deg);
+}
+
+.front,
+.back {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-sizing: border-box;
+}
+
+.front {
+    height: 100%;
+}
+
+.back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    /* حشوة أقل من الوجه الأمامي عشان الشجرة تاخذ مساحة الكرت كلها (الحشوة الأصلية inline) */
+    padding: 8px 12px !important;
+    overflow: hidden;
+}
+
+.treeBtn {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--home-border, #e6dec5);
+    background: var(--home-chip, #feecd0);
+    color: var(--home-accent, #8c5521);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s;
+}
+
+.treeBtn:hover {
+    transform: scale(1.08);
+}
+
+/* زر الرجوع في زاوية الكرت فوق الشجرة */
+.backBtn {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 2;
+}
+
+.note {
+    margin: auto;
+    color: var(--home-muted, #4a5550);
+    font-size: 0.9rem;
+}
+
+/* ===== الشجرة: العقد بمواقع نسبية فوق خطوط SVG بنفس النسب ===== */
+.tree {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+}
+
+.branches {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* الفروع: جذع غامق وسميك للمودلات، وأغصان أفتح وأنحف للشابترات، وعقدة عند كل تفرّع */
+.branches path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* كل فرع طوله 1 (pathLength) عشان ينرسم بالأنيميشن من بدايته لنهايته */
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+}
+
+.stem,
+.trunk {
+    stroke: #8c5521;
+    stroke-width: 3;
+}
+
+.twigStem,
+.twig {
+    stroke: #c98f62;
+    stroke-width: 2;
+}
+
+.knot {
+    fill: #c98f62;
+    opacity: 0;
+}
+
+.rootKnot {
+    fill: #8c5521;
+}
+
+.branchLocked path {
+    stroke: #e6dcc8;
+}
+
+.branchLocked .knot {
+    fill: #e6dcc8;
+}
+
+/* لما ينقلب الكرت: الجذع ينزل أول، ثم الفروع للمودلات، ثم الأغصان للشابترات */
+.growing .branches path {
+    animation: grow 0.45s ease-out forwards;
+}
+
+.growing .stem {
+    animation-delay: 0.3s !important;
+}
+
+.growing .trunk {
+    animation-delay: 0.4s !important;
+}
+
+.growing .twigStem {
+    animation-delay: 0.75s !important;
+}
+
+.growing .twig {
+    animation-delay: 0.82s !important;
+}
+
+.growing .knot {
+    animation: knot 0.2s ease-out forwards;
+    animation-delay: 0.8s;
+}
+
+.growing .rootKnot {
+    animation-delay: 0.38s;
+}
+
+@keyframes grow {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes knot {
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .growing .branches path,
+    .growing .knot {
+        animation-duration: 0.01s;
+        animation-delay: 0s !important;
+    }
+}
+
+.group {
+    display: contents;
+}
+
+.root,
+.module,
+.chip {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    text-decoration: none;
+    z-index: 1;
+}
+
+.root {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background: var(--home-primary, #8c5521);
+    padding: 5px 16px;
+    border-radius: 999px;
+}
+
+.module {
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: var(--home-accent, #8c5521);
+    background: var(--home-chip, #feecd0);
+    border: 1px solid #dca27b;
+    padding: 4px 11px;
+    border-radius: 9px;
+    transition: transform 0.15s, background 0.15s;
+}
+
+a.module:hover {
+    background: #f8ddb4;
+    transform: translate(-50%, -50%) scale(1.06);
+}
+
+.chip {
+    font-size: 0.74rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #dca27b;
+    color: var(--home-accent, #8c5521);
+    background: var(--home-card, #ffffff);
+    direction: ltr;
+    transition: transform 0.15s, background 0.15s;
+}
+
+a.chip:hover {
+    background: var(--home-chip, #feecd0);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.locked {
+    background: var(--home-card, #ffffff);
+    border-color: var(--home-border, #e6dec5);
+    color: #a89f8c;
+    cursor: default;
+}
+
+/* الجوال والشاشات الصغيرة: الكرت ضيق والتشجير ما يتسع فيه، فنخفي الزر ونرجع الكرت لوجهه */
+@media (max-width: 767px) {
+    .treeBtn {
+        display: none;
+    }
+
+    .flipped {
+        transform: none;
+    }
+
+    /* important: شكل الكرت يجي inline وفيه display */
+    .back {
+        display: none !important;
+    }
+}

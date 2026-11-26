@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import BrandName from '@/components/BrandName'
+import CourseTreeCard from '@/components/CourseTreeCard'
 import { supabase } from '@/lib/supabase'
 import { checkIsAdmin } from '@/lib/admin'
 import { COURSES_LOCKED, DEMO_COURSE, isDemoCourse } from '@/lib/courseAccess'
@@ -418,6 +419,77 @@ export default function HomePage() {
         )
     }
 
+    // الكورس الحالي: المقبول فيه، وإذا ما فيه فاللي طلبه وينتظر الموافقة (الطالب يسجل في كورس واحد بس، والنموذجي ما يُحسب)
+    const enrolledIn = (status: string) =>
+        isLoggedIn ? courses.find(c => !isDemoCourse(c.id) && courseStatuses[c.id] === status) : undefined
+    const currentCourse = enrolledIn('approved') ?? enrolledIn('pending')
+    const otherCourses = courses.filter(c => c.id !== currentCourse?.id)
+
+    const renderCourseCard = (course: Course, isCurrent = false) => {
+        const cardStyle: React.CSSProperties = {
+            background: 'var(--home-card, #ffffff)',
+            border: isCurrent ? `2px solid ${PRIMARY}` : '1px solid var(--home-border, #e6dec5)',
+            borderRadius: '16px',
+            padding: '20px',
+            boxShadow: isCurrent ? '0 8px 20px -8px rgba(140,85,33,0.35)' : '0 4px 6px -1px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+        }
+
+        // كرت «كورسك الحالي» فيه زر الشجرة اللي يقلبه ويطلع تشجير الكورس
+        if (isCurrent) {
+            return (
+                <CourseTreeCard
+                    key={course.id}
+                    courseId={course.id}
+                    courseTitle={course.title}
+                    isApproved={courseStatuses[course.id] === 'approved'}
+                    cardStyle={cardStyle}
+                >
+                    {(treeButton) => renderCourseContent(course, treeButton)}
+                </CourseTreeCard>
+            )
+        }
+
+        return (
+            <div key={course.id} className="course-card" style={cardStyle}>
+                {renderCourseContent(course)}
+            </div>
+        )
+    }
+
+    const renderCourseContent = (course: Course, treeButton?: React.ReactNode) => (
+        <>
+            <div>
+                <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--home-text, #2C3531)' }}>{course.title}</h3>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {treeButton}
+                        {!course.is_active && (
+                            <span style={{ background: 'var(--home-chip, #FEECD0)', color: 'var(--home-accent, #8c5521)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                مخفي عن الطلاب 🔒
+                            </span>
+                        )}
+
+                        <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                            {isDemoCourse(course.id) ? 'نموذج' : `Math${course.id}`}
+                        </span>
+                    </div>
+                </div>
+
+                <p className="course-description" style={{ color: 'var(--home-muted, #4A5550)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
+                    {course.description}
+                </p>
+            </div>
+
+            <div>
+                {renderCourseActions(course)}
+            </div>
+        </>
+    )
+
     return (
         // سكرول الصفحة العادي، وشريط التواصل ينزل لآخر الشاشة إذا كان المحتوى قصير
         <div style={{ backgroundColor: 'var(--home-bg, #FFF9E2)', minHeight: '100dvh', display: 'flex', flexDirection: 'column', color: 'var(--home-text, #2C3531)', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
@@ -448,11 +520,21 @@ export default function HomePage() {
                 </p>
             </header>
 
+            {/* كورسك الحالي: للطالب المسجل في كورس، يطلع أول شي تحت الترحيب */}
+            {currentCourse && (
+                <section className="current-course-section" style={{ maxWidth: '1100px', margin: '22px auto 0 auto', padding: '0 20px', width: '100%' }}>
+                    <h3 style={{ fontSize: '1.3rem', color: 'var(--home-text, #2C3531)', fontWeight: 'bold', margin: '0 0 16px 0' }}>
+                        🎓 كورسك الحالي
+                    </h3>
+                    {renderCourseCard(currentCourse, true)}
+                </section>
+            )}
+
             {/* قسم الكورسات: بمكان ثابت ومنفصل مع مسافة فاصلة أوسع */}
             <section className="courses-section" style={{ maxWidth: '1100px', margin: '22px auto 30px auto', padding: '0 20px', width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3 style={{ fontSize: '1.3rem', color: 'var(--home-text, #2C3531)', fontWeight: 'bold', margin: 0 }}>
-                        📚 كورساتك المتاحة
+                        {currentCourse ? '📚 باقي الكورسات' : '📚 كورساتك المتاحة'}
                     </h3>
                 </div>
 
@@ -461,50 +543,7 @@ export default function HomePage() {
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px' }}>
-                    {courses.map((course) => {
-                        return (
-                            <div
-                                key={course.id}
-                                className="course-card"
-                                style={{
-                                    background: 'var(--home-card, #ffffff)',
-                                    border: '1px solid var(--home-border, #e6dec5)',
-                                    borderRadius: '16px',
-                                    padding: '20px',
-                                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'space-between'
-                                }}
-                            >
-                                <div>
-                                    <div className="course-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--home-text, #2C3531)' }}>{course.title}</h3>
-
-                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                            {!course.is_active && (
-                                                <span style={{ background: 'var(--home-chip, #FEECD0)', color: 'var(--home-accent, #8c5521)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                                    مخفي عن الطلاب 🔒
-                                                </span>
-                                            )}
-
-                                            <span className="course-badge" style={{ background: course.badge_color, color: course.badge_text_color, padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                                {isDemoCourse(course.id) ? 'نموذج' : `Math${course.id}`}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <p className="course-description" style={{ color: 'var(--home-muted, #4A5550)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                                        {course.description}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    {renderCourseActions(course)}
-                                </div>
-                            </div>
-                        )
-                    })}
+                    {otherCourses.map((course) => renderCourseCard(course))}
                 </div>
             </section>
 
