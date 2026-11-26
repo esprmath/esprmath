@@ -52,6 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         __html: "try{if(localStorage.getItem('theme')==='dark'){var r=document.documentElement;r.setAttribute('data-theme','dark');if(location.pathname==='/')r.setAttribute('data-dark-native','')}}catch(e){}",
                     }}
                 />
+                {/* حدث تثبيت التطبيق يوصل بدري قبل ما تجهز الجولة، فنحفظه لها (OnboardingTour) */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__esprInstall=e})",
+                    }}
+                />
                 {children}
                 <SpeedInsights />
             </body>

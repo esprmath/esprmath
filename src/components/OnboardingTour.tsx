@@ -11,7 +11,42 @@ import { createPortal } from 'react-dom';
 
 export type TourPage = 'course' | 'moduleList' | 'idea' | 'other';
 
-type Step = 'exam' | 'module' | 'chapter' | 'summary' | 'video' | 'question' | 'done' | 'finished';
+type Step = 'install' | 'exam' | 'module' | 'chapter' | 'summary' | 'video' | 'question' | 'done' | 'finished';
+
+/** طريقة التثبيت كتطبيق (للجوالات والآيباد فقط): زر تثبيت مباشر في أندرويد، أو شرح للآيفون والآيباد */
+type InstallMode = 'prompt' | 'ios';
+
+interface InstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+declare global {
+    interface Window {
+        /** يلتقطه سكربت في layout.tsx قبل ما تجهز الصفحة */
+        __esprInstall?: InstallPromptEvent | null;
+    }
+}
+
+const INSTALL_TEXT: Record<InstallMode, string> = {
+    prompt: 'يفتح من أيقونة على شاشتك الرئيسية مثل أي تطبيق، وبدون شريط المتصفح.',
+    ios: 'اضغط زر المشاركة (المربع اللي طالع منه سهم)، ثم «إضافة إلى الشاشة الرئيسية».',
+};
+
+function isStandalone(): boolean {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+/** null: لابتوب أو كمبيوتر، أو الموقع مثبت أصلًا، أو المتصفح ما يدعم التثبيت */
+function detectInstall(): InstallMode | null {
+    if (isStandalone()) return null;
+    const ua = navigator.userAgent;
+    // الآيباد الحديث يعرّف نفسه Macintosh، ونميزه عن الماك باللمس
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/.test(ua) && window.__esprInstall) return 'prompt';
+    return null;
+}
 
 const STORAGE_KEY = 'esprmath_tour_v1';
 
@@ -37,6 +72,13 @@ interface StepConfig {
 const TOTAL = 6;
 
 const STEPS: Record<Exclude<Step, 'finished'>, StepConfig> = {
+    // قبل الجولة وبدون رقم: نص البطاقة وأزرارها حسب الجهاز (INSTALL_TEXT)
+    install: {
+        page: ['course'],
+        title: 'ثبّت EsprMath كتطبيق',
+        text: '',
+        next: { label: 'التالي', to: 'exam' },
+    },
     exam: {
         page: ['course'],
         target: '[data-tour="exam-date"]',
@@ -95,12 +137,12 @@ const STEPS: Record<Exclude<Step, 'finished'>, StepConfig> = {
     },
 };
 
-const ORDER: Step[] = ['exam', 'module', 'chapter', 'summary', 'video', 'question', 'done', 'finished'];
+const ORDER: Step[] = ['install', 'exam', 'module', 'chapter', 'summary', 'video', 'question', 'done', 'finished'];
 
 function readStep(): Step {
     try {
         const saved = localStorage.getItem(STORAGE_KEY) as Step | null;
-        return saved && ORDER.includes(saved) ? saved : 'exam';
+        return saved && ORDER.includes(saved) ? saved : 'install';
     } catch {
         return 'finished'; // لا نزعج الطالب إذا كان التخزين معطلًا
     }
@@ -142,6 +184,43 @@ export default function OnboardingTour({ page }: { page: TourPage }) {
 
     const config = step === 'finished' ? null : STEPS[step];
     const visible = ready && config !== null && config.page.includes(page);
+    const [installMode, setInstallMode] = useState<InstallMode | null>(null);
+
+    // بطاقة التثبيت: نحدد طريقة الجهاز، ونتخطاها لو مثبت أو ما يدعم التثبيت
+    useEffect(() => {
+        if (!visible || step !== 'install') return;
+        if (isStandalone()) {
+            go('exam');
+            return;
+        }
+        setInstallMode(detectInstall());
+        const onPrompt = (e: Event) => {
+            e.preventDefault();
+            window.__esprInstall = e as InstallPromptEvent;
+            setInstallMode(detectInstall());
+        };
+        const onInstalled = () => go('exam');
+        window.addEventListener('beforeinstallprompt', onPrompt);
+        window.addEventListener('appinstalled', onInstalled);
+        // Chrome يرسل حدث التثبيت بعد التحميل بشوي، فننتظره قبل ما نتخطى
+        const timer = window.setTimeout(() => {
+            if (!detectInstall()) go('exam');
+        }, 4000);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', onPrompt);
+            window.removeEventListener('appinstalled', onInstalled);
+            window.clearTimeout(timer);
+        };
+    }, [visible, step, go]);
+
+    const install = useCallback(async () => {
+        const prompt = window.__esprInstall;
+        if (!prompt) return go('exam');
+        await prompt.prompt();
+        await prompt.userChoice.catch(() => null);
+        window.__esprInstall = null;
+        go('exam');
+    }, [go]);
 
     // تتقدم الجولة عند حدث من الصفحة (حفظ الموعد، أو التحقق من أول إجابة)
     useEffect(() => {
@@ -189,6 +268,21 @@ export default function OnboardingTour({ page }: { page: TourPage }) {
 
     if (!visible || !config) return null;
     if (config.target && !rect) return null;
+    if (step === 'install' && !installMode) return null;
+    const text = step === 'install' && installMode ? INSTALL_TEXT[installMode] : config.text;
+    const primary =
+        step === 'install' && installMode === 'prompt'
+            ? { label: 'ثبّت التطبيق', onClick: install }
+            : config.next
+                ? { label: config.next.label, onClick: () => go(config.next!.to) }
+                : null;
+    // زر التثبيت يجي معه «بعدين» بدل تخطي الجولة كاملة
+    const secondary =
+        step === 'install' && installMode === 'prompt'
+            ? { label: 'بعدين', onClick: () => go('exam') }
+            : step !== 'done'
+                ? { label: 'تخطي الجولة', onClick: () => go('finished') }
+                : null;
 
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
     // البطاقة تحت، إلا إذا كان العنصر نفسه في أسفل الشاشة
@@ -246,26 +340,26 @@ export default function OnboardingTour({ page }: { page: TourPage }) {
                     </div>
                 )}
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#8C5521', marginBottom: 6 }}>{config.title}</div>
-                <p style={{ margin: '0 0 14px', fontSize: 14, lineHeight: 1.6 }}>{config.text}</p>
+                <p style={{ margin: '0 0 14px', fontSize: 14, lineHeight: 1.6 }}>{text}</p>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-                    {config.next ? (
+                    {primary ? (
                         <button
                             type="button"
-                            onClick={() => go(config.next!.to)}
+                            onClick={primary.onClick}
                             style={{ background: '#3A4D39', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
                         >
-                            {config.next.label}
+                            {primary.label}
                         </button>
                     ) : (
                         <span style={{ fontSize: 12, color: '#6B5A3A' }}>اضغط على الجزء المحدد</span>
                     )}
-                    {step !== 'done' && (
+                    {secondary && (
                         <button
                             type="button"
-                            onClick={() => go('finished')}
+                            onClick={secondary.onClick}
                             style={{ background: 'none', border: 'none', color: '#8C5521', fontSize: 13, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
                         >
-                            تخطي الجولة
+                            {secondary.label}
                         </button>
                     )}
                 </div>
