@@ -18,7 +18,15 @@ export const metadata: Metadata = {
         description: SITE_DESCRIPTION,
         locale: 'ar_SA',
     },
-    manifest: '/manifest.json',
+    // رابط manifest ينضاف تلقائياً من app/manifest.ts
+    icons: {
+        icon: [
+            { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+        apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    },
+    // الآيفون: يفتح بملء الشاشة من الشاشة الرئيسية وباسم قصير تحت الأيقونة
     appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -27,8 +35,11 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-    // لون شريط حالة الجوال وما فوق الصفحة عند السحب لتحت بلون النافبار
-    themeColor: '#8B5E3C',
+    // لون شريط حالة الجوال وما فوق الصفحة عند السحب لتحت بلون النافبار (فاتح وداكن)
+    themeColor: [
+        { media: '(prefers-color-scheme: light)', color: '#8B5E3C' },
+        { media: '(prefers-color-scheme: dark)', color: '#4A3426' },
+    ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
